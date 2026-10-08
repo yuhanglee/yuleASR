@@ -6,7 +6,7 @@
 * All Rights Reserved.
 *
 * B3-1 (2026-08-09): compiles the real production sources
-* Cdd_Fvm_1.0.0.c + Cdd_Fvm_Hw.c (RAM backend) with a Det_ReportError
+* Cdd_Fvm.c + Cdd_Fvm_Hw.c (RAM backend) with a Det_ReportError
 * mock, covering:
 *   - init lifecycle (default/custom config, double-init, de-init)
 *   - bank registration / unregistration / queries
@@ -28,7 +28,7 @@
 /*==================================================================================================
 *                                      DET API ID MIRRORS
 *==================================================================================================*/
-/* Mirror of the DET API ids used by Cdd_Fvm_1.0.0.c (kept local to the test) */
+/* Mirror of the DET API ids used by Cdd_Fvm.c (kept local to the test) */
 #define CDD_FVM_SID_REGISTERBANK        0x04u
 #define CDD_FVM_SID_UNREGISTERBANK      0x05u
 #define CDD_FVM_SID_SELECTACTIVEBANK    0x07u

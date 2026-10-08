@@ -18,7 +18,7 @@
  *
  * @details
  *   Hardware backend interface of the FVM complex driver (same layering
- *   pattern as Fls_Hw.h).  The module logic in Cdd_Fvm_1.0.0.c never
+ *   pattern as Fls_Hw.h).  The module logic in Cdd_Fvm.c never
  *   touches flash directly — it always goes through this interface.
  *
  *   Two backends are provided (selected by CDD_FVM_BACKEND in Cdd_Fvm_Cfg.h):

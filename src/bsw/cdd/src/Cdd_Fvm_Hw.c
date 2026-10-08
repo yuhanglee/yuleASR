@@ -41,7 +41,7 @@
  *==================================================================================================*/
 #include "Cdd_Fvm_Hw.h"
 
-/* Defensive fallback: see Cdd_Fvm_1.0.0.c — Std_Types.h may resolve from
+/* Defensive fallback: see Cdd_Fvm.c — Std_Types.h may resolve from
  * the OS include tree without the STATIC macro. */
 #ifndef STATIC
 #define STATIC                                     static

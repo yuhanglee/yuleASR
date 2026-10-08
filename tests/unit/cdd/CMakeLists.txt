@@ -1,7 +1,7 @@
 # FVM (Flash Virtual Memory) Unit Tests CMakeLists.txt
 #
 # B3-1 (2026-08-09): compiles the real production sources
-# Cdd_Fvm_1.0.0.c + Cdd_Fvm_Hw.c (RAM backend) with a Det_ReportError
+# Cdd_Fvm.c + Cdd_Fvm_Hw.c (RAM backend) with a Det_ReportError
 # mock, covering init lifecycle, bank registration/selection, read/write,
 # erase, write protection, bank-to-bank copy and corrupt-active failover.
 #
@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(FVM_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/fvm/test_fvm.c)
 set(FVM_PRODUCT_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../src/bsw/cdd/src/Cdd_Fvm_1.0.0.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../src/bsw/cdd/src/Cdd_Fvm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../src/bsw/cdd/src/Cdd_Fvm_Hw.c
 )
 
