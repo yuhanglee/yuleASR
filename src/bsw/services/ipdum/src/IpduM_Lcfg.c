@@ -1,7 +1,6 @@
 /*==================================================================================================
 * Project              : YuleTech AutoSAR BSW
 * Platform             : NXP i.MX8M Mini
-* Dependencies         : ...
 *
 * Copyright (c) 2026 Shanghai Yule Electronics Technology Co., Ltd.
 * All rights reserved.
@@ -9,25 +8,15 @@
 * SPDX-License-Identifier: MIT
 *
 *================================================================================================*/
-/* @req SHALL_IPDUM */
 
-
-/**
- * @file IpduM_Lcfg.c
- * @brief IPDU Multiplexer Link-Time Configuration
- */
-
-#include "IpduM.h"
-#include "IpduM_Cfg.h"
-
-extern const IpduM_ConfigType IpduM_Config;
-static const IpduM_StaticPartType IpduM_StaticParts[IPDUM_MAX_STATIC_PARTS] = {
-    { 0U, 0U, 0U },
-    { 1U, 1U, 1U },
-    { 0xFFFFU, 0xFFFFU, 0U }  /* End marker */
-};
-
-const IpduM_ConfigType IpduM_Config = {
-    .NumStaticParts = 2U,
-    .StaticParts = IpduM_StaticParts
-};
+/*==================================================================================================
+ *                     PHASE 2 DUPLICATE-MODULE CONVERGENCE - FORWARDING SHIM
+ *==================================================================================================
+ * Canonical IpduM implementation: src/bsw/ecual/ipdum/ (target: ecual_ipdum).
+ * See IpduM.c in this directory for the full convergence rationale.
+ *
+ * This Lcfg previously defined IpduM_Config (IpduM_StaticParts + mapping
+ * table). The symbol had no consumers outside this module (the canonical
+ * ecual implementation builds its mux configuration from its own
+ * IpduM_Lcfg.c), so the definition was removed.
+ *================================================================================================*/

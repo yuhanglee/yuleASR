@@ -139,6 +139,14 @@ Std_ReturnType Crypto_CancelJob(uint32 objectId, Crypto_JobType* job);
  * @param keyLength Length of key data
  * @return Result of the operation
  */
+/**
+ * @brief key element set
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @return Operation status
+ */
 Std_ReturnType Crypto_KeyElementSet(Crypto_KeyIdType cryptoKeyId,
                                      Crypto_KeyElementIdType keyElementId,
                                      const uint8* keyPtr,
@@ -151,6 +159,14 @@ Std_ReturnType Crypto_KeyElementSet(Crypto_KeyIdType cryptoKeyId,
  * @param keyPtr Pointer to buffer for key data
  * @param keyLengthPtr Pointer to length variable
  * @return Result of the operation
+ */
+/**
+ * @brief key element get
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @return Operation status
  */
 Std_ReturnType Crypto_KeyElementGet(Crypto_KeyIdType cryptoKeyId,
                                      Crypto_KeyElementIdType keyElementId,
@@ -183,6 +199,14 @@ Std_ReturnType Crypto_KeyElementIdsGet(Crypto_KeyIdType cryptoKeyId,
  * @param targetKeyElementId Target element ID
  * @return Result of the operation
  */
+/**
+ * @brief key element copy
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetCryptoKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Crypto_KeyElementCopy(Crypto_KeyIdType cryptoKeyId,
                                       Crypto_KeyElementIdType keyElementId,
                                       Crypto_KeyIdType targetCryptoKeyId,
@@ -195,6 +219,14 @@ Std_ReturnType Crypto_KeyElementCopy(Crypto_KeyIdType cryptoKeyId,
  * @param targetCryptoKeyId Target key ID
  * @param targetKeyElementId Target element ID
  * @return Result of the operation
+ */
+/**
+ * @brief key element move
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetCryptoKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
  */
 Std_ReturnType Crypto_KeyElementMove(Crypto_KeyIdType cryptoKeyId,
                                       Crypto_KeyElementIdType keyElementId,
@@ -246,6 +278,13 @@ Std_ReturnType Crypto_KeyDerive(Crypto_KeyIdType cryptoKeyId,
  * @param partnerPublicKeyLength Length of public key
  * @return Result of the operation
  */
+/**
+ * @brief key exchange calc secret
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] partnerPublicKeyPtr Pointer reference
+ * @param[in] partnerPublicKeyLength Data length
+ * @return Operation status
+ */
 Std_ReturnType Crypto_KeyExchangeCalcSecret(Crypto_KeyIdType cryptoKeyId,
                                              const uint8* partnerPublicKeyPtr,
                                              uint32 partnerPublicKeyLength);
@@ -257,6 +296,13 @@ Std_ReturnType Crypto_KeyExchangeCalcSecret(Crypto_KeyIdType cryptoKeyId,
  * @param resultLength Length of random data to generate
  * @return Result of the operation
  */
+/**
+ * @brief random generate
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLength Data length
+ * @return Operation status
+ */
 Std_ReturnType Crypto_RandomGenerate(Crypto_KeyIdType cryptoKeyId,
                                       uint8* resultPtr,
                                       uint32 resultLength);
@@ -267,6 +313,13 @@ Std_ReturnType Crypto_RandomGenerate(Crypto_KeyIdType cryptoKeyId,
  * @param entropyPtr Pointer to entropy data
  * @param entropyLength Length of entropy data
  * @return Result of the operation
+ */
+/**
+ * @brief random seed
+ * @param[in] cryptoKeyId Identifier
+ * @param[in] entropyPtr Pointer reference
+ * @param[in] entropyLength Data length
+ * @return Operation status
  */
 Std_ReturnType Crypto_RandomSeed(Crypto_KeyIdType cryptoKeyId,
                                   const uint8* entropyPtr,
@@ -332,6 +385,14 @@ Std_ReturnType Crypto_HsmGetId(uint8* idPtr, uint32* idLengthPtr);
  * @param signatureLengthPtr Pointer to signature length
  * @return Result of the operation
  */
+/**
+ * @brief ccc generate attestation
+ * @param[in] challengePtr Data length
+ * @param[in] challengeLength Data length
+ * @param[in] signaturePtr Pointer reference
+ * @param[in] signatureLengthPtr Data length
+ * @return Operation status
+ */
 Std_ReturnType Crypto_CccGenerateAttestation(const uint8* challengePtr,
                                               uint32 challengeLength,
                                               uint8* signaturePtr,
@@ -344,6 +405,13 @@ Std_ReturnType Crypto_CccGenerateAttestation(const uint8* challengePtr,
  * @param verifyResultPtr Pointer to verification result
  * @return Result of the operation
  */
+/**
+ * @brief ccc verify owner certificate
+ * @param[in] certificatePtr Pointer reference
+ * @param[in] certificateLength Data length
+ * @param[in] verifyResultPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType Crypto_CccVerifyOwnerCertificate(const uint8* certificatePtr,
                                                  uint32 certificateLength,
                                                  Crypto_VerifyResultType* verifyResultPtr);
@@ -354,6 +422,13 @@ Std_ReturnType Crypto_CccVerifyOwnerCertificate(const uint8* certificatePtr,
  * @param ephemeralPublicKeyLength Length of public key
  * @param sessionKeyId Output session key ID
  * @return Result of the operation
+ */
+/**
+ * @brief ccc derive session key
+ * @param[in] ephemeralPublicKeyPtr Pointer reference
+ * @param[in] ephemeralPublicKeyLength Data length
+ * @param[in] sessionKeyId Identifier
+ * @return Operation status
  */
 Std_ReturnType Crypto_CccDeriveSessionKey(const uint8* ephemeralPublicKeyPtr,
                                            uint32 ephemeralPublicKeyLength,
@@ -372,6 +447,20 @@ Std_ReturnType Crypto_CccDeriveSessionKey(const uint8* ephemeralPublicKeyPtr,
  * @param tagPtr Output buffer for authentication tag
  * @param tagLengthPtr Pointer to tag length
  * @return Result of the operation
+ */
+/**
+ * @brief ccc encrypt
+ * @param[in] keyId Identifier
+ * @param[in] plaintextPtr Pointer reference
+ * @param[in] plaintextLength Data length
+ * @param[in] aadPtr Pointer reference
+ * @param[in] aadLength Data length
+ * @param[in] ivPtr Pointer reference
+ * @param[in] ivLength Data length
+ * @param[in] ciphertextPtr Pointer reference
+ * @param[in] tagPtr Pointer reference
+ * @param[in] tagLengthPtr Data length
+ * @return Operation status
  */
 Std_ReturnType Crypto_CccEncrypt(Crypto_KeyIdType keyId,
                                   const uint8* plaintextPtr,
@@ -398,6 +487,21 @@ Std_ReturnType Crypto_CccEncrypt(Crypto_KeyIdType keyId,
  * @param plaintextPtr Output buffer for plaintext
  * @param plaintextLengthPtr Pointer to plaintext length
  * @return Result of the operation
+ */
+/**
+ * @brief ccc decrypt
+ * @param[in] keyId Identifier
+ * @param[in] ciphertextPtr Pointer reference
+ * @param[in] ciphertextLength Data length
+ * @param[in] aadPtr Pointer reference
+ * @param[in] aadLength Data length
+ * @param[in] ivPtr Pointer reference
+ * @param[in] ivLength Data length
+ * @param[in] tagPtr Pointer reference
+ * @param[in] tagLength Data length
+ * @param[in] plaintextPtr Pointer reference
+ * @param[in] plaintextLengthPtr Data length
+ * @return Operation status
  */
 Std_ReturnType Crypto_CccDecrypt(Crypto_KeyIdType keyId,
                                   const uint8* ciphertextPtr,
@@ -429,6 +533,16 @@ Std_ReturnType Crypto_CccDecrypt(Crypto_KeyIdType keyId,
  * @param digestPtr Output buffer for hash
  * @return Result of the operation
  */
+/**
+ * @brief blake2b
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @param[in] digestLength Data length
+ * @param[in] digestPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType Crypto_Blake2b(const uint8* dataPtr,
                                uint32 dataLength,
                                const uint8* keyPtr,
@@ -446,6 +560,16 @@ Std_ReturnType Crypto_Blake2b(const uint8* dataPtr,
  * @param digestPtr Output buffer for hash
  * @return Result of the operation
  */
+/**
+ * @brief blake2s
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @param[in] digestLength Data length
+ * @param[in] digestPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType Crypto_Blake2s(const uint8* dataPtr,
                                uint32 dataLength,
                                const uint8* keyPtr,
@@ -461,6 +585,14 @@ Std_ReturnType Crypto_Blake2s(const uint8* dataPtr,
  * @param digestLength Output digest length
  * @return Result of the operation
  */
+/**
+ * @brief blake2b_ start
+ * @param[in] jobId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @param[in] digestLength Data length
+ * @return Operation status
+ */
 Std_ReturnType Crypto_Blake2b_Start(uint32 jobId,
                                      const uint8* keyPtr,
                                      uint32 keyLength,
@@ -473,6 +605,13 @@ Std_ReturnType Crypto_Blake2b_Start(uint32 jobId,
  * @param dataLength Input data length
  * @return Result of the operation
  */
+/**
+ * @brief blake2b_ update
+ * @param[in] jobId Identifier
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @return Operation status
+ */
 Std_ReturnType Crypto_Blake2b_Update(uint32 jobId,
                                       const uint8* dataPtr,
                                       uint32 dataLength);
@@ -483,6 +622,13 @@ Std_ReturnType Crypto_Blake2b_Update(uint32 jobId,
  * @param digestPtr Output buffer for hash
  * @param digestLengthPtr Pointer to digest length
  * @return Result of the operation
+ */
+/**
+ * @brief blake2b_ finish
+ * @param[in] jobId Identifier
+ * @param[in] digestPtr Pointer reference
+ * @param[in] digestLengthPtr Data length
+ * @return Operation status
  */
 Std_ReturnType Crypto_Blake2b_Finish(uint32 jobId,
                                       uint8* digestPtr,
@@ -506,6 +652,13 @@ void Crypto_JobNotification(Crypto_JobType* job, Crypto_ResultType result);
  * @param instanceId The instance ID
  * @param apiId The API ID
  * @param errorId The error ID
+ */
+/**
+ * @brief error notification
+ * @param[in] moduleId Identifier
+ * @param[in] instanceId Identifier
+ * @param[in] apiId Identifier
+ * @param[in] errorId Identifier
  */
 void Crypto_ErrorNotification(uint16 moduleId, uint8 instanceId, uint8 apiId, uint8 errorId);
 

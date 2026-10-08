@@ -98,6 +98,14 @@
 static boolean Can_DriverInitialized = FALSE;
 static Can_ControllerStateType Can_ControllerState[CAN_NUM_CONTROLLERS];
 static const Can_ConfigType* Can_ConfigPtr = NULL_PTR;
+/* Runtime error surface per controller: error counters and derived error
+ * state (CAN_ERRORSTATE_ACTIVE/PASSIVE/BUSOFF). Maintained on the existing
+ * state paths: Can_Init (reset), Can_SetControllerMode(STARTED) (bus-off
+ * recovery reset) and Can_MainFunction_BusOff (migration from the FlexCAN
+ * ECR/ESR1 registers). */
+static uint8 Can_RxErrorCounter[CAN_NUM_CONTROLLERS];
+static uint8 Can_TxErrorCounter[CAN_NUM_CONTROLLERS];
+static Can_ErrorStateType Can_ErrorState[CAN_NUM_CONTROLLERS];
 
 #define CAN_STOP_SEC_VAR_CLEARED_UNSPECIFIED
 #include "MemMap.h"
@@ -180,6 +188,18 @@ static uint8 Can_FdLengthToDlcCode(uint8 length)
     }
 }
 
+/** @req SWS_Can_00108 */
+static Can_ErrorStateType Can_DeriveErrorState(uint8 txErrorCounter, uint8 rxErrorCounter, boolean busOff)
+{
+    if (busOff != FALSE) {
+        return CAN_ERRORSTATE_BUSOFF;
+    }
+    if ((txErrorCounter >= 128U) || (rxErrorCounter >= 128U)) {
+        return CAN_ERRORSTATE_PASSIVE;
+    }
+    return CAN_ERRORSTATE_ACTIVE;
+}
+
 #define CAN_START_SEC_CODE
 #include "MemMap.h"
 
@@ -201,6 +221,9 @@ void Can_Init(const Can_ConfigType* Config)
 
     for (uint8 i = 0U; i < CAN_NUM_CONTROLLERS; i++) {
         Can_ControllerState[i] = CAN_CS_UNINIT;
+        Can_RxErrorCounter[i] = 0U;
+        Can_TxErrorCounter[i] = 0U;
+        Can_ErrorState[i] = CAN_ERRORSTATE_ACTIVE;
 
         uint32 baseAddr = Can_GetBaseAddr(i);
         if (baseAddr != 0U) {
@@ -304,6 +327,11 @@ Can_ReturnType Can_SetControllerMode(uint8 Controller, Can_ControllerStateType T
                 return CAN_NOT_OK;
             }
             Can_ControllerState[Controller] = CAN_CS_STARTED;
+            /* Bus-off recovery: a controller that leaves freeze mode starts
+             * with zeroed error counters and leaves the BUSOFF state. */
+            Can_RxErrorCounter[Controller] = 0U;
+            Can_TxErrorCounter[Controller] = 0U;
+            Can_ErrorState[Controller] = CAN_ERRORSTATE_ACTIVE;
             break;
 
         case CAN_CS_STOPPED:
@@ -540,13 +568,23 @@ void Can_MainFunction_BusOff(void)
         if (Can_ControllerState[ctrlIdx] == CAN_CS_STARTED) {
             uint32 baseAddr = Can_GetBaseAddr(ctrlIdx);
             uint32 esrValue = REG_READ32(baseAddr + CAN_ESR1);
+            /* Refresh the error counters from the FlexCAN ECR register
+             * (TXERRCNT in bits 0..7, RXERRCNT in bits 8..15). */
+            uint32 ecrValue = REG_READ32(baseAddr + CAN_ECR);
+            Can_TxErrorCounter[ctrlIdx] = (uint8)(ecrValue & 0xFFU);
+            Can_RxErrorCounter[ctrlIdx] = (uint8)((ecrValue >> 8) & 0xFFU);
 
+            boolean busOff = FALSE;
             if ((esrValue & CAN_ESR1_BOFFINT) != 0U) {
                 /* Bus-off detected */
                 /* CanIf_ControllerBusOff(ctrlIdx); */
                 /* Clear flag */
                 REG_WRITE32(baseAddr + CAN_ESR1, CAN_ESR1_BOFFINT);
+                busOff = TRUE;
             }
+            Can_ErrorState[ctrlIdx] = Can_DeriveErrorState(Can_TxErrorCounter[ctrlIdx],
+                                                           Can_RxErrorCounter[ctrlIdx],
+                                                           busOff);
         }
     }
 }
@@ -585,6 +623,72 @@ Std_ReturnType Can_CheckWakeup(uint8 Controller)
     }
 
     return E_NOT_OK;
+}
+
+/** @req SWS_Can_00013 */
+Std_ReturnType Can_GetControllerErrorState(uint8 Controller, Can_ErrorStateType* ErrorStatePtr)
+{
+    #if (CAN_DEV_ERROR_DETECT == STD_ON)
+    if (Can_DriverInitialized == FALSE) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERERRORSTATE, CAN_E_UNINIT);
+        return E_NOT_OK;
+    }
+    if (Controller >= CAN_NUM_CONTROLLERS) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERERRORSTATE, CAN_E_PARAM_CONTROLLER);
+        return E_NOT_OK;
+    }
+    if (ErrorStatePtr == NULL_PTR) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERERRORSTATE, CAN_E_PARAM_POINTER);
+        return E_NOT_OK;
+    }
+    #endif
+
+    *ErrorStatePtr = Can_ErrorState[Controller];
+    return E_OK;
+}
+
+/** @req SWS_Can_00014 */
+Std_ReturnType Can_GetControllerRxErrorCounter(uint8 Controller, uint8* RxErrorCounterPtr)
+{
+    #if (CAN_DEV_ERROR_DETECT == STD_ON)
+    if (Can_DriverInitialized == FALSE) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERRXERRORCOUNTER, CAN_E_UNINIT);
+        return E_NOT_OK;
+    }
+    if (Controller >= CAN_NUM_CONTROLLERS) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERRXERRORCOUNTER, CAN_E_PARAM_CONTROLLER);
+        return E_NOT_OK;
+    }
+    if (RxErrorCounterPtr == NULL_PTR) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERRXERRORCOUNTER, CAN_E_PARAM_POINTER);
+        return E_NOT_OK;
+    }
+    #endif
+
+    *RxErrorCounterPtr = Can_RxErrorCounter[Controller];
+    return E_OK;
+}
+
+/** @req SWS_Can_00015 */
+Std_ReturnType Can_GetControllerTxErrorCounter(uint8 Controller, uint8* TxErrorCounterPtr)
+{
+    #if (CAN_DEV_ERROR_DETECT == STD_ON)
+    if (Can_DriverInitialized == FALSE) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERTXERRORCOUNTER, CAN_E_UNINIT);
+        return E_NOT_OK;
+    }
+    if (Controller >= CAN_NUM_CONTROLLERS) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERTXERRORCOUNTER, CAN_E_PARAM_CONTROLLER);
+        return E_NOT_OK;
+    }
+    if (TxErrorCounterPtr == NULL_PTR) {
+        Det_ReportError(CAN_MODULE_ID, Controller, CAN_SID_GETCONTROLLERTXERRORCOUNTER, CAN_E_PARAM_POINTER);
+        return E_NOT_OK;
+    }
+    #endif
+
+    *TxErrorCounterPtr = Can_TxErrorCounter[Controller];
+    return E_OK;
 }
 
 #define CAN_STOP_SEC_CODE

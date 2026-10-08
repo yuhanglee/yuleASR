@@ -262,112 +262,322 @@ typedef struct {
 
 /* Initialization Functions */
 /** @req SWS_EcuM_00001 */
+/**
+ * @brief Initialize the module
+ */
 extern void EcuM_Init(void);
 /** @req SWS_EcuM_00010 */
+/**
+ * @brief Start the operation
+ */
 extern void EcuM_StartupOne(void);
 /** @req SWS_EcuM_00011 */
+/**
+ * @brief Start the operation
+ */
 extern void EcuM_StartupTwo(void);
 
 /* Runtime Functions */
 /** @req SWS_EcuM_00060 */
+/**
+ * @brief Process periodic tasks
+ */
 extern void EcuM_MainFunction(void);
 /** @req SWS_EcuM_00090 */
+/**
+ * @brief Request operation
+ * @param[in] user user value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_RequestRUN(EcuM_UserType user);
 /** @req SWS_EcuM_00091 */
+/**
+ * @brief release r u n
+ * @param[in] user user value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_ReleaseRUN(EcuM_UserType user);
 /** @req SWS_EcuM_00092 */
+/**
+ * @brief kill all r u n requests
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_KillAllRUNRequests(void);
 
 /* State Management */
 /** @req SWS_EcuM_00021 */
+/**
+ * @brief Get current module state
+ * @param[in] state State value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetState(EcuM_StateType* state);
 /** @req SWS_EcuM_00022 */
+/**
+ * @brief Get current module state
+ * @param[in] subState State value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetSubState(EcuM_SubStateType* subState);
 
 /* Shutdown Management */
 /** @req SWS_EcuM_00035 */
+/**
+ * @brief shutdown
+ */
 extern void EcuM_Shutdown(void);
 /** @req SWS_EcuM_00030 */
+/**
+ * @brief select shutdown target
+ * @param[in] target target value
+ * @param[in] mode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_SelectShutdownTarget(EcuM_ShutdownTargetType target, uint8 mode);
 /** @req SWS_EcuM_00031 */
+/**
+ * @brief Get requested information
+ * @param[in] target target value
+ * @param[in] mode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetShutdownTarget(EcuM_ShutdownTargetType* target, uint8* mode);
 /** @req SWS_EcuM_00032 */
+/**
+ * @brief Get requested information
+ * @param[in] target target value
+ * @param[in] mode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetLastShutdownTarget(EcuM_ShutdownTargetType* target, uint8* mode);
 /** @req SWS_EcuM_00033 */
+/**
+ * @brief select shutdown cause
+ * @param[in] cause cause value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_SelectShutdownCause(EcuM_ShutdownCauseType cause);
 /** @req SWS_EcuM_00034 */
+/**
+ * @brief Get requested information
+ * @param[in] cause cause value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetShutdownCause(EcuM_ShutdownCauseType* cause);
 
 /* Sleep Management */
 /** @req SWS_EcuM_00080 */
+/**
+ * @brief go sleep
+ */
 extern void EcuM_GoSleep(void);
 /** @req SWS_EcuM_00081 */
+/**
+ * @brief go halt
+ */
 extern void EcuM_GoHalt(void);
 /** @req SWS_EcuM_00082 */
+/**
+ * @brief go poll
+ */
 extern void EcuM_GoPoll(void);
 /** @req SWS_EcuM_00083 */
+/**
+ * @brief wakeup restart
+ */
 extern void EcuM_WakeupRestart(void);
 
 /* Wakeup Source Management */
 /** @req SWS_EcuM_00040 */
+/**
+ * @brief Set configuration value
+ * @param[in] sources sources value
+ */
 extern void EcuM_SetWakeupEvent(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00041 */
+/**
+ * @brief clear wakeup event
+ * @param[in] sources sources value
+ */
 extern void EcuM_ClearWakeupEvent(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00042 */
+/**
+ * @brief Check condition
+ * @param[in] sources sources value
+ */
 extern void EcuM_CheckWakeup(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00043 */
+/**
+ * @brief Enable the feature
+ * @param[in] sources sources value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_EnableWakeupSources(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00044 */
+/**
+ * @brief Disable the feature
+ * @param[in] sources sources value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_DisableWakeupSources(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00045 */
+/**
+ * @brief Get current status
+ * @param[in] sources sources value
+ * @return Operation status
+ */
 extern EcuM_WakeupStatusType EcuM_GetStatusOfWakeupSource(EcuM_WakeupSourceType sources);
 /** @req SWS_EcuM_00046 */
+/**
+ * @brief Get requested information
+ * @param[in] sources sources value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetWakeupSources(EcuM_WakeupSourceType* sources);
 /** @req SWS_EcuM_00047 */
+/**
+ * @brief Check condition
+ * @param[in] source source value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_CheckValidation(EcuM_WakeupSourceType source);
 
 /* Boot Target Management */
 /** @req SWS_EcuM_00050 */
+/**
+ * @brief select boot target
+ * @param[in] target target value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_SelectBootTarget(EcuM_BootTargetType target);
 /** @req SWS_EcuM_00051 */
+/**
+ * @brief Get requested information
+ * @param[in] target target value
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetBootTarget(EcuM_BootTargetType* target);
 
 /* Application Mode */
 /** @req SWS_EcuM_00100 */
+/**
+ * @brief select application mode
+ * @param[in] appMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_SelectApplicationMode(EcuM_AppModeType appMode);
 /** @req SWS_EcuM_00101 */
+/**
+ * @brief Get requested information
+ * @param[in] appMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_GetApplicationMode(EcuM_AppModeType* appMode);
 
 /* BSW Mode Management */
 /** @req SWS_EcuM_00120 */
+/**
+ * @brief Start the operation
+ * @param[in] mode Operation mode
+ */
 extern void EcuM_StartBswMode(EcuM_BswModeType mode);
 /** @req SWS_EcuM_00121 */
+/**
+ * @brief Stop the operation
+ * @param[in] mode Operation mode
+ */
 extern void EcuM_StopBswMode(EcuM_BswModeType mode);
 
 /* Communication Mode */
 /** @req SWS_EcuM_00110 */
+/**
+ * @brief com m_ request com mode
+ * @param[in] channel Channel identifier
+ * @param[in] mode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_ComM_RequestComMode(uint8 channel, EcuM_ModeType mode);
 /** @req SWS_EcuM_00111 */
+/**
+ * @brief com m_ release com mode
+ * @param[in] channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType EcuM_ComM_ReleaseComMode(uint8 channel);
 
 /* Version Info */
 /** @req SWS_EcuM_00070 */
+/**
+ * @brief Get module version information
+ * @param[in] versionInfo Version info
+ */
 extern void EcuM_GetVersionInfo(Std_VersionInfoType* versionInfo);
 
 /* Callout Declarations - To be implemented by integrator */
+/**
+ * @brief driver init one
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_DriverInitOne(const EcuM_ConfigType* config);
+/**
+ * @brief driver init two
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_DriverInitTwo(const EcuM_ConfigType* config);
+/**
+ * @brief driver init three
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_DriverInitThree(const EcuM_ConfigType* config);
+/**
+ * @brief driver restart
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_DriverRestart(const EcuM_ConfigType* config);
+/**
+ * @brief a l_ driver init one
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_AL_DriverInitOne(const EcuM_ConfigType* config);
+/**
+ * @brief a l_ driver init two
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_AL_DriverInitTwo(const EcuM_ConfigType* config);
+/**
+ * @brief a l_ driver init three
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_AL_DriverInitThree(const EcuM_ConfigType* config);
+/**
+ * @brief a l_ driver restart
+ * @param[in] config Configuration reference
+ */
 extern void EcuM_AL_DriverRestart(const EcuM_ConfigType* config);
+/**
+ * @brief a l_ switch off
+ */
 extern void EcuM_AL_SwitchOff(void);
+/**
+ * @brief a l_ reset
+ * @param[in] resetType Type selector
+ */
 extern void EcuM_AL_Reset(EcuM_ResetType resetType);
+/**
+ * @brief a l_ enter sleep
+ */
 extern void EcuM_AL_EnterSleep(void);
+/**
+ * @brief a l_ wakeup check
+ */
 extern void EcuM_AL_WakeupCheck(void);
+/**
+ * @brief a l_ wakeup validation
+ */
 extern void EcuM_AL_WakeupValidation(void);
+/**
+ * @brief a l_ wakeup reaction
+ */
 extern void EcuM_AL_WakeupReaction(void);
 
 #endif /* ECUM_H */

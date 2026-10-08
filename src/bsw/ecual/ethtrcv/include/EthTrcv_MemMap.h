@@ -2,6 +2,8 @@
  * EthTrcv_MemMap.h - memory mapping for EthTrcv driver
  *
  * All sections map to their defaults (no special memory placement).
+ * @file EthTrcv_MemMap.h
+ * @brief EthTrcv memory mapping
  *================================================================================================*/
 #ifndef ETHTRCV_MEMMAP_H
 #define ETHTRCV_MEMMAP_H

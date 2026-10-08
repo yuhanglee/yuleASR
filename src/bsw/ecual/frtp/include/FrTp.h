@@ -213,6 +213,13 @@ typedef enum {
 #endif
 
 /** @req SWS_FrTp_00008 */
+/**
+ * @brief change parameter
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType FrTp_ChangeParameter(PduIdType id, TPParameterType parameter, uint16 value);
 
 /**

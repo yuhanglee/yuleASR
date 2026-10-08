@@ -28,12 +28,38 @@ add_compile_definitions(MBEDTLS_ALLOW_PRIVATE_ACCESS)
 # Get all submodule directories
 file(GLOB MCAL_SUBDIRS LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
+# ── Phase 3 duplicate-module convergence (forwarding shims) ─────────────────
+# These MCAL modules are thin duplicates whose canonical implementation
+# lives in the ECUAL layer. Their src/*.c files are excluded from compilation
+# to avoid duplicate symbol definitions at link time; the CMake target itself
+# is kept (fed with a generated comment-only stub) so target names, PUBLIC
+# include paths and existing link references stay valid.
+#   fee -> ecual/fee  (block-based API matching MemIf contract; mcal/fee was
+#                       address-based — wrong abstraction for AUTOSAR Fee)
+set(MCAL_SHIMMED_MODULES
+    fee
+)
+
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated/shim-stubs")
+
 foreach(subdir ${MCAL_SUBDIRS})
     get_filename_component(module_name ${subdir} NAME)
-    
-    # Collect source files
-    file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
-    
+
+    list(FIND MCAL_SHIMMED_MODULES "${module_name}" _shimmed_idx)
+    if(NOT _shimmed_idx EQUAL -1)
+        # Shimmed module: exclude real sources, keep target alive with an
+        # empty (comment-only) stub translation unit.
+        set(module_sources "${CMAKE_BINARY_DIR}/generated/shim-stubs/mcal_${module_name}_shim.c")
+        file(WRITE "${module_sources}"
+            "/* Phase 3 duplicate-module convergence: forwarding shim for mcal_${module_name}.\n"
+            " * Canonical implementation lives in the ECUAL layer; the sources of\n"
+            " * this module are excluded from the build to avoid duplicate symbols.\n"
+            " */\n")
+    else()
+        # Collect source files
+        file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
+    endif()
+
     # Exclude *_impl.c files. 历史遗留实现已随 P0-5 删除（原 <module>/legacy/），
     # 此处 FILTER 作为防守保留, 防止误编译 unity-build 风格文件
     list(FILTER module_sources EXCLUDE REGEX ".*_impl\\.c$")

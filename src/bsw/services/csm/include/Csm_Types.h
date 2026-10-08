@@ -458,14 +458,26 @@ typedef struct
 /*==================================================================================================
  *                          SECOC COMPATIBILITY DEFINITIONS
  *================================================================================================*/
+/* NOTE (P1 Phase 8): these job IDs must resolve to the MAC jobs of the
+ * default job table in Csm.c (CSM_JOB_ID_MAC_GENERATE_DEFAULT = 4,
+ * CSM_JOB_ID_MAC_VERIFY_DEFAULT = 5). The previous values 1/2 resolved to
+ * the HASH/ENCRYPT jobs, so every SecOC MAC request failed the Csm
+ * key-usage check and the whole SecOC crypto chain was dead. */
 #ifndef CSM_JOB_ID_MAC_GENERATE_1
-#define CSM_JOB_ID_MAC_GENERATE_1               (1U)
+#define CSM_JOB_ID_MAC_GENERATE_1               (4U)
 #endif
 #ifndef CSM_JOB_ID_MAC_VERIFY_1
-#define CSM_JOB_ID_MAC_VERIFY_1                 (2U)
+#define CSM_JOB_ID_MAC_VERIFY_1                 (5U)
 #endif
+/* NOTE (P1 Phase 8): Csm.c decodes the mode parameter as bit flags
+ * (START = 0x01, UPDATE = 0x02, FINISH = 0x04). STREAMSTART (0x01) never
+ * sets the FINISH flag, so MAC generation/verification never produced a
+ * result. SINGLESHOT (0x05 = START|FINISH) is the mode SecOC must use. */
 #ifndef CSM_OPERATIONMODE_STREAMSTART
 #define CSM_OPERATIONMODE_STREAMSTART           (0x01U)
+#endif
+#ifndef CSM_OPERATIONMODE_SINGLESHOT
+#define CSM_OPERATIONMODE_SINGLESHOT            (0x05U)
 #endif
 
 /* MAC verification result */

@@ -255,12 +255,17 @@ Std_ReturnType Dem_SetEventStatus(Dem_EventIdType EventId, Dem_EventStatusType E
                 /* Counter-based or no debounce */
                 Dem_IntUpdateDebounceCounter(EventId, EventStatus);
                 
-                /* Check if threshold reached and update DTC status */
-                if (eventState->DebounceCounter >= DEM_DEBOUNCE_COUNTER_FAILED_THRESHOLD)
+                /* Check if threshold reached and update DTC status.
+                 * P1 Phase 8 FIX: compare against the per-event configured
+                 * thresholds. Previously the global DEM_DEBOUNCE_COUNTER_*
+                 * constants (127/-128) were used here, so counter-debounce
+                 * events with tighter per-event limits (e.g. Dem_Cfg event 5:
+                 * 64/-64) could never reach the status transition. */
+                if (eventState->DebounceCounter >= eventConfig->DebounceCounterFailedThreshold)
                 {
                     Dem_IntUpdateDTCStatusFromDebounce(EventId, TRUE);
                 }
-                else if (eventState->DebounceCounter <= DEM_DEBOUNCE_COUNTER_PASSED_THRESHOLD)
+                else if (eventState->DebounceCounter <= eventConfig->DebounceCounterPassedThreshold)
                 {
                     Dem_IntUpdateDTCStatusFromDebounce(EventId, FALSE);
                 }
@@ -634,7 +639,11 @@ Std_ReturnType Dem_ClearDTC(Dem_DtcType DTC,
     }
 
 #if (DEM_CLEAR_DTC_SUPPORTED == STD_ON)
-    if ((DTC != DEM_DTC_GROUP_ALL) && (Dem_IntFindDTCConfig(DTC) == NULL_PTR))
+    /* P1 Phase 8: accept exact DTCs, DEM_DTC_GROUP_ALL and functional
+     * DTC groups (UDS 0x14 mask semantics: (dtc & group) == group) */
+    if ((DTC != DEM_DTC_GROUP_ALL) &&
+        (Dem_IntFindDTCConfig(DTC) == NULL_PTR) &&
+        (Dem_IntCountDTCGroupMatches(DTC) == 0U))
     {
         DEM_DET_REPORT_ERROR(DEM_SERVICE_ID_CLEARDTC, DEM_E_PARAM_DATA);
         return E_NOT_OK;
@@ -656,13 +665,18 @@ Std_ReturnType Dem_ClearDTC(Dem_DtcType DTC,
     {
         Dem_IntClearAllDTCs();
     }
-    else
+    else if (Dem_IntFindDTCConfig(DTC) != NULL_PTR)
     {
         uint8 dtcIndex = Dem_IntFindDTCIndex(DTC);
         if (dtcIndex != DEM_INVALID_DTC_INDEX)
         {
             Dem_IntClearSingleDTC(dtcIndex);
         }
+    }
+    else
+    {
+        /* Functional DTC group clear (P1 Phase 8) */
+        Dem_IntClearDTCGroup(DTC);
     }
 
     /* Call finish notification if configured */

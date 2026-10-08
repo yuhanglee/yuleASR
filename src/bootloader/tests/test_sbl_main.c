@@ -278,6 +278,7 @@ static void make_default_config(sbl_main_config_t *cfg, const uint8_t *image,
  * ============================================================================ */
 
 /* ① 验签通过路径: NVM 装载计数器 + 注入 Boot_Update + 延后递增提交 + 跳转 */
+/* @req SWR-002.1-04 */
 static int test_sbl_boot_verify_pass(void)
 {
     printf("  Testing SBL boot verify-pass path (NVM counter + notify + jump)...\n");

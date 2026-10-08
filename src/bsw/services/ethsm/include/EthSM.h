@@ -47,13 +47,44 @@ typedef struct {
     const EthSM_ControllerConfigType* Controllers;
 } EthSM_ConfigType;
 
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void EthSM_Init(const EthSM_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ */
 void EthSM_DeInit(void);
+/**
+ * @brief Start the operation
+ * @return Operation status
+ */
 Std_ReturnType EthSM_Start(void);
+/**
+ * @brief Stop the operation
+ * @return Operation status
+ */
 Std_ReturnType EthSM_Stop(void);
+/**
+ * @brief Set configuration value
+ * @param[in] State State value
+ * @return Operation status
+ */
 Std_ReturnType EthSM_SetState(EthSM_StateType State);
+/**
+ * @brief Get current module state
+ * @return Operation result
+ */
 EthSM_StateType EthSM_GetState(void);
+/**
+ * @brief Process periodic tasks
+ */
 void EthSM_MainFunction(void);
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void EthSM_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* ETHSM_H */

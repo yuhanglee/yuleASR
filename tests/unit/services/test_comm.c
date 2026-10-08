@@ -23,6 +23,7 @@ static ComM_ConfigType g_test_config;
 ==================================================================================================*/
 
 /* Test: ComM_Init with valid config */
+/* @req SWR-007.1-01 */
 TEST_CASE(comm_init_valid_config)
 {
     g_test_config.dummy = 0;

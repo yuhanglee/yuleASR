@@ -44,11 +44,46 @@ foreach(subdir ${SERVICES_SUBDIRS})
     endif()
 endforeach()
 
+# ── Phase 2 & 3 duplicate-module convergence (forwarding shims) ─────────────
+# These service modules are thin duplicates whose canonical implementation
+# lives in another layer (ECUAL or MCAL). Their src/*.c files are excluded
+# from compilation to avoid duplicate symbol definitions at link time; the
+# CMake target itself is kept (fed with a generated comment-only stub) so
+# target names, PUBLIC include paths and existing link references stay valid.
+#   doip   -> ecual/doIP   (Phase 2: real implementation, ~1191 vs ~306 LOC)
+#   ipdum  -> ecual/ipdum  (Phase 2: real mux implementation, ~448 vs ~130 LOC)
+#   ethsm  -> ecual/ethsm  (Phase 2: real network state machine, ~853 vs ~162 LOC)
+#   canm   -> ecual/canNm  (Phase 3: full CanIf/ComM integration, ~1409 vs ~507 LOC)
+#   linsm  -> ecual/linSM  (Phase 3: standard AUTOSAR ComM/EcuM integration)
+#   ramtst -> mcal/ramtst  (Phase 3: v2.0.0 with 6 algorithms vs v1.0.0 with 2)
+set(SERVICES_SHIMMED_MODULES
+    doip
+    ipdum
+    ethsm
+    canm
+    linsm
+    ramtst
+)
+
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated/shim-stubs")
+
 foreach(subdir ${SERVICES_SUBDIRS})
     get_filename_component(module_name ${subdir} NAME)
-    
-    # Collect source files excluding test files
-    file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
+
+    list(FIND SERVICES_SHIMMED_MODULES "${module_name}" _shimmed_idx)
+    if(NOT _shimmed_idx EQUAL -1)
+        # Shimmed module: exclude real sources, keep target alive with an
+        # empty (comment-only) stub translation unit.
+        set(module_sources "${CMAKE_BINARY_DIR}/generated/shim-stubs/service_${module_name}_shim.c")
+        file(WRITE "${module_sources}"
+            "/* Duplicate-module convergence: forwarding shim for service_${module_name}.\n"
+            " * Canonical implementation lives in another layer; the sources of\n"
+            " * this module are excluded from the build to avoid duplicate symbols.\n"
+            " */\n")
+    else()
+        # Collect source files excluding test files
+        file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
+    endif()
     
     # Filter out test files (_test.c, _Test.c)
     list(FILTER module_sources EXCLUDE REGEX ".*[_Tt]est\\.c$")

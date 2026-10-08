@@ -67,23 +67,74 @@ typedef struct {
 } SomeIpSd_ConfigType;
 
 /** @req SWS_SomeIpSd_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SomeIpSd_Init(const void* ConfigPtr);
 /** @req SWS_SomeIpSd_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SomeIpSd_DeInit(void);
 /** @req SWS_SomeIpSd_00004 */
+/**
+ * @brief Process periodic tasks
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SomeIpSd_MainFunction(void);
 /** @req SWS_SomeIpSd_00005 */
+/**
+ * @brief find service
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SomeIpSd_FindService(uint16 ServiceId, uint16 InstanceId);
 /** @req SWS_SomeIpSd_00006 */
+/**
+ * @brief offer service
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SomeIpSd_OfferService(uint16 ServiceId, uint16 InstanceId);
 /** @req SWS_SomeIpSd_00007 */
+/**
+ * @brief Stop the operation
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SomeIpSd_StopOffer(uint16 ServiceId, uint16 InstanceId);
 /** @req SWS_SomeIpSd_00008 */
+/**
+ * @brief subscribe event group
+ * @param[in] ServiceId Identifier
+ * @param[in] EventGroupId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SomeIpSd_SubscribeEventGroup(uint16 ServiceId, uint16 EventGroupId);
+/**
+ * @brief Get current module state
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @return Operation result
+ */
 SomeIpSd_ServiceStateType SomeIpSd_GetServiceState(uint16 ServiceId, uint16 InstanceId);
 /** @req SWS_SomeIpSd_00009 */
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void SomeIpSd_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 /** @req SWS_SomeIpSd_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void SomeIpSd_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* SOMEIPSD_H */

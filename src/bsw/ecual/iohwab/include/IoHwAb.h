@@ -68,15 +68,50 @@ typedef struct {
 } IoHwAb_ConfigType;
 
 /** @req SWS_IoHwAb_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void IoHwAb_Init(const IoHwAb_ConfigType* ConfigPtr);
 /** @req SWS_IoHwAb_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void IoHwAb_DeInit(void);
+/**
+ * @brief analog read
+ * @param[in] Channel Channel identifier
+ * @param[in] Value Parameter value
+ * @return Operation result
+ */
 IoHwAb_ReturnType IoHwAb_AnalogRead(IoHwAb_ChannelType Channel, uint16* Value);
+/**
+ * @brief digital read
+ * @param[in] Channel Channel identifier
+ * @param[in] Value Parameter value
+ * @return Operation result
+ */
 IoHwAb_ReturnType IoHwAb_DigitalRead(IoHwAb_ChannelType Channel, uint8* Value);
+/**
+ * @brief digital write
+ * @param[in] Channel Channel identifier
+ * @param[in] Value Parameter value
+ * @return Operation result
+ */
 IoHwAb_ReturnType IoHwAb_DigitalWrite(IoHwAb_ChannelType Channel, uint8 Value);
 /** @req SWS_IoHwAb_00004 */
+/**
+ * @brief Process periodic tasks
+ * @param[in] Channel Channel identifier
+ * @param[in] Value Parameter value
+ */
 void IoHwAb_MainFunction(void);
 /** @req SWS_IoHwAb_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void IoHwAb_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* IOHWAB_H */

@@ -161,6 +161,12 @@ extern void Dem_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * 
  * CRITICAL FIX: Now properly handles time-based debounce algorithm
  */
+/**
+ * @brief Set configuration value
+ * @param[in] EventId Identifier
+ * @param[in] EventStatus State value
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_SetEventStatus(Dem_EventIdType EventId, Dem_EventStatusType EventStatus);
 
 /**
@@ -223,6 +229,20 @@ extern Std_ReturnType Dem_ClearPrestoredFreezeFrame(Dem_EventIdType EventId);
  * @param DTCStatus Pointer to store status
  * @return Result of operation
  */
+/**
+ * @brief Get current status
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] DTCStatus State value
+ * @return Operation status
+ */
+/**
+ * @brief Get current status
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] DTCStatus State value
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_GetStatusOfDTC(Dem_DtcType DTC,
                                          Dem_DTCOriginType DTCOrigin,
                                          Dem_UdsStatusByteType* DTCStatus);
@@ -236,6 +256,11 @@ extern Std_ReturnType Dem_GetStatusOfDTC(Dem_DtcType DTC,
 
 #define Dem_GetDTCStatus(d,o,s) Dem_GetStatusOfDTC(d,o,s)
 
+/**
+ * @brief Get current status
+ * @param[in] DTCStatusMask State value
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_GetDTCStatusAvailabilityMask(uint8* DTCStatusMask);
 
 /**
@@ -260,6 +285,20 @@ extern Std_ReturnType Dem_GetNextFilteredDTC(Dem_DtcType* DTC, Dem_UdsStatusByte
  * @param DTCOrigin DTC origin
  * @return Result of operation
  */
+/**
+ * @brief clear d t c
+ * @param[in] DTC DTC value
+ * @param[in] DTCFormat DTCFormat value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @return Operation status
+ */
+/**
+ * @brief clear d t c
+ * @param[in] DTC DTC value
+ * @param[in] DTCFormat DTCFormat value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_ClearDTC(Dem_DtcType DTC,
                                    Dem_DTCFormatType DTCFormat,
                                    Dem_DTCOriginType DTCOrigin);
@@ -270,6 +309,20 @@ extern Std_ReturnType Dem_ClearDTC(Dem_DtcType DTC,
  * @param DTCFormat DTC format
  * @param DTCOrigin DTC origin
  * @return Result of operation
+ */
+/**
+ * @brief select d t c
+ * @param[in] DTC DTC value
+ * @param[in] DTCFormat DTCFormat value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @return Operation status
+ */
+/**
+ * @brief select d t c
+ * @param[in] DTC DTC value
+ * @param[in] DTCFormat DTCFormat value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @return Operation status
  */
 extern Std_ReturnType Dem_SelectDTC(Dem_DtcType DTC, 
                                     Dem_DTCFormatType DTCFormat, 
@@ -328,6 +381,24 @@ extern Std_ReturnType Dem_SetIndicatorStatus(uint8 IndicatorId, Dem_IndicatorSta
  * @param BufferSize Buffer size pointer
  * @return Result of operation
  */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] RecordNumber RecordNumber value
+ * @param[in] DestBuffer Data buffer
+ * @param[in] BufferSize Data buffer
+ * @return Operation status
+ */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] RecordNumber RecordNumber value
+ * @param[in] DestBuffer Data buffer
+ * @param[in] BufferSize Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_GetFreezeFrameDataByDTC(Dem_DtcType DTC,
                                                   Dem_DTCOriginType DTCOrigin,
                                                   uint8 RecordNumber,
@@ -345,6 +416,24 @@ extern Std_ReturnType Dem_GetFreezeFrameDataByDTC(Dem_DtcType DTC,
  * 
  * CRITICAL FIX: Added extended data record support
  */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] ExtendedDataNumber Data buffer
+ * @param[in] DestBuffer Data buffer
+ * @param[in] BufferSize Data buffer
+ * @return Operation status
+ */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] ExtendedDataNumber Data buffer
+ * @param[in] DestBuffer Data buffer
+ * @param[in] BufferSize Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Dem_GetExtendedDataRecordByDTC(Dem_DtcType DTC,
                                                      Dem_DTCOriginType DTCOrigin,
                                                      uint8 ExtendedDataNumber,
@@ -358,6 +447,22 @@ extern Std_ReturnType Dem_GetExtendedDataRecordByDTC(Dem_DtcType DTC,
  * @param ExtendedDataNumber Extended data record number
  * @param SizeOfExtendedDataRecord Pointer to store size
  * @return Result of operation
+ */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] ExtendedDataNumber Data buffer
+ * @param[in] SizeOfExtendedDataRecord Data buffer
+ * @return Operation status
+ */
+/**
+ * @brief Get requested information
+ * @param[in] DTC DTC value
+ * @param[in] DTCOrigin DTCOrigin value
+ * @param[in] ExtendedDataNumber Data buffer
+ * @param[in] SizeOfExtendedDataRecord Data buffer
+ * @return Operation status
  */
 extern Std_ReturnType Dem_GetSizeOfExtendedDataRecordByDTC(Dem_DtcType DTC,
                                                            Dem_DTCOriginType DTCOrigin,

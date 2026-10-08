@@ -2,6 +2,8 @@
  * mbedtls/x509_crt.h - Stub for mbedTLS X.509 certificate handling
  * This is a minimal stub for compilation purposes only.
  * Install mbedTLS for the full implementation.
+ * @file x509_crt.h
+ * @brief include/x509_crt header
  */
 #ifndef MBEDTLS_X509_CRT_H
 #define MBEDTLS_X509_CRT_H

@@ -7,17 +7,26 @@
 
 #include <unity.h>
 #include "linm.h"
+#include <string.h>
 
 void setUp(void) {}
 void tearDown(void) {}
 
 /** @req SWS_LinM_00001 */
 void test_linm_Init_should_initialize(void) {
-    TEST_IGNORE_MESSAGE("API stub");
+    /* Init with NULL_PTR should not crash (DET reports error internally) */
+    LinM_Init(NULL_PTR);
+    TEST_PASS();
 }
 
 void test_linm_GetVersionInfo_should_return_version(void) {
-    TEST_IGNORE_MESSAGE("API stub");
+    Std_VersionInfoType versionInfo;
+    memset(&versionInfo, 0, sizeof(Std_VersionInfoType));
+    LinM_GetVersionInfo(&versionInfo);
+    TEST_ASSERT_EQUAL(LINM_VENDOR_ID, versionInfo.vendorID);
+    TEST_ASSERT_EQUAL(LINM_SW_MAJOR_VERSION, versionInfo.sw_major_version);
+    TEST_ASSERT_EQUAL(LINM_SW_MINOR_VERSION, versionInfo.sw_minor_version);
+    TEST_ASSERT_EQUAL(LINM_SW_PATCH_VERSION, versionInfo.sw_patch_version);
 }
 
 int main(void) {

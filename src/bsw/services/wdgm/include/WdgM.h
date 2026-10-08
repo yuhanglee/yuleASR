@@ -194,7 +194,10 @@ typedef struct
     uint16 seId;                        /* 监督实体ID */
     WdgM_SEStateType state;             /* 当前状态 */
     uint16 aliveCounter;                /* 活计数器 */
-    uint16 expectedAliveIndications;    /* 期望的活指示数 */
+    uint16 expectedAliveIndications;    /* 期望的活指示数 (取自配置 aliveSupMin) */
+    uint16 aliveSupMaxIndications;      /* 参考周期内允许的最大活指示数 (取自配置 aliveSupMax) */
+    uint16 aliveSupRefCycle;            /* 活监督参考周期数 (监督周期个数) */
+    uint16 aliveCycleCounter;           /* 当前参考周期内已计数的监督周期数 */
     uint32 timestampStart;              /* 开始时间戳 */
     uint32 timestampStop;               /* 停止时间戳 */
     uint8 consecutiveErrors;            /* 连续错误计数 */
@@ -252,6 +255,11 @@ typedef void (*WdgM_SafetyCallbackType)(
  * @param config 配置指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Initialize the module
+ * @param[in] config Configuration reference
+ * @return Operation status
+ */
 extern Std_ReturnType WdgM_Init(const WdgM_ConfigType* config);
 
 /**
@@ -277,6 +285,11 @@ extern WdgM_StateType WdgM_GetState(void);
  * 
  * @param mode 目标模式 (WDGM_WATCHDOG_MODE_OFF/SLOW/FAST)
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] mode Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType WdgM_SetMode(uint8 mode);
 
@@ -304,6 +317,11 @@ extern boolean WdgM_IsDisableAllowed(void);
  * @param seId 监督实体ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Check condition
+ * @param[in] seId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType WdgM_CheckpointReached(uint16 seId);
 
 /**
@@ -312,6 +330,11 @@ extern Std_ReturnType WdgM_CheckpointReached(uint16 seId);
  * 
  * @param seId 监督实体ID
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief update alive indication
+ * @param[in] seId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType WdgM_UpdateAliveIndication(uint16 seId);
 
@@ -323,6 +346,12 @@ extern Std_ReturnType WdgM_UpdateAliveIndication(uint16 seId);
  * @param state 状态输出指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Get current module state
+ * @param[in] seId Identifier
+ * @param[in] state State value
+ * @return Operation status
+ */
 extern Std_ReturnType WdgM_GetSEState(uint16 seId, WdgM_SEStateType* state);
 
 /**
@@ -331,6 +360,11 @@ extern Std_ReturnType WdgM_GetSEState(uint16 seId, WdgM_SEStateType* state);
  * 
  * @param seId 监督实体ID
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief deactivate supervision entity
+ * @param[in] seId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType WdgM_DeactivateSupervisionEntity(uint16 seId);
 
@@ -341,6 +375,11 @@ extern Std_ReturnType WdgM_DeactivateSupervisionEntity(uint16 seId);
  * @param seId 监督实体ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief activate supervision entity
+ * @param[in] seId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType WdgM_ActivateSupervisionEntity(uint16 seId);
 
 /**
@@ -349,6 +388,11 @@ extern Std_ReturnType WdgM_ActivateSupervisionEntity(uint16 seId);
  * 
  * @param status 状态信息输出指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief Get current status
+ * @param[in] status State value
+ * @return Operation status
  */
 extern Std_ReturnType WdgM_GetGlobalStatus(WdgM_GlobalStatusType* status);
 
@@ -359,6 +403,9 @@ extern Std_ReturnType WdgM_GetGlobalStatus(WdgM_GlobalStatusType* status);
  * 
  * 应在主循环中定期调用 (建议10ms周期)
  */
+/**
+ * @brief Process periodic tasks
+ */
 extern void WdgM_MainFunction(void);
 
 /**
@@ -367,6 +414,9 @@ extern void WdgM_MainFunction(void);
  * @req SWS_WdgM_00014
  * 
  * 在窗口内触发看门狗，防止复位
+ */
+/**
+ * @brief Trigger action
  */
 extern void WdgM_TriggerWatchdog(void);
 
@@ -385,6 +435,11 @@ extern void WdgM_PerformReset(void);
  * @param timeout 超时值输出指针 (单位: ms)
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Get requested information
+ * @param[in] seId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType WdgM_GetFirstExpiredSEID(uint16* seId);
 
 /**
@@ -393,6 +448,10 @@ extern Std_ReturnType WdgM_GetFirstExpiredSEID(uint16* seId);
  * @req SWS_WdgM_00017
  * 
  * @param errorCode Lockstep错误码
+ */
+/**
+ * @brief Handle event
+ * @param[in] errorCode Error code
  */
 extern void WdgM_HandleLockstepError(uint32 errorCode);
 
@@ -403,6 +462,10 @@ extern void WdgM_HandleLockstepError(uint32 errorCode);
  * 
  * @param errorCode RamSafety错误码
  */
+/**
+ * @brief Handle event
+ * @param[in] errorCode Error code
+ */
 extern void WdgM_HandleRamSafetyError(uint32 errorCode);
 
 /**
@@ -412,6 +475,12 @@ extern void WdgM_HandleRamSafetyError(uint32 errorCode);
  * @param callback 回调函数
  * @param context 上下文指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief Register callback or handler
+ * @param[in] callback Callback function
+ * @param[in] context context value
+ * @return Operation status
  */
 extern Std_ReturnType WdgM_RegisterSafetyCallback(
     WdgM_SafetyCallbackType callback,

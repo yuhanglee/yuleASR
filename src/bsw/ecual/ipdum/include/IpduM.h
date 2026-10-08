@@ -137,19 +137,59 @@ typedef struct
  *                               FUNCTION PROTOTYPES
  *=================================================================================================*/
 
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void IpduM_Init(const IpduM_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
+ */
 Std_ReturnType IpduM_DeInit(void);
 
 #if (IPDUM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 void IpduM_GetVersionInfo(Std_VersionInfoType* VersionInfo);
 #endif
 
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType IpduM_Transmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
 
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void IpduM_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 void IpduM_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
+/**
+ * @brief Trigger action
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType IpduM_TriggerTransmit(PduIdType TxPduId, PduInfoType* PduInfoPtr);
 
+/**
+ * @brief Process periodic tasks
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void IpduM_MainFunction(void);
 
 /*==================================================================================================

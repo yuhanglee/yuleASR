@@ -2,6 +2,8 @@
  * PduR_LinTp.h - PduR LinTp interface header (AUTOSAR PduR)
  *
  * Declares the PduR <-> LinTp module interface functions.
+ * @file PduR_LinTp.h
+ * @brief PDU Router LinTp interface
  *================================================================================================*/
 #ifndef PDUR_LINTP_H
 #define PDUR_LINTP_H

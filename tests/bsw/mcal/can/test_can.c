@@ -502,3 +502,170 @@ void test_Can_Write_ClassicFrameLength12_ShouldRejectWithDet(void) {
     TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
     TEST_ASSERT_EQUAL(CAN_E_PARAM_DLC, Det_MockData.ErrorId);
 }
+
+/* --- AD3: error state / error counter getters --- */
+
+#define CAN_ECR_OFF (0x1CU)
+
+/** @req SWS_Can_00013 */
+void test_Can_GetControllerErrorState_BeforeInit_ShouldReportDet(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_BUSOFF;
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERERRORSTATE, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_UNINIT, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00014 */
+void test_Can_GetControllerRxErrorCounter_BeforeInit_ShouldReportDet(void) {
+    uint8 counter = 0xFFU;
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerRxErrorCounter(0U, &counter));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERRXERRORCOUNTER, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_UNINIT, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00015 */
+void test_Can_GetControllerTxErrorCounter_BeforeInit_ShouldReportDet(void) {
+    uint8 counter = 0xFFU;
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerTxErrorCounter(0U, &counter));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERTXERRORCOUNTER, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_UNINIT, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00013 */
+void test_Can_GetControllerErrorState_AfterInit_ShouldReturnActive(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_BUSOFF;
+    test_Can_EnsureInitialized();
+    /* A previous BusOff main-function test may have migrated controller 0
+     * into BUSOFF; the STARTED transition resets the error state. */
+    test_Can_BringToStarted();
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_ACTIVE, state);
+}
+
+/** @req SWS_Can_00013 */
+void test_Can_GetControllerErrorState_InvalidController_ShouldReportDet(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    test_Can_EnsureInitialized();
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerErrorState(200U, &state));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERERRORSTATE, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_PARAM_CONTROLLER, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00013 */
+void test_Can_GetControllerErrorState_NullPtr_ShouldReportDet(void) {
+    test_Can_EnsureInitialized();
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerErrorState(0U, NULL_PTR));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERERRORSTATE, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_PARAM_POINTER, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00014 */
+void test_Can_GetControllerRxErrorCounter_NullPtr_ShouldReportDet(void) {
+    test_Can_EnsureInitialized();
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerRxErrorCounter(0U, NULL_PTR));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERRXERRORCOUNTER, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_PARAM_POINTER, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00015 */
+void test_Can_GetControllerTxErrorCounter_InvalidController_ShouldReportDet(void) {
+    uint8 counter = 0U;
+    test_Can_EnsureInitialized();
+    TEST_ASSERT_EQUAL(E_NOT_OK, Can_GetControllerTxErrorCounter(200U, &counter));
+    TEST_ASSERT_TRUE(Det_MockData.LastCallValid);
+    TEST_ASSERT_EQUAL(CAN_SID_GETCONTROLLERTXERRORCOUNTER, Det_MockData.ApiId);
+    TEST_ASSERT_EQUAL(CAN_E_PARAM_CONTROLLER, Det_MockData.ErrorId);
+}
+
+/** @req SWS_Can_00014 @req SWS_Can_00015 */
+void test_Can_ErrorCounters_AfterInit_ShouldBeZero(void) {
+    uint8 rxCounter = 0xFFU;
+    uint8 txCounter = 0xFFU;
+    test_Can_EnsureInitialized();
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerRxErrorCounter(0U, &rxCounter));
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerTxErrorCounter(0U, &txCounter));
+    TEST_ASSERT_EQUAL(0U, rxCounter);
+    TEST_ASSERT_EQUAL(0U, txCounter);
+}
+
+/* --- AD3: runtime error-state migration from ECR/ESR1 --- */
+
+/** @req SWS_Can_00013 @req SWS_Can_00009 */
+void test_Can_MainFunction_BusOff_TxCounter200_ShouldSetPassive(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    uint8 rxCounter = 0U;
+    uint8 txCounter = 0U;
+
+    test_Can_EnsureInitialized();
+    test_Can_BringToStarted();
+
+    /* ECR: TXERRCNT = 200 (>= 128 -> PASSIVE), RXERRCNT = 0; no BOFFINT */
+    MockRegisters_Write32(CAN1_BASE + CAN_ECR_OFF, 200U);
+    MockRegisters_Write32(CAN1_BASE + CAN_ESR1_OFF, 0U);
+    Can_MainFunction_BusOff();
+
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_PASSIVE, state);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerTxErrorCounter(0U, &txCounter));
+    TEST_ASSERT_EQUAL(200U, txCounter);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerRxErrorCounter(0U, &rxCounter));
+    TEST_ASSERT_EQUAL(0U, rxCounter);
+}
+
+/** @req SWS_Can_00013 @req SWS_Can_00009 */
+void test_Can_MainFunction_BusOff_BoffintAndCounter255_ShouldSetBusOff(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    uint8 rxCounter = 0U;
+    uint8 txCounter = 0U;
+
+    test_Can_EnsureInitialized();
+    test_Can_BringToStarted();
+
+    /* ECR: TXERRCNT = 255, RXERRCNT = 100; ESR1: BOFFINT set */
+    MockRegisters_Write32(CAN1_BASE + CAN_ECR_OFF, 255U | (100U << 8));
+    MockRegisters_Write32(CAN1_BASE + CAN_ESR1_OFF, 0x04U);
+    Can_MainFunction_BusOff();
+
+    /* Driver clears BOFFINT via W1C write (mock keeps last written value) */
+    TEST_ASSERT_EQUAL(0x04U, MockRegisters_Read32(CAN1_BASE + CAN_ESR1_OFF));
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_BUSOFF, state);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerTxErrorCounter(0U, &txCounter));
+    TEST_ASSERT_EQUAL(255U, txCounter);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerRxErrorCounter(0U, &rxCounter));
+    TEST_ASSERT_EQUAL(100U, rxCounter);
+}
+
+/** @req SWS_Can_00013 @req SWS_Can_00003 */
+void test_Can_ErrorState_RestartAfterBusOff_ShouldReturnActive(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    uint8 rxCounter = 0xFFU;
+    uint8 txCounter = 0xFFU;
+
+    test_Can_EnsureInitialized();
+    test_Can_BringToStarted();
+
+    /* Drive controller 0 into BUSOFF */
+    MockRegisters_Write32(CAN1_BASE + CAN_ECR_OFF, 255U);
+    MockRegisters_Write32(CAN1_BASE + CAN_ESR1_OFF, 0x04U);
+    Can_MainFunction_BusOff();
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_BUSOFF, state);
+
+    /* Bus-off recovery: STOPPED -> STARTED resets counters and state */
+    test_Can_BringToStopped();
+    test_Can_BringToStarted();
+
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_ACTIVE, state);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerRxErrorCounter(0U, &rxCounter));
+    TEST_ASSERT_EQUAL(0U, rxCounter);
+    TEST_ASSERT_EQUAL(E_OK, Can_GetControllerTxErrorCounter(0U, &txCounter));
+    TEST_ASSERT_EQUAL(0U, txCounter);
+}

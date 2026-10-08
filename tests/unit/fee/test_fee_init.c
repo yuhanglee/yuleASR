@@ -15,6 +15,7 @@ void tearDown(void) {
     Fee_DeInit();
 }
 
+/* @req SWR-004.1-02 */
 void test_Fee_Init_ValidConfig(void) {
     extern const Fee_ConfigType Fee_Config;
     Fee_Init(&Fee_Config);

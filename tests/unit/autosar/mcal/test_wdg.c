@@ -24,18 +24,40 @@ void tearDown(void) {
 /* 初始化测试 */
 /** @req SWS_Wdg_00001 */
 void test_wdg_Init_should_initialize_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    /* Normal init with valid config should not crash */
+    Wdg_Init(&Wdg_Config);
+
+    /* After init, state should not be UNINIT */
+    TEST_ASSERT_NOT_EQUAL(WDG_STATE_UNINIT, Wdg_GetStatus());
+
+    /* Init with NULL_PTR should be handled by DET (no crash) */
+    Wdg_Init(NULL_PTR);
 }
 
 /* @req SWS_Wdg_00201 */
 void test_wdg_DeInit_should_cleanup_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    Std_ReturnType result;
+
+    /* Init first, then set mode to OFF to disable watchdog */
+    Wdg_Init(&Wdg_Config);
+    result = Wdg_SetMode(WDGIF_OFF_MODE);
+
+    TEST_ASSERT_EQUAL(E_OK, result);
 }
 
 /* 版本信息测试 */
 /** @req SWS_Wdg_00004 */
 void test_wdg_GetVersionInfo_should_return_version(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    Std_VersionInfoType versionInfo;
+    memset(&versionInfo, 0, sizeof(versionInfo));
+
+    Wdg_GetVersionInfo(&versionInfo);
+
+    TEST_ASSERT_EQUAL(WDG_VENDOR_ID, versionInfo.vendorID);
+    TEST_ASSERT_EQUAL(WDG_MODULE_ID, versionInfo.moduleID);
+    TEST_ASSERT_EQUAL(WDG_SW_MAJOR_VERSION, versionInfo.sw_major_version);
+    TEST_ASSERT_EQUAL(WDG_SW_MINOR_VERSION, versionInfo.sw_minor_version);
+    TEST_ASSERT_EQUAL(WDG_SW_PATCH_VERSION, versionInfo.sw_patch_version);
 }
 
 /* 主函数 */

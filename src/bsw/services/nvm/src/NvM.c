@@ -60,6 +60,120 @@
 #define NVM_CRC16_POLYNOMIAL            (0x1021U)
 #define NVM_CRC32_POLYNOMIAL            (0x04C11DB7U)
 
+/* P1 Phase 8: CRC lookup tables (256+512+1024 = 1792 bytes of flash)
+ * replacing the per-bit shift loops — ~8x faster per byte, bit-exact
+ * identical results (polynomials and init/final values unchanged).
+ * Table entry T[c] holds the result of processing the single byte c
+ * through eight bit-wise rounds; the update equations below are the
+ * standard MSB-first table transformations of the original loops. */
+static const uint8 NvM_Crc8Table[256U] =
+{
+    0x00U, 0x1DU, 0x3AU, 0x27U, 0x74U, 0x69U, 0x4EU, 0x53U,
+    0xE8U, 0xF5U, 0xD2U, 0xCFU, 0x9CU, 0x81U, 0xA6U, 0xBBU,
+    0xCDU, 0xD0U, 0xF7U, 0xEAU, 0xB9U, 0xA4U, 0x83U, 0x9EU,
+    0x25U, 0x38U, 0x1FU, 0x02U, 0x51U, 0x4CU, 0x6BU, 0x76U,
+    0x87U, 0x9AU, 0xBDU, 0xA0U, 0xF3U, 0xEEU, 0xC9U, 0xD4U,
+    0x6FU, 0x72U, 0x55U, 0x48U, 0x1BU, 0x06U, 0x21U, 0x3CU,
+    0x4AU, 0x57U, 0x70U, 0x6DU, 0x3EU, 0x23U, 0x04U, 0x19U,
+    0xA2U, 0xBFU, 0x98U, 0x85U, 0xD6U, 0xCBU, 0xECU, 0xF1U,
+    0x13U, 0x0EU, 0x29U, 0x34U, 0x67U, 0x7AU, 0x5DU, 0x40U,
+    0xFBU, 0xE6U, 0xC1U, 0xDCU, 0x8FU, 0x92U, 0xB5U, 0xA8U,
+    0xDEU, 0xC3U, 0xE4U, 0xF9U, 0xAAU, 0xB7U, 0x90U, 0x8DU,
+    0x36U, 0x2BU, 0x0CU, 0x11U, 0x42U, 0x5FU, 0x78U, 0x65U,
+    0x94U, 0x89U, 0xAEU, 0xB3U, 0xE0U, 0xFDU, 0xDAU, 0xC7U,
+    0x7CU, 0x61U, 0x46U, 0x5BU, 0x08U, 0x15U, 0x32U, 0x2FU,
+    0x59U, 0x44U, 0x63U, 0x7EU, 0x2DU, 0x30U, 0x17U, 0x0AU,
+    0xB1U, 0xACU, 0x8BU, 0x96U, 0xC5U, 0xD8U, 0xFFU, 0xE2U,
+    0x26U, 0x3BU, 0x1CU, 0x01U, 0x52U, 0x4FU, 0x68U, 0x75U,
+    0xCEU, 0xD3U, 0xF4U, 0xE9U, 0xBAU, 0xA7U, 0x80U, 0x9DU,
+    0xEBU, 0xF6U, 0xD1U, 0xCCU, 0x9FU, 0x82U, 0xA5U, 0xB8U,
+    0x03U, 0x1EU, 0x39U, 0x24U, 0x77U, 0x6AU, 0x4DU, 0x50U,
+    0xA1U, 0xBCU, 0x9BU, 0x86U, 0xD5U, 0xC8U, 0xEFU, 0xF2U,
+    0x49U, 0x54U, 0x73U, 0x6EU, 0x3DU, 0x20U, 0x07U, 0x1AU,
+    0x6CU, 0x71U, 0x56U, 0x4BU, 0x18U, 0x05U, 0x22U, 0x3FU,
+    0x84U, 0x99U, 0xBEU, 0xA3U, 0xF0U, 0xEDU, 0xCAU, 0xD7U,
+    0x35U, 0x28U, 0x0FU, 0x12U, 0x41U, 0x5CU, 0x7BU, 0x66U,
+    0xDDU, 0xC0U, 0xE7U, 0xFAU, 0xA9U, 0xB4U, 0x93U, 0x8EU,
+    0xF8U, 0xE5U, 0xC2U, 0xDFU, 0x8CU, 0x91U, 0xB6U, 0xABU,
+    0x10U, 0x0DU, 0x2AU, 0x37U, 0x64U, 0x79U, 0x5EU, 0x43U,
+    0xB2U, 0xAFU, 0x88U, 0x95U, 0xC6U, 0xDBU, 0xFCU, 0xE1U,
+    0x5AU, 0x47U, 0x60U, 0x7DU, 0x2EU, 0x33U, 0x14U, 0x09U,
+    0x7FU, 0x62U, 0x45U, 0x58U, 0x0BU, 0x16U, 0x31U, 0x2CU,
+    0x97U, 0x8AU, 0xADU, 0xB0U, 0xE3U, 0xFEU, 0xD9U, 0xC4U
+};
+
+static const uint16 NvM_Crc16Table[256U] =
+{
+    0x0000U, 0x1021U, 0x2042U, 0x3063U, 0x4084U, 0x50A5U, 0x60C6U, 0x70E7U,
+    0x8108U, 0x9129U, 0xA14AU, 0xB16BU, 0xC18CU, 0xD1ADU, 0xE1CEU, 0xF1EFU,
+    0x1231U, 0x0210U, 0x3273U, 0x2252U, 0x52B5U, 0x4294U, 0x72F7U, 0x62D6U,
+    0x9339U, 0x8318U, 0xB37BU, 0xA35AU, 0xD3BDU, 0xC39CU, 0xF3FFU, 0xE3DEU,
+    0x2462U, 0x3443U, 0x0420U, 0x1401U, 0x64E6U, 0x74C7U, 0x44A4U, 0x5485U,
+    0xA56AU, 0xB54BU, 0x8528U, 0x9509U, 0xE5EEU, 0xF5CFU, 0xC5ACU, 0xD58DU,
+    0x3653U, 0x2672U, 0x1611U, 0x0630U, 0x76D7U, 0x66F6U, 0x5695U, 0x46B4U,
+    0xB75BU, 0xA77AU, 0x9719U, 0x8738U, 0xF7DFU, 0xE7FEU, 0xD79DU, 0xC7BCU,
+    0x48C4U, 0x58E5U, 0x6886U, 0x78A7U, 0x0840U, 0x1861U, 0x2802U, 0x3823U,
+    0xC9CCU, 0xD9EDU, 0xE98EU, 0xF9AFU, 0x8948U, 0x9969U, 0xA90AU, 0xB92BU,
+    0x5AF5U, 0x4AD4U, 0x7AB7U, 0x6A96U, 0x1A71U, 0x0A50U, 0x3A33U, 0x2A12U,
+    0xDBFDU, 0xCBDCU, 0xFBBFU, 0xEB9EU, 0x9B79U, 0x8B58U, 0xBB3BU, 0xAB1AU,
+    0x6CA6U, 0x7C87U, 0x4CE4U, 0x5CC5U, 0x2C22U, 0x3C03U, 0x0C60U, 0x1C41U,
+    0xEDAEU, 0xFD8FU, 0xCDECU, 0xDDCDU, 0xAD2AU, 0xBD0BU, 0x8D68U, 0x9D49U,
+    0x7E97U, 0x6EB6U, 0x5ED5U, 0x4EF4U, 0x3E13U, 0x2E32U, 0x1E51U, 0x0E70U,
+    0xFF9FU, 0xEFBEU, 0xDFDDU, 0xCFFCU, 0xBF1BU, 0xAF3AU, 0x9F59U, 0x8F78U,
+    0x9188U, 0x81A9U, 0xB1CAU, 0xA1EBU, 0xD10CU, 0xC12DU, 0xF14EU, 0xE16FU,
+    0x1080U, 0x00A1U, 0x30C2U, 0x20E3U, 0x5004U, 0x4025U, 0x7046U, 0x6067U,
+    0x83B9U, 0x9398U, 0xA3FBU, 0xB3DAU, 0xC33DU, 0xD31CU, 0xE37FU, 0xF35EU,
+    0x02B1U, 0x1290U, 0x22F3U, 0x32D2U, 0x4235U, 0x5214U, 0x6277U, 0x7256U,
+    0xB5EAU, 0xA5CBU, 0x95A8U, 0x8589U, 0xF56EU, 0xE54FU, 0xD52CU, 0xC50DU,
+    0x34E2U, 0x24C3U, 0x14A0U, 0x0481U, 0x7466U, 0x6447U, 0x5424U, 0x4405U,
+    0xA7DBU, 0xB7FAU, 0x8799U, 0x97B8U, 0xE75FU, 0xF77EU, 0xC71DU, 0xD73CU,
+    0x26D3U, 0x36F2U, 0x0691U, 0x16B0U, 0x6657U, 0x7676U, 0x4615U, 0x5634U,
+    0xD94CU, 0xC96DU, 0xF90EU, 0xE92FU, 0x99C8U, 0x89E9U, 0xB98AU, 0xA9ABU,
+    0x5844U, 0x4865U, 0x7806U, 0x6827U, 0x18C0U, 0x08E1U, 0x3882U, 0x28A3U,
+    0xCB7DU, 0xDB5CU, 0xEB3FU, 0xFB1EU, 0x8BF9U, 0x9BD8U, 0xABBBU, 0xBB9AU,
+    0x4A75U, 0x5A54U, 0x6A37U, 0x7A16U, 0x0AF1U, 0x1AD0U, 0x2AB3U, 0x3A92U,
+    0xFD2EU, 0xED0FU, 0xDD6CU, 0xCD4DU, 0xBDAAU, 0xAD8BU, 0x9DE8U, 0x8DC9U,
+    0x7C26U, 0x6C07U, 0x5C64U, 0x4C45U, 0x3CA2U, 0x2C83U, 0x1CE0U, 0x0CC1U,
+    0xEF1FU, 0xFF3EU, 0xCF5DU, 0xDF7CU, 0xAF9BU, 0xBFBAU, 0x8FD9U, 0x9FF8U,
+    0x6E17U, 0x7E36U, 0x4E55U, 0x5E74U, 0x2E93U, 0x3EB2U, 0x0ED1U, 0x1EF0U
+};
+
+static const uint32 NvM_Crc32Table[256U] =
+{
+    0x00000000UL, 0x04C11DB7UL, 0x09823B6EUL, 0x0D4326D9UL, 0x130476DCUL, 0x17C56B6BUL, 0x1A864DB2UL, 0x1E475005UL,
+    0x2608EDB8UL, 0x22C9F00FUL, 0x2F8AD6D6UL, 0x2B4BCB61UL, 0x350C9B64UL, 0x31CD86D3UL, 0x3C8EA00AUL, 0x384FBDBDUL,
+    0x4C11DB70UL, 0x48D0C6C7UL, 0x4593E01EUL, 0x4152FDA9UL, 0x5F15ADACUL, 0x5BD4B01BUL, 0x569796C2UL, 0x52568B75UL,
+    0x6A1936C8UL, 0x6ED82B7FUL, 0x639B0DA6UL, 0x675A1011UL, 0x791D4014UL, 0x7DDC5DA3UL, 0x709F7B7AUL, 0x745E66CDUL,
+    0x9823B6E0UL, 0x9CE2AB57UL, 0x91A18D8EUL, 0x95609039UL, 0x8B27C03CUL, 0x8FE6DD8BUL, 0x82A5FB52UL, 0x8664E6E5UL,
+    0xBE2B5B58UL, 0xBAEA46EFUL, 0xB7A96036UL, 0xB3687D81UL, 0xAD2F2D84UL, 0xA9EE3033UL, 0xA4AD16EAUL, 0xA06C0B5DUL,
+    0xD4326D90UL, 0xD0F37027UL, 0xDDB056FEUL, 0xD9714B49UL, 0xC7361B4CUL, 0xC3F706FBUL, 0xCEB42022UL, 0xCA753D95UL,
+    0xF23A8028UL, 0xF6FB9D9FUL, 0xFBB8BB46UL, 0xFF79A6F1UL, 0xE13EF6F4UL, 0xE5FFEB43UL, 0xE8BCCD9AUL, 0xEC7DD02DUL,
+    0x34867077UL, 0x30476DC0UL, 0x3D044B19UL, 0x39C556AEUL, 0x278206ABUL, 0x23431B1CUL, 0x2E003DC5UL, 0x2AC12072UL,
+    0x128E9DCFUL, 0x164F8078UL, 0x1B0CA6A1UL, 0x1FCDBB16UL, 0x018AEB13UL, 0x054BF6A4UL, 0x0808D07DUL, 0x0CC9CDCAUL,
+    0x7897AB07UL, 0x7C56B6B0UL, 0x71159069UL, 0x75D48DDEUL, 0x6B93DDDBUL, 0x6F52C06CUL, 0x6211E6B5UL, 0x66D0FB02UL,
+    0x5E9F46BFUL, 0x5A5E5B08UL, 0x571D7DD1UL, 0x53DC6066UL, 0x4D9B3063UL, 0x495A2DD4UL, 0x44190B0DUL, 0x40D816BAUL,
+    0xACA5C697UL, 0xA864DB20UL, 0xA527FDF9UL, 0xA1E6E04EUL, 0xBFA1B04BUL, 0xBB60ADFCUL, 0xB6238B25UL, 0xB2E29692UL,
+    0x8AAD2B2FUL, 0x8E6C3698UL, 0x832F1041UL, 0x87EE0DF6UL, 0x99A95DF3UL, 0x9D684044UL, 0x902B669DUL, 0x94EA7B2AUL,
+    0xE0B41DE7UL, 0xE4750050UL, 0xE9362689UL, 0xEDF73B3EUL, 0xF3B06B3BUL, 0xF771768CUL, 0xFA325055UL, 0xFEF34DE2UL,
+    0xC6BCF05FUL, 0xC27DEDE8UL, 0xCF3ECB31UL, 0xCBFFD686UL, 0xD5B88683UL, 0xD1799B34UL, 0xDC3ABDEDUL, 0xD8FBA05AUL,
+    0x690CE0EEUL, 0x6DCDFD59UL, 0x608EDB80UL, 0x644FC637UL, 0x7A089632UL, 0x7EC98B85UL, 0x738AAD5CUL, 0x774BB0EBUL,
+    0x4F040D56UL, 0x4BC510E1UL, 0x46863638UL, 0x42472B8FUL, 0x5C007B8AUL, 0x58C1663DUL, 0x558240E4UL, 0x51435D53UL,
+    0x251D3B9EUL, 0x21DC2629UL, 0x2C9F00F0UL, 0x285E1D47UL, 0x36194D42UL, 0x32D850F5UL, 0x3F9B762CUL, 0x3B5A6B9BUL,
+    0x0315D626UL, 0x07D4CB91UL, 0x0A97ED48UL, 0x0E56F0FFUL, 0x1011A0FAUL, 0x14D0BD4DUL, 0x19939B94UL, 0x1D528623UL,
+    0xF12F560EUL, 0xF5EE4BB9UL, 0xF8AD6D60UL, 0xFC6C70D7UL, 0xE22B20D2UL, 0xE6EA3D65UL, 0xEBA91BBCUL, 0xEF68060BUL,
+    0xD727BBB6UL, 0xD3E6A601UL, 0xDEA580D8UL, 0xDA649D6FUL, 0xC423CD6AUL, 0xC0E2D0DDUL, 0xCDA1F604UL, 0xC960EBB3UL,
+    0xBD3E8D7EUL, 0xB9FF90C9UL, 0xB4BCB610UL, 0xB07DABA7UL, 0xAE3AFBA2UL, 0xAAFBE615UL, 0xA7B8C0CCUL, 0xA379DD7BUL,
+    0x9B3660C6UL, 0x9FF77D71UL, 0x92B45BA8UL, 0x9675461FUL, 0x8832161AUL, 0x8CF30BADUL, 0x81B02D74UL, 0x857130C3UL,
+    0x5D8A9099UL, 0x594B8D2EUL, 0x5408ABF7UL, 0x50C9B640UL, 0x4E8EE645UL, 0x4A4FFBF2UL, 0x470CDD2BUL, 0x43CDC09CUL,
+    0x7B827D21UL, 0x7F436096UL, 0x7200464FUL, 0x76C15BF8UL, 0x68860BFDUL, 0x6C47164AUL, 0x61043093UL, 0x65C52D24UL,
+    0x119B4BE9UL, 0x155A565EUL, 0x18197087UL, 0x1CD86D30UL, 0x029F3D35UL, 0x065E2082UL, 0x0B1D065BUL, 0x0FDC1BECUL,
+    0x3793A651UL, 0x3352BBE6UL, 0x3E119D3FUL, 0x3AD08088UL, 0x2497D08DUL, 0x2056CD3AUL, 0x2D15EBE3UL, 0x29D4F654UL,
+    0xC5A92679UL, 0xC1683BCEUL, 0xCC2B1D17UL, 0xC8EA00A0UL, 0xD6AD50A5UL, 0xD26C4D12UL, 0xDF2F6BCBUL, 0xDBEE767CUL,
+    0xE3A1CBC1UL, 0xE760D676UL, 0xEA23F0AFUL, 0xEEE2ED18UL, 0xF0A5BD1DUL, 0xF464A0AAUL, 0xF9278673UL, 0xFDE69BC4UL,
+    0x89B8FD09UL, 0x8D79E0BEUL, 0x803AC667UL, 0x84FBDBD0UL, 0x9ABC8BD5UL, 0x9E7D9662UL, 0x933EB0BBUL, 0x97FFAD0CUL,
+    0xAFB010B1UL, 0xAB710D06UL, 0xA6322BDFUL, 0xA2F33668UL, 0xBCB4666DUL, 0xB8757BDAUL, 0xB5365D03UL, 0xB1F740B4UL
+};
+
 /*==================================================================================================
 *                                  LOCAL MACRO DEFINITIONS
 ==================================================================================================*/
@@ -142,6 +256,12 @@ STATIC NvM_InternalStateType NvM_InternalState;
 
 #define NVM_STOP_SEC_VAR_CLEARED_UNSPECIFIED
 #include "MemMap.h"
+
+/* P1 Phase 8: TRUE when the configured block descriptors form a contiguous
+ * BlockId layout (BlockId == array index + 1). Validated by NvM_Init from
+ * the configuration constraint check below; gates the O(1) direct-index
+ * fast path in NvM_GetBlockDescriptor(). */
+STATIC boolean NvM_BlockIdDirectIndex = FALSE;
 
 /*==================================================================================================
 *                                  LOCAL FUNCTION PROTOTYPES
@@ -264,12 +384,25 @@ STATIC const NvM_BlockDescriptorType* NvM_GetBlockDescriptor(NvM_BlockIdType Blo
 
     if (NvM_InternalState.ConfigPtr != NULL_PTR)
     {
-        for (i = 0U; i < NvM_InternalState.ConfigPtr->NumBlockDescriptors; i++)
+        /* P1 Phase 8: O(1) BlockId direct indexing fast path. Usable only
+         * when NvM_Init validated the contiguous descriptor layout
+         * (BlockId == index + 1, see NvM_BlockIdDirectIndex); sparse
+         * configurations transparently fall back to the linear scan. */
+        if ((NvM_BlockIdDirectIndex == TRUE) &&
+            (BlockId > 0U) &&
+            ((uint32)BlockId <= (uint32)NvM_InternalState.ConfigPtr->NumBlockDescriptors))
         {
-            if (NvM_InternalState.ConfigPtr->BlockDescriptors[i].BlockId == BlockId)
+            result = &NvM_InternalState.ConfigPtr->BlockDescriptors[BlockId - 1U];
+        }
+        else
+        {
+            for (i = 0U; i < NvM_InternalState.ConfigPtr->NumBlockDescriptors; i++)
             {
-                result = &NvM_InternalState.ConfigPtr->BlockDescriptors[i];
-                break;
+                if (NvM_InternalState.ConfigPtr->BlockDescriptors[i].BlockId == BlockId)
+                {
+                    result = &NvM_InternalState.ConfigPtr->BlockDescriptors[i];
+                    break;
+                }
             }
         }
     }
@@ -301,24 +434,14 @@ STATIC Std_ReturnType NvM_ValidateBlockId(NvM_BlockIdType BlockId)
  */
 STATIC uint8 NvM_CalculateCrc8(const uint8* DataPtr, uint16 Length)
 {
+    /* P1 Phase 8: 256-entry lookup table, bit-exact with the former
+     * per-bit loop (poly 0x1D, init 0xFF, MSB first). ~8x faster. */
     uint8 crc = 0xFFU;
     uint16 i;
-    uint8 bit;
 
     for (i = 0U; i < Length; i++)
     {
-        crc ^= DataPtr[i];
-        for (bit = 0U; bit < 8U; bit++)
-        {
-            if ((crc & 0x80U) != 0U)
-            {
-                crc = (crc << 1U) ^ NVM_CRC8_POLYNOMIAL;
-            }
-            else
-            {
-                crc = crc << 1U;
-            }
-        }
+        crc = NvM_Crc8Table[crc ^ DataPtr[i]];
     }
 
     return crc;
@@ -329,24 +452,15 @@ STATIC uint8 NvM_CalculateCrc8(const uint8* DataPtr, uint16 Length)
  */
 STATIC uint16 NvM_CalculateCrc16(const uint8* DataPtr, uint16 Length)
 {
+    /* P1 Phase 8: 256-entry lookup table, bit-exact with the former
+     * per-bit loop (poly 0x1021, init 0xFFFF, MSB first). ~8x faster. */
     uint16 crc = 0xFFFFU;
     uint16 i;
-    uint8 bit;
 
     for (i = 0U; i < Length; i++)
     {
-        crc ^= ((uint16)DataPtr[i] << 8U);
-        for (bit = 0U; bit < 8U; bit++)
-        {
-            if ((crc & 0x8000U) != 0U)
-            {
-                crc = (crc << 1U) ^ NVM_CRC16_POLYNOMIAL;
-            }
-            else
-            {
-                crc = crc << 1U;
-            }
-        }
+        crc = (uint16)(((uint16)(crc << 8U)) ^
+              NvM_Crc16Table[((uint16)(crc >> 8U) ^ (uint16)DataPtr[i]) & 0xFFU]);
     }
 
     return crc;
@@ -357,24 +471,16 @@ STATIC uint16 NvM_CalculateCrc16(const uint8* DataPtr, uint16 Length)
  */
 STATIC uint32 NvM_CalculateCrc32(const uint8* DataPtr, uint16 Length)
 {
+    /* P1 Phase 8: 256-entry lookup table, bit-exact with the former
+     * per-bit loop (poly 0x04C11DB7, init 0xFFFFFFFF, MSB first).
+     * ~8x faster on the NvM read/write job paths. */
     uint32 crc = 0xFFFFFFFFU;
     uint16 i;
-    uint8 bit;
 
     for (i = 0U; i < Length; i++)
     {
-        crc ^= ((uint32)DataPtr[i] << 24U);
-        for (bit = 0U; bit < 8U; bit++)
-        {
-            if ((crc & 0x80000000U) != 0U)
-            {
-                crc = (crc << 1U) ^ NVM_CRC32_POLYNOMIAL;
-            }
-            else
-            {
-                crc = crc << 1U;
-            }
-        }
+        crc = (crc << 8U) ^
+              NvM_Crc32Table[((crc >> 24U) ^ (uint32)DataPtr[i]) & 0xFFU];
     }
 
     return crc;
@@ -960,6 +1066,22 @@ void NvM_Init(const NvM_ConfigType* ConfigPtr)
 
     /* Store configuration pointer */
     NvM_InternalState.ConfigPtr = ConfigPtr;
+
+    /* P1 Phase 8: configuration constraint check for O(1) block lookup.
+     * The direct-index fast path in NvM_GetBlockDescriptor() requires the
+     * descriptors to be laid out contiguously with BlockId == index + 1
+     * (no sparse BlockIds, BlockId usable as array index). Sparse layouts
+     * remain fully functional via the linear-scan fallback. */
+    NvM_BlockIdDirectIndex = TRUE;
+    for (i = 0U; ((NvM_BlockIdDirectIndex == TRUE) &&
+                  (i < ConfigPtr->NumBlockDescriptors) &&
+                  (i < NVM_NUM_OF_NVRAM_BLOCKS)); i++)
+    {
+        if (ConfigPtr->BlockDescriptors[i].BlockId != (NvM_BlockIdType)(i + 1U))
+        {
+            NvM_BlockIdDirectIndex = FALSE;
+        }
+    }
 
     /* Initialize queues */
     NvM_InternalState.StandardQueueHead = 0U;
@@ -2231,6 +2353,125 @@ const void* NvM_GetRedundantBlockAddress(NvM_BlockIdType BlockId)
     }
 
     return blockDesc->MirrorBlockData;
+}
+
+/**
+ * @brief   Cancel all queued jobs for a block
+ * @param   BlockId - Block identifier
+ * @return  E_OK if request accepted, E_NOT_OK otherwise
+ *
+ * TODO(Phase2): Implement per-block job cancellation - remove pending jobs
+ * for BlockId from the standard/immediate queues and terminate the active
+ * job if it belongs to BlockId. Production-safe stub returns E_NOT_OK.
+ */
+/** @req SWS_NvM_00024 */
+Std_ReturnType NvM_CancelJobs(NvM_BlockIdType BlockId)
+{
+    (void)BlockId;
+
+#if (NVM_DEV_ERROR_DETECT == STD_ON)
+    if (NvM_InternalState.State == NVM_STATE_UNINIT)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_CANCELJOBS, NVM_E_NOT_INITIALIZED);
+        return E_NOT_OK;
+    }
+
+    if (NvM_ValidateBlockId(BlockId) != E_OK)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_CANCELJOBS, NVM_E_PARAM_BLOCK_ID);
+        return E_NOT_OK;
+    }
+#endif
+
+    /* TODO: Implement job cancellation logic (queue removal + active job abort) */
+    return E_NOT_OK;
+}
+
+/**
+ * @brief   Read a permanent RAM block from NV memory
+ * @param   BlockId - Block identifier
+ * @return  E_OK if request accepted, E_NOT_OK otherwise
+ *
+ * TODO(Phase2): Queue an implicit read job using the block's RamBlockData
+ * as destination (explicit destination pointer variant is NvM_ReadBlock).
+ * Production-safe stub returns E_NOT_OK.
+ */
+/** @req SWS_NvM_00025 */
+Std_ReturnType NvM_ReadPRAMBlock(NvM_BlockIdType BlockId)
+{
+    (void)BlockId;
+
+#if (NVM_DEV_ERROR_DETECT == STD_ON)
+    if (NvM_InternalState.State == NVM_STATE_UNINIT)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_READPRAMBLOCK, NVM_E_NOT_INITIALIZED);
+        return E_NOT_OK;
+    }
+
+    if (NvM_ValidateBlockId(BlockId) != E_OK)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_READPRAMBLOCK, NVM_E_PARAM_BLOCK_ID);
+        return E_NOT_OK;
+    }
+#endif
+
+    /* TODO: Queue read job with block descriptor's RamBlockData as destination */
+    return E_NOT_OK;
+}
+
+/**
+ * @brief   Write a permanent RAM block to NV memory
+ * @param   BlockId - Block identifier
+ * @return  E_OK if request accepted, E_NOT_OK otherwise
+ *
+ * TODO(Phase2): Queue an implicit write job using the block's RamBlockData
+ * as source (explicit source pointer variant is NvM_WriteBlock).
+ * Production-safe stub returns E_NOT_OK.
+ */
+/** @req SWS_NvM_00026 */
+Std_ReturnType NvM_WritePRAMBlock(NvM_BlockIdType BlockId)
+{
+    (void)BlockId;
+
+#if (NVM_DEV_ERROR_DETECT == STD_ON)
+    if (NvM_InternalState.State == NVM_STATE_UNINIT)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_WRITEPRAMBLOCK, NVM_E_NOT_INITIALIZED);
+        return E_NOT_OK;
+    }
+
+    if (NvM_ValidateBlockId(BlockId) != E_OK)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_WRITEPRAMBLOCK, NVM_E_PARAM_BLOCK_ID);
+        return E_NOT_OK;
+    }
+#endif
+
+    /* TODO: Queue write job with block descriptor's RamBlockData as source */
+    return E_NOT_OK;
+}
+
+/**
+ * @brief   Repair damaged blocks (maintenance/recovery operation)
+ * @return  E_OK if request accepted, E_NOT_OK otherwise
+ *
+ * TODO(Phase2): Implement block repair flow: read redundant copies, verify
+ * CRC, rebuild damaged blocks from redundant/ROM defaults. Production-safe
+ * stub returns E_NOT_OK.
+ */
+/** @req SWS_NvM_00027 */
+Std_ReturnType NvM_RepairDamagedBlocks(void)
+{
+#if (NVM_DEV_ERROR_DETECT == STD_ON)
+    if (NvM_InternalState.State == NVM_STATE_UNINIT)
+    {
+        NVM_DET_REPORT_ERROR(NVM_SID_REPAIRDamagedBlocks, NVM_E_NOT_INITIALIZED);
+        return E_NOT_OK;
+    }
+#endif
+
+    /* TODO: Implement redundant-copy repair flow */
+    return E_NOT_OK;
 }
 
 /*==================================================================================================

@@ -106,6 +106,19 @@ typedef enum {
 #define CANTP_E_FRAME                   (0x18U)
 
 /*==================================================================================================
+*                                    RX PADDING VALIDATION CONFIG
+==================================================================================================*/
+/* Reject (drop) received SF / CF frames whose padding bytes deviate from
+ * CANTP_PADDING_BYTE_VALUE. Default STD_OFF: the frame is still processed and
+ * only a CANTP_E_RX_UNEXP_PADDING runtime error is reported (ISO 15765-2
+ * tolerance towards senders that do not pad). FC frames are always exempt
+ * because their padding is sender-specific. FF frames carry no padding area
+ * on classic CAN (2 PCI + 6 data bytes fill the frame exactly). */
+#ifndef CANTP_REJECT_INVALID_PADDING
+#define CANTP_REJECT_INVALID_PADDING    (STD_OFF)
+#endif
+
+/*==================================================================================================
 *                                    CANTP FRAME TYPES (PCI Types)
 ==================================================================================================*/
 typedef enum {
@@ -300,6 +313,13 @@ Std_ReturnType CanTp_CancelReceive(PduIdType CanTpRxSduId);
  * @param value New value
  * @return Result of operation
  */
+/**
+ * @brief change parameter
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType CanTp_ChangeParameter(PduIdType id, TPParameterType parameter, uint16 value);
 
 /**
@@ -308,6 +328,13 @@ Std_ReturnType CanTp_ChangeParameter(PduIdType id, TPParameterType parameter, ui
  * @param parameter Parameter to read
  * @param value Pointer to store value
  * @return Result of operation
+ */
+/**
+ * @brief Read data from channel
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
  */
 Std_ReturnType CanTp_ReadParameter(PduIdType id, TPParameterType parameter, uint16* value);
 

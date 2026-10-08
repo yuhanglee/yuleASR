@@ -310,6 +310,13 @@ Icu_InputStateType Icu_GetInputState(Icu_ChannelType Channel);
  * @param BufferSize Size of the buffer
  * @param NotifyInterval Number of captures between notifications
  */
+/**
+ * @brief Start the operation
+ * @param[in] Channel Channel identifier
+ * @param[in] BufferPtr Data buffer
+ * @param[in] BufferSize Data buffer
+ * @param[in] NotifyInterval Parameter value
+ */
 void Icu_StartTimestamp(Icu_ChannelType Channel, uint32* BufferPtr, uint16 BufferSize, uint16 NotifyInterval);
 
 /**

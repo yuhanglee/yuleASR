@@ -62,6 +62,19 @@ typedef uint32 EcuM_WakeupSourceType;
 #define CANIF_SID_GETBAUDRATE           (0x28U)
 #define CANIF_SID_GETCONTROLLERRXERRORCOUNTER (0x4CU)
 #define CANIF_SID_GETCONTROLLERTXERRORCOUNTER (0x4DU)
+#define CANIF_SID_READTXNOTIFSTATUS     (0x4EU)
+#define CANIF_SID_READRXNOTIFSTATUS     (0x4FU)
+#define CANIF_SID_CONFIRMPNAVAILABILITY (0x50U)
+#define CANIF_SID_CHECKTRCVWAKEFLAG     (0x51U)
+#define CANIF_SID_CLEARTRCVWUFFLAG      (0x52U)
+#define CANIF_SID_CHECKTRCVWAKEFLAGINDICATION (0x53U)
+#define CANIF_SID_CLEARTRCVWUFFLAGINDICATION  (0x54U)
+#define CANIF_SID_TRCVMODEINDICATION    (0x55U)
+#define CANIF_SID_CONTROLLERMODEINDICATION (0x56U)
+#define CANIF_SID_CANIDTOMETADATA       (0x57U)
+#define CANIF_SID_METADATATOCANID       (0x58U)
+#define CANIF_SID_SETPNWAKEUPFILTER     (0x59U)
+#define CANIF_SID_TXQUEUEMAINFUNCTION   (0x5AU)
 
 /*==================================================================================================
 *                                    DET ERROR CODES
@@ -94,6 +107,30 @@ typedef uint32 EcuM_WakeupSourceType;
 #define CANIF_E_PARAM_TRCVWAKEUPREASON  (0x7AU)
 #define CANIF_E_PARAM_TRCVTYPE          (0x7BU)
 #define CANIF_E_ALREADY_INITIALIZED     (0x7CU)
+
+/*==================================================================================================
+*                                    CANIF PARTIAL NETWORKING / RX DISPATCH / TX QUEUE CONFIG
+==================================================================================================*/
+/* Compile switch: use the Hoh-bucketed Rx dispatch lookup table built by
+ * CanIf_Init (O(bucket) matching) instead of the linear scan over all Rx
+ * L-PDUs. When disabled, or for hardware object handles outside the table
+ * range, the linear scan is used as fallback. */
+#ifndef CANIF_USE_RX_LOOKUP_TABLE
+#define CANIF_USE_RX_LOOKUP_TABLE       (STD_ON)
+#endif
+/* Highest hardware object handle covered by the Rx dispatch lookup table */
+#ifndef CANIF_RX_LOOKUP_MAX_HOH
+#define CANIF_RX_LOOKUP_MAX_HOH         (16U)
+#endif
+/* Depth of the Tx retry queue buffering frames that Can_Write rejected with
+ * CAN_BUSY; drained by CanIf_TxQueueMainFunction. */
+#ifndef CANIF_TX_QUEUE_DEPTH
+#define CANIF_TX_QUEUE_DEPTH            (16U)
+#endif
+/* Maximum payload length bufferable in one Tx queue entry (classic CAN) */
+#ifndef CANIF_TX_QUEUE_DATA_LENGTH
+#define CANIF_TX_QUEUE_DATA_LENGTH      (8U)
+#endif
 
 /*==================================================================================================
 *                                    CANIF RETURN TYPE
@@ -186,6 +223,7 @@ typedef struct {
     uint8 Length;
     boolean TxConfirmation;
     boolean UserType;
+    boolean FdFrame;
 } CanIf_TxPduConfigType;
 
 /*==================================================================================================
@@ -201,6 +239,22 @@ typedef struct {
     uint8 Length;
     boolean RxIndication;
 } CanIf_RxPduConfigType;
+
+/*==================================================================================================
+*                                    CANIF PN WAKEUP FILTER TYPE
+==================================================================================================*/
+/** @brief Selective wake-up filter of a transceiver channel
+ * @details A received frame passes the PN filter when
+ *          (CanId AND CanIdMask) lies inside the inclusive range
+ *          [(CanIdRangeLower AND CanIdMask), (CanIdRangeUpper AND CanIdMask)].
+ *          The filter is armed per transceiver via CanIf_SetPnWakeupFilter.
+ */
+typedef struct {
+    CanIf_CanIdType CanIdRangeLower;    /**< Inclusive lower bound of the wake-up CAN ID range */
+    CanIf_CanIdType CanIdRangeUpper;    /**< Inclusive upper bound of the wake-up CAN ID range */
+    CanIf_CanIdType CanIdMask;          /**< Mask applied to the range bounds and to received CAN IDs */
+    boolean PnFilterEnabled;            /**< TRUE: filter active, non-matching frames are dropped */
+} CanIf_PnWakeupFilterType;
 
 /*==================================================================================================
 *                                    CANIF HRH CONFIG TYPE
@@ -440,6 +494,182 @@ Std_ReturnType CanIf_SetBaudrate(uint8 ControllerId, uint16 BaudRate);
  * @return Result of operation
  */
 Std_ReturnType CanIf_GetBaudrate(uint8 ControllerId, uint16* BaudRatePtr);
+
+/**
+ * @brief Gets the error state of a CAN controller (delegates to the Can driver)
+ * @param ControllerId Controller to query
+ * @param ErrorStatePtr Pointer to store the error state
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_GetControllerErrorState(uint8 ControllerId, Can_ErrorStateType* ErrorStatePtr);
+
+/**
+ * @brief Gets the receive error counter of a CAN controller (delegates to the Can driver)
+ * @param ControllerId Controller to query
+ * @param RxErrorCounterPtr Pointer to store the RX error counter
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_GetControllerRxErrorCounter(uint8 ControllerId, uint8* RxErrorCounterPtr);
+
+/**
+ * @brief Gets the transmit error counter of a CAN controller (delegates to the Can driver)
+ * @param ControllerId Controller to query
+ * @param TxErrorCounterPtr Pointer to store the TX error counter
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_GetControllerTxErrorCounter(uint8 ControllerId, uint8* TxErrorCounterPtr);
+
+/**
+ * @brief Reads and clears the TX notification status of a Tx L-PDU
+ * @details Read-and-clear semantics: the status is returned once and reset to
+ *          CANIF_NO_NOTIFICATION immediately. Only usable when
+ *          ReadTxPduNotifyStatusApi is enabled in the configuration.
+ * @param CanTxPduId Tx L-PDU to query
+ * @return CANIF_TX_RX_NOTIFICATION if a notification is pending, else CANIF_NO_NOTIFICATION
+ */
+/**
+ * @brief Read data from channel
+ * @param[in] CanTxPduId Identifier
+ * @return Operation status
+ */
+CanIf_NotifStatusType CanIf_ReadTxNotifStatus(PduIdType CanTxPduId);
+
+/**
+ * @brief Reads and clears the RX notification status of an Rx L-PDU
+ * @details Read-and-clear semantics: the status is returned once and reset to
+ *          CANIF_NO_NOTIFICATION immediately. Only usable when
+ *          ReadRxPduNotifyStatusApi is enabled in the configuration.
+ * @param CanRxPduId Rx L-PDU to query
+ * @return CANIF_TX_RX_NOTIFICATION if a notification is pending, else CANIF_NO_NOTIFICATION
+ */
+/**
+ * @brief Read data from channel
+ * @param[in] CanRxPduId Identifier
+ * @return Operation status
+ */
+CanIf_NotifStatusType CanIf_ReadRxNotifStatus(PduIdType CanRxPduId);
+
+/**
+ * @brief Trigger-transmit data request for a Tx L-PDU
+ * @details For PDUs configured for trigger transmit (TxPduConfig.UserType), the
+ *          data cached by the most recent CanIf_Transmit call is copied into the
+ *          buffer provided by the caller. The copied length is
+ *          min(requested length, configured length, cached length).
+ * @param TxPduId Tx L-PDU to query
+ * @param PduInfoPtr Buffer descriptor (SduDataPtr/SduLength) to fill
+ * @return E_OK if data was provided, E_NOT_OK otherwise
+ */
+/**
+ * @brief Trigger action
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
+Std_ReturnType CanIf_TriggerTransmit(PduIdType TxPduId, PduInfoType* PduInfoPtr);
+
+/**
+ * @brief Confirms partial-networking availability for a transceiver channel
+ * @param TransceiverId Transceiver to confirm
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_ConfirmPnAvailability(uint8 TransceiverId);
+
+/**
+ * @brief Requests a wake-flag check on the given transceiver
+ * @param TransceiverId Transceiver to check
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_CheckTrcvWakeFlag(uint8 TransceiverId);
+
+/**
+ * @brief Requests the wake-up flag of the given transceiver to be cleared
+ * @param TransceiverId Transceiver to clear
+ * @return E_OK on success, E_NOT_OK otherwise
+ */
+Std_ReturnType CanIf_ClearTrcvWufFlag(uint8 TransceiverId);
+
+/**
+ * @brief Wake-flag check indication invoked by the CAN transceiver driver
+ * @param TransceiverId Transceiver that completed the wake-flag check
+ */
+void CanIf_CheckTrcvWakeFlagIndication(uint8 TransceiverId);
+
+/**
+ * @brief Wake-up-flag cleared indication invoked by the CAN transceiver driver
+ * @param TransceiverId Transceiver whose wake-up flag was cleared
+ */
+void CanIf_ClearTrcvWufFlagIndication(uint8 TransceiverId);
+
+/**
+ * @brief Transceiver mode indication invoked by the CAN transceiver driver
+ * @param TransceiverId Transceiver that changed mode
+ * @param TransceiverMode New transceiver mode
+ */
+void CanIf_TrcvModeIndication(uint8 TransceiverId, CanIf_TransceiverModeType TransceiverMode);
+
+/**
+ * @brief Controller mode indication invoked by the CAN driver
+ * @param ControllerId Controller that changed mode
+ * @param ControllerMode New controller mode
+ */
+void CanIf_ControllerModeIndication(uint8 ControllerId, CanIf_ControllerModeType ControllerMode);
+
+/**
+ * @brief Converts a 29-bit CAN identifier into the 4-byte big-endian MetaData layout
+ * @details MetaData[0] = CanId bits 28..21, MetaData[1] = bits 20..13,
+ *          MetaData[2] = bits 12..5, MetaData[3] = bits 7..0.
+ * @param CanId CAN identifier to convert
+ * @param MetaDataPtr 4-byte MetaData buffer to fill
+ * @return E_OK on success, E_NOT_OK on NULL pointer
+ */
+/**
+ * @brief can id to meta data
+ * @param[in] CanId Identifier
+ * @param[in] MetaDataPtr Data buffer
+ * @return Operation status
+ */
+Std_ReturnType CanIf_CanIdToMetaData(uint32 CanId, uint8* MetaDataPtr);
+
+/**
+ * @brief Converts the 4-byte big-endian MetaData layout back into a 29-bit CAN identifier
+ * @param MetaDataPtr 4-byte MetaData buffer to read
+ * @param CanIdPtr Storage for the reconstructed CAN identifier
+ * @return E_OK on success, E_NOT_OK on NULL pointer
+ */
+Std_ReturnType CanIf_MetaDataToCanId(const uint8* MetaDataPtr, uint32* CanIdPtr);
+
+/**
+ * @brief Arms the selective wake-up (PN) filter of a transceiver channel
+ * @details When enabled, CanIf_RxIndication drops every frame whose (masked)
+ *          CAN ID lies outside the configured range. The filter is reset by
+ *          CanIf_Init / CanIf_DeInit.
+ * @param TransceiverId Transceiver whose filter is configured
+ * @param PnFilter Filter definition (range/mask/enabled), copied by CanIf
+ * @return E_OK on success, E_NOT_OK on invalid transceiver, NULL pointer or
+ *         an inverted CAN ID range
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] TransceiverId Identifier
+ * @param[in] PnFilter PnFilter value
+ * @return Operation status
+ */
+Std_ReturnType CanIf_SetPnWakeupFilter(uint8 TransceiverId, const CanIf_PnWakeupFilterType* PnFilter);
+
+/**
+ * @brief Drains the Tx retry queue (frames buffered on CAN_BUSY)
+ * @details Called cyclically from the CanIf main function context. Every
+ *          queued frame is retried via Can_Write; on success the Tx
+ *          confirmation state is armed, on CAN_BUSY the remaining frames stay
+ *          queued for the next cycle. The queue is flushed by CanIf_Init,
+ *          CanIf_DeInit and CanIf_ControllerBusOff.
+ */
+/**
+ * @brief Transmit data
+ * @param[in] TransceiverId Identifier
+ * @param[in] PnFilter PnFilter value
+ */
+void CanIf_TxQueueMainFunction(void);
 
 #define CANIF_STOP_SEC_CODE
 #include "MemMap.h"

@@ -2,6 +2,8 @@
  * PduR_DoIP.h - PduR DoIP interface header (AUTOSAR PduR)
  *
  * Declares the PduR <-> DoIP module interface functions.
+ * @file PduR_DoIP.h
+ * @brief PDU Router DoIP interface
  *================================================================================================*/
 #ifndef PDUR_DOIP_H
 #define PDUR_DOIP_H

@@ -19,6 +19,12 @@
 #ifndef LINTRCV_H
 #define LINTRCV_H
 
+/**
+ * @file LinTrcv.h
+ * @brief LINTRCV module public API
+ */
+
+
 /*=============================================================================
  * Includes
  ============================================================================*/
@@ -198,6 +204,10 @@ extern const LinTrcv_ConfigType *LinTrcv_ConfigPtr;
  * Parameters    : ConfigPtr - Pointer to configuration structure
  * Return        : None
  ******************************************************************************/
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void LinTrcv_Init(const LinTrcv_ConfigType *ConfigPtr);
 
 /** @req SWS_LinTrcv_00002 */
@@ -208,6 +218,10 @@ extern void LinTrcv_Init(const LinTrcv_ConfigType *ConfigPtr);
  * Parameters    : None
  * Return        : None
  ******************************************************************************/
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void LinTrcv_DeInit(void);
 
 /** @req SWS_LinTrcv_00005 */
@@ -220,6 +234,12 @@ extern void LinTrcv_DeInit(void);
  * Return        : E_OK     - Mode transition successful
  *               : E_NOT_OK - Mode transition failed
  ******************************************************************************/
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] OpMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType LinTrcv_SetOpMode(uint8 Channel, LinTrcv_OpmodeType OpMode);
 
 /** @req SWS_LinTrcv_00006 */
@@ -231,6 +251,12 @@ extern Std_ReturnType LinTrcv_SetOpMode(uint8 Channel, LinTrcv_OpmodeType OpMode
  * Return        : E_OK     - Successful
  *               : E_NOT_OK - Failed (invalid channel or NULL pointer)
  ******************************************************************************/
+/**
+ * @brief Get requested information
+ * @param[in] Channel Channel identifier
+ * @param[in] OpMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType LinTrcv_GetOpMode(uint8 Channel, LinTrcv_OpmodeType *OpMode);
 
 /** @req SWS_LinTrcv_00007 */
@@ -243,6 +269,12 @@ extern Std_ReturnType LinTrcv_GetOpMode(uint8 Channel, LinTrcv_OpmodeType *OpMod
  * Return        : E_OK     - Successful
  *               : E_NOT_OK - Failed (invalid channel or NULL pointer)
  ******************************************************************************/
+/**
+ * @brief Get requested information
+ * @param[in] Channel Channel identifier
+ * @param[in] WuReason WuReason value
+ * @return Operation status
+ */
 extern Std_ReturnType LinTrcv_GetBusWuReason(uint8 Channel, LinTrcv_WakeupReasonType *WuReason);
 
 /*******************************************************************************
@@ -253,6 +285,10 @@ extern Std_ReturnType LinTrcv_GetBusWuReason(uint8 Channel, LinTrcv_WakeupReason
  ******************************************************************************/
 #if (LINTRCV_VERSION_INFO_API == STD_ON)
 /** @req SWS_LinTrcv_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void LinTrcv_GetVersionInfo(Std_VersionInfoType *VersionInfo);
 #endif
 
@@ -265,6 +301,11 @@ extern void LinTrcv_GetVersionInfo(Std_VersionInfoType *VersionInfo);
  * Return        : E_OK     - Wake-up initiated successfully
  *               : E_NOT_OK - Wake-up failed
  ******************************************************************************/
+/**
+ * @brief wakeup
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType LinTrcv_Wakeup(uint8 Channel);
 
 /** @req SWS_LinTrcv_00009 */
@@ -276,6 +317,11 @@ extern Std_ReturnType LinTrcv_Wakeup(uint8 Channel);
  * Return        : E_OK     - Wake-up detected
  *               : E_NOT_OK - No wake-up detected
  ******************************************************************************/
+/**
+ * @brief Check condition
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType LinTrcv_CheckWakeup(uint8 Channel);
 
 /** @req SWS_LinTrcv_00010 */
@@ -286,6 +332,10 @@ extern Std_ReturnType LinTrcv_CheckWakeup(uint8 Channel);
  * Parameters    : Channel - LIN transceiver channel ID
  * Return        : None
  ******************************************************************************/
+/**
+ * @brief cbk_ wakeup by bus
+ * @param[in] Channel Channel identifier
+ */
 extern void LinTrcv_Cbk_WakeupByBus(uint8 Channel);
 
 /** @req SWS_LinTrcv_00004 */
@@ -296,6 +346,10 @@ extern void LinTrcv_Cbk_WakeupByBus(uint8 Channel);
  * Parameters    : None
  * Return        : None
  ******************************************************************************/
+/**
+ * @brief Process periodic tasks
+ * @param[in] Channel Channel identifier
+ */
 extern void LinTrcv_MainFunction(void);
 
 #define LINTRCV_STOP_SEC_CODE

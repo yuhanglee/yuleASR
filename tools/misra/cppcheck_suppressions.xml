@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions>
+  <!--
+    Struct member names reported as "unknown variable" by misra-config
+    because cppcheck cannot resolve the struct type from unreachable headers.
+    These are false positives — the members are defined in CanNm.h.
+  -->
+  <suppress>
+    <id>misra-config</id>
+    <fileName>src/bsw/ecual/canNm/src/CanNm.c</fileName>
+    <symbolName>ChannelId</symbolName>
+  </suppress>
+  <suppress>
+    <id>misra-config</id>
+    <fileName>src/bsw/ecual/canNm/src/CanNm.c</fileName>
+    <symbolName>RxPduId</symbolName>
+  </suppress>
+  <suppress>
+    <id>misra-config</id>
+    <fileName>src/bsw/ecual/canNm/src/CanNm.c</fileName>
+    <symbolName>TxPduId</symbolName>
+  </suppress>
+</suppressions>

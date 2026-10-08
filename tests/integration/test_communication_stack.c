@@ -54,7 +54,7 @@ void Com_DeInit(void)
     Com_Init(NULL);
 }
 
-uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
+Std_ReturnType Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
 {
     if ((SignalId >= STACK_NUM_SIGNALS) || (SignalDataPtr == NULL))
     {
@@ -64,7 +64,7 @@ uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
     return 0u; /* E_OK */
 }
 
-uint8 Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
+Std_ReturnType Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
 {
     if ((SignalId >= STACK_NUM_SIGNALS) || (SignalDataPtr == NULL))
     {

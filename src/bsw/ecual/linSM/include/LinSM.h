@@ -28,6 +28,12 @@
 #ifndef LINSM_H
 #define LINSM_H
 
+/**
+ * @file LinSM.h
+ * @brief LINSM module public API
+ */
+
+
 #include "Std_Types.h"
 #include "ComStack_Types.h"
 #include "Lin_GeneralTypes.h"
@@ -161,6 +167,10 @@ typedef struct
  * @pre None
  * @post Module initialized and ready for operation
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void LinSM_Init(const LinSM_ConfigType *ConfigPtr);
 
 /**
@@ -169,6 +179,10 @@ extern void LinSM_Init(const LinSM_ConfigType *ConfigPtr);
  * @return void
  * @pre Module must be initialized
  * @post Module de-initialized
+ */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
  */
 extern void LinSM_DeInit(void);
 
@@ -179,6 +193,12 @@ extern void LinSM_DeInit(void);
  * @return Std_ReturnType - E_OK if request accepted, E_NOT_OK otherwise
  * @pre Module must be initialized
  * @post Communication mode transition initiated
+ */
+/**
+ * @brief Request operation
+ * @param[in] Channel Channel identifier
+ * @param[in] Mode Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType LinSM_RequestComMode(
     uint8 Channel,
@@ -193,6 +213,12 @@ extern Std_ReturnType LinSM_RequestComMode(
  * @pre Module must be initialized
  * @post Current mode stored in Mode parameter
  */
+/**
+ * @brief Get requested information
+ * @param[in] Channel Channel identifier
+ * @param[in] Mode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType LinSM_GetCurrentComMode(
     uint8 Channel,
     ComM_ModeType *Mode
@@ -205,6 +231,12 @@ extern Std_ReturnType LinSM_GetCurrentComMode(
  * @return Std_ReturnType - E_OK if request accepted, E_NOT_OK otherwise
  * @pre Module must be initialized and in FULL_COM mode
  * @post Schedule table request initiated
+ */
+/**
+ * @brief schedule request
+ * @param[in] Channel Channel identifier
+ * @param[in] Schedule Schedule value
+ * @return Operation status
  */
 extern Std_ReturnType LinSM_ScheduleRequest(
     uint8 Channel,
@@ -219,6 +251,10 @@ extern Std_ReturnType LinSM_ScheduleRequest(
  * @post Version information stored in VersionInfo
  */
 #if (LINSM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void LinSM_GetVersionInfo(Std_VersionInfoType *VersionInfo);
 #endif
 
@@ -228,6 +264,10 @@ extern void LinSM_GetVersionInfo(Std_VersionInfoType *VersionInfo);
  * @return void
  * @pre Module must be initialized
  * @post State machine transitions processed
+ */
+/**
+ * @brief Process periodic tasks
+ * @param[in] VersionInfo Version info
  */
 extern void LinSM_MainFunction(void);
 

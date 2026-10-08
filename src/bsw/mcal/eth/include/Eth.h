@@ -217,47 +217,175 @@ typedef struct {
 ==================================================================================================*/
 
 /* Initialization and De-initialization */
+/**
+ * @brief Initialize the module
+ * @param[in] CfgPtr Configuration reference
+ */
 extern void Eth_Init(const Eth_ConfigType* CfgPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] CfgPtr Configuration reference
+ */
 extern void Eth_DeInit(void);
+/**
+ * @brief Control operation
+ * @param[in] CtrlIdx Index value
+ * @param[in] CfgPtr Configuration reference
+ */
 extern void Eth_ControllerInit(Eth_ControllerType CtrlIdx, const Eth_ControllerConfigType* CfgPtr);
 
 /* Version Information */
 #if (ETH_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfoPtr Pointer reference
+ */
 extern void Eth_GetVersionInfo(Std_VersionInfoType* VersionInfoPtr);
 #endif
 
 /* Controller Mode Management */
+/**
+ * @brief Set configuration value
+ * @param[in] CtrlIdx Index value
+ * @param[in] CtrlMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_SetControllerMode(Eth_ControllerType CtrlIdx, Eth_ModeType CtrlMode);
+/**
+ * @brief Get requested information
+ * @param[in] CtrlIdx Index value
+ * @param[in] CtrlModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_GetControllerMode(Eth_ControllerType CtrlIdx, Eth_ModeType* CtrlModePtr);
+/**
+ * @brief Get requested information
+ * @param[in] CtrlName CtrlName value
+ * @return Result code
+ */
 extern uint8 Eth_GetControllerIdx(const uint8* CtrlName);
 
 /* MAC Address Management */
+/**
+ * @brief Get requested information
+ * @param[in] CtrlIdx Index value
+ * @param[in] PhysAddrPtr Pointer reference
+ */
 extern void Eth_GetPhysAddr(Eth_ControllerType CtrlIdx, uint8* PhysAddrPtr);
+/**
+ * @brief Set configuration value
+ * @param[in] CtrlIdx Index value
+ * @param[in] PhysAddrPtr Pointer reference
+ */
 extern void Eth_SetPhysAddr(Eth_ControllerType CtrlIdx, const uint8* PhysAddrPtr);
+/**
+ * @brief update phys addr filter
+ * @param[in] CtrlIdx Index value
+ * @param[in] PhysAddrPtr Pointer reference
+ * @param[in] Action Action value
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_UpdatePhysAddrFilter(Eth_ControllerType CtrlIdx, const uint8* PhysAddrPtr, Eth_FilterActionType Action);
 
 /* PHY MII Interface */
+/**
+ * @brief Write data to channel
+ * @param[in] CtrlIdx Index value
+ * @param[in] PhyAddr Memory address
+ * @param[in] RegAddr Memory address
+ * @param[in] Data Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_WriteMii(Eth_ControllerType CtrlIdx, Eth_PhyAddrType PhyAddr, Eth_RegAddrType RegAddr, Eth_DataType Data);
+/**
+ * @brief Read data from channel
+ * @param[in] CtrlIdx Index value
+ * @param[in] PhyAddr Memory address
+ * @param[in] RegAddr Memory address
+ * @param[in] DataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_ReadMii(Eth_ControllerType CtrlIdx, Eth_PhyAddrType PhyAddr, Eth_RegAddrType RegAddr, Eth_DataType* DataPtr);
 
 /* Buffer Management */
+/**
+ * @brief provide tx buffer
+ * @param[in] CtrlIdx Index value
+ * @param[in] FrameType Type selector
+ * @param[in] Priority Priority level
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] BufPtr Data buffer
+ * @param[in] LenBytePtr Data length
+ * @return Operation result
+ */
 extern BufReq_ReturnType Eth_ProvideTxBuffer(Eth_ControllerType CtrlIdx, Eth_FrameIdType FrameType, uint16 Priority, Eth_BufIdxType* BufIdxPtr, uint8** BufPtr, uint16* LenBytePtr);
+/**
+ * @brief Transmit data
+ * @param[in] CtrlIdx Index value
+ * @param[in] BufIdx Data buffer
+ */
 extern void Eth_TxConfirmation(Eth_ControllerType CtrlIdx, Eth_BufIdxType BufIdx);
 
 /* Transmission */
+/**
+ * @brief Transmit data
+ * @param[in] CtrlIdx Index value
+ * @param[in] BufIdx Data buffer
+ * @param[in] FrameType Type selector
+ * @param[in] TxConfirmation TxConfirmation value
+ * @param[in] LenByte Data length
+ * @param[in] PhysAddrPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_Transmit(Eth_ControllerType CtrlIdx, Eth_BufIdxType BufIdx, Eth_FrameIdType FrameType, boolean TxConfirmation, uint16 LenByte, const uint8* PhysAddrPtr);
 
 /* Reception */
+/**
+ * @brief Receive data
+ * @param[in] CtrlIdx Index value
+ * @param[in] RxStatusPtr State value
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] FramePtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_Receive(Eth_ControllerType CtrlIdx, uint8* RxStatusPtr, Eth_BufIdxType* BufIdxPtr, Eth_FrameStructType** FramePtr);
 
 /* Interrupt Control */
+/**
+ * @brief Enable the feature
+ * @param[in] CtrlIdx Index value
+ * @param[in] RxStatusPtr State value
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] FramePtr Pointer reference
+ */
 extern void Eth_EnableIrq(void);
+/**
+ * @brief Disable the feature
+ * @param[in] CtrlIdx Index value
+ * @param[in] RxStatusPtr State value
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] FramePtr Pointer reference
+ */
 extern void Eth_DisableIrq(void);
 
 /* Buffer Initialization */
+/**
+ * @brief Initialize the module
+ * @param[in] CtrlIdx Index value
+ * @param[in] RxStatusPtr State value
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] FramePtr Pointer reference
+ */
 extern void Eth_InitBuffers(void);
 
 /* Scheduled Main Function (TX confirmation + RX polling + error recovery) */
+/**
+ * @brief Process periodic tasks
+ * @param[in] CtrlIdx Index value
+ * @param[in] RxStatusPtr State value
+ * @param[in] BufIdxPtr Data buffer
+ * @param[in] FramePtr Pointer reference
+ */
 extern void Eth_MainFunction(void);
 
 /*==================================================================================================
@@ -266,8 +394,20 @@ extern void Eth_MainFunction(void);
 #define ETH_START_SEC_CODE
 #include "MemMap.h"
 
+/**
+ * @brief isr tx
+ * @param[in] CtrlIdx Index value
+ */
 extern void Eth_IsrTx(Eth_ControllerType CtrlIdx);
+/**
+ * @brief isr rx
+ * @param[in] CtrlIdx Index value
+ */
 extern void Eth_IsrRx(Eth_ControllerType CtrlIdx);
+/**
+ * @brief isr error
+ * @param[in] CtrlIdx Index value
+ */
 extern void Eth_IsrError(Eth_ControllerType CtrlIdx);
 
 #define ETH_STOP_SEC_CODE
@@ -279,6 +419,13 @@ extern void Eth_IsrError(Eth_ControllerType CtrlIdx);
 
 
 /* Ethernet hardware timestamp access (used by StbM) */
+/**
+ * @brief Get requested information
+ * @param[in] ControllerId Identifier
+ * @param[in] TimeStampPtr Pointer reference
+ * @param[in] RxStatusPtr State value
+ * @return Operation status
+ */
 extern Std_ReturnType Eth_GetCurrentTime(uint8 ControllerId, Eth_TimeStampType* TimeStampPtr, Eth_RxStatusType* RxStatusPtr);
 
 #endif /* ETH_H */

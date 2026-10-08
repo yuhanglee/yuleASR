@@ -216,7 +216,18 @@ void SoAd_GetVersionInfo(Std_VersionInfoType* versioninfo);
  */
 typedef uint16 SoAd_SoConIdType;
 Std_ReturnType SoAd_OpenTcpConnection(uint16 SoConId);
+/**
+ * @brief close connection
+ * @param[in] SoConId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SoAd_CloseConnection(SoAd_SoConIdType SoConId);
+/**
+ * @brief if transmit
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType SoAd_IfTransmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
 
 /**
@@ -256,6 +267,13 @@ Std_ReturnType SoAd_Send(uint16 SoConId, const PduInfoType* PduInfoPtr);
  * @param Length Length of data received
  * @return Result of operation
  */
+/**
+ * @brief Receive data
+ * @param[in] SoConId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType SoAd_Receive(uint16 SoConId, PduInfoType* PduInfoPtr, PduLengthType* Length);
 
 /**
@@ -264,6 +282,13 @@ Std_ReturnType SoAd_Receive(uint16 SoConId, PduInfoType* PduInfoPtr, PduLengthTy
  * @param IpAddrPtr Pointer to store IP address
  * @param PortPtr Pointer to store port
  * @return Result of operation
+ */
+/**
+ * @brief Get requested information
+ * @param[in] SoConId Identifier
+ * @param[in] IpAddrPtr Pointer reference
+ * @param[in] PortPtr Pointer reference
+ * @return Operation status
  */
 Std_ReturnType SoAd_GetRemoteAddr(uint16 SoConId, TcpIp_SockAddrType* IpAddrPtr, uint16* PortPtr);
 
@@ -313,6 +338,13 @@ void SoAd_MainFunction(void);
  * @param RemoteAddrPtr Remote address
  * @param BufPtr Data buffer
  * @param Length Data length
+ */
+/**
+ * @brief Receive data
+ * @param[in] SocketId Identifier
+ * @param[in] RemoteAddrPtr Pointer reference
+ * @param[in] BufPtr Data buffer
+ * @param[in] Length Data length
  */
 void SoAd_RxIndication(TcpIp_SocketIdType SocketId, const TcpIp_SockAddrType* RemoteAddrPtr,
                        const uint8* BufPtr, uint16 Length);

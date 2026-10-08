@@ -50,3 +50,15 @@ Std_ReturnType Csm_MacVerify(
     }
     return E_OK;
 }
+
+Std_ReturnType NvM_ReadBlock(uint16 BlockId, void* DstPtr) {
+    (void)BlockId;
+    (void)DstPtr;
+    return E_NOT_OK;
+}
+
+Std_ReturnType NvM_WriteBlock(uint16 BlockId, const void* SrcPtr) {
+    (void)BlockId;
+    (void)SrcPtr;
+    return E_OK;
+}

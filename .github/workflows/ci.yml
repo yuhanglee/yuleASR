@@ -12,6 +12,73 @@ env:
 
 jobs:
   # ============================================================
+  # Config Drift Gate — 双重漂移检测
+  #   1) ci.yml 内嵌阈值与 ci-config.yaml 一致性 (P0-5 硬化, 2026-10-07)
+  #   2) config/generated/* 与 bsw_config.json 重新生成一致性 (P0-4, spec 6.4)
+  # ============================================================
+  config-drift:
+    name: Config Drift Gate (thresholds + bsw_config regeneration)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check gate threshold drift
+        # 背景: P0-5 提升分支覆盖率阈值 (20%→25%) 时发现，ci.yml 内嵌解析
+        # 正则会先命中 ci-config.yaml 注释中的历史值 (20.0)，真实键值 25.0
+        # 被遮蔽 —— 门禁实际仍按旧阈值判定（已修复为行首锚定正则）。
+        # 本步骤用 YAML 解析 (非正则) 校验三处一致：
+        #   1) ci-config.yaml YAML 解析值 (权威);
+        #   2) 门禁运行时正则提取值;
+        #   3) ci.yml 兜底默认值。
+        # 任一漂移立即阻断 CI，防止门禁阈值再次静默失效。
+        run: |
+          python3 -c '
+          import re, sys, yaml
+
+          cfg = yaml.safe_load(open(".yuleosh/ci-config.yaml"))
+          cfg_fu = int(cfg["coverage"]["c_fail_under"])
+          cfg_bt = float(cfg["coverage"]["threshold_branch"])
+
+          # 1) 门禁运行时提取路径 (与 ci.yml Coverage Gate Check 相同的行首锚定正则)
+          txt = open(".yuleosh/ci-config.yaml").read()
+          m = re.search(r"^[ \t]*c_fail_under:\s*(\d+)", txt, re.MULTILINE)
+          rx_fu = int(m.group(1)) if m else None
+          m = re.search(r"^[ \t]*threshold_branch:\s*([\d.]+)", txt, re.MULTILINE)
+          rx_bt = float(m.group(1)) if m else None
+
+          # 2) ci.yml 兜底默认值
+          wf = yaml.safe_load(open(".github/workflows/ci.yml"))
+          steps = wf["jobs"]["coverage"]["steps"]
+          gate = [s for s in steps if s.get("name") == "Coverage Gate Check"][0]
+          m = re.search(r"fail_under = (\d+)", gate["run"])
+          fb_fu = int(m.group(1)) if m else None
+          m = re.search(r"branch_thr = ([\d.]+)", gate["run"])
+          fb_bt = float(m.group(1)) if m else None
+
+          print(f"ci-config.yaml (YAML-parsed): c_fail_under={cfg_fu}, threshold_branch={cfg_bt}")
+          print(f"gate regex extraction       : c_fail_under={rx_fu}, threshold_branch={rx_bt}")
+          print(f"ci.yml fallback defaults    : fail_under={fb_fu}, branch_thr={fb_bt}")
+
+          if not (rx_fu == cfg_fu and rx_bt == cfg_bt and fb_fu == cfg_fu and fb_bt == cfg_bt):
+              print("FAILED: coverage gate thresholds drifted between ci.yml and ci-config.yaml")
+              sys.exit(1)
+          print("PASSED: gate thresholds consistent (regex extraction == YAML values == fallbacks)")
+          '
+
+      - name: Check BSW config regeneration drift
+        # 量产门禁：P0-4 配置生成闭环 (spec 6.4)。重新生成 → diff committed →
+        # 不一致则失败: 防止手改 config/generated/* 或改 bsw_config.json 后
+        # 忘记重新生成（提交的生成物与配置源漂移）。
+        # 基线已验证 (2026-10-07): 当前树 exit 0 — 7 个 *_Cfg.h 模板渲染 +
+        # RTE 输出 (Rte.h/Rte.c/Rte_Type.h/Rte_*SWC.*) 与提交版本一致。
+        run: |
+          if ! python3 -c "import jinja2, jsonschema" 2>/dev/null; then
+            python3 -m pip install --quiet jinja2 jsonschema \
+              || python3 -m pip install --break-system-packages --quiet jinja2 jsonschema
+          fi
+          bash config/tools/check_config_drift.sh
+
+  # ============================================================
   # Build — ARM 交叉编译 + 静态分析 + 架构检查
   # ============================================================
   build:
@@ -48,10 +115,14 @@ jobs:
           path: reports/static_analysis.json
 
       - name: Check Code Quality
-        # 试点阶段: 报告照常生成/上传, 但不阻断 CI。
-        # 存量误报: MISRA-C-8.1 对宏调用误判 (17209 条) + 测试/第三方代码
-        # 未排除 (63% issues)。待 static_analysis.py 校准后恢复硬门禁。
-        continue-on-error: true
+        # 量产门禁：P0-5 硬化 (2026-10-07)。静态分析失败必须阻断 CI。
+        # 误报根因已修复 (static_analysis.py):
+        #   1. 排除 tests/ 与 third_party/ 扫描结果 (63% 误报来源);
+        #   2. 修复 MISRA-C-8.1 模式缺陷 — 原模式误报所有 if/for/while/switch
+        #      同行大括号语句与正常函数定义 (src/ 中 15743 条);
+        #   3. 非 ASCII 行注释重分类为 CHARSET-001 warning (中文注释为项目规范)。
+        # 修复后基线: 0 errors / ~1305 warnings (仅 advisory)。
+        continue-on-error: false
         run: |
           python -c "
           import json
@@ -71,10 +142,11 @@ jobs:
           "
 
       - name: Methodology Gate (L2) — standalone
+        # 量产门禁：P0-5 硬化 (2026-10-07)。方法论门禁已从试点观察阶段转为硬门禁。
         run: |
           curl -fsSL -o /tmp/methodology-gate.py https://raw.githubusercontent.com/frisky1985/yuleOSH/main/dist/methodology-gate.py
           python3 /tmp/methodology-gate.py . --json | python3 -c "import json,sys; d=json.load(sys.stdin); print('methodology passed:', d['passed']); sys.exit(0 if d['passed'] else 1)"
-        continue-on-error: true   # 试点阶段：先观察不阻断，稳定后改 false
+        continue-on-error: false  # 量产门禁：P0-5 硬化 (2026-10-07)，方法论失败必须阻断 CI
 
   # ============================================================
   # Unit Test — native 编译 + 全量单测 + 架构依赖检查
@@ -97,8 +169,9 @@ jobs:
           generator: Ninja
 
       - name: Run Unit Tests
+        # 量产门禁：P0-5 硬化 (2026-10-07)。测试失败必须阻断 CI。
         working-directory: build-test
-        run: ctest --output-on-failure --timeout 60 -j$(nproc) || echo "⚠️  部分测试未通过，继续执行后续检查"
+        run: ctest --output-on-failure --timeout 60 -j$(nproc)
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -207,8 +280,9 @@ jobs:
           fi
 
       - name: Run Tests (generate .gcda files)
+        # 量产门禁：P0-5 硬化 (2026-10-07)。测试失败必须阻断 CI。
         run: |
-          cd build-coverage && ctest --output-on-failure --timeout 60 -j$(nproc) || echo "⚠️  部分测试未通过，覆盖率数据仍会收集"
+          cd build-coverage && ctest --output-on-failure --timeout 60 -j$(nproc)
 
       - name: Count coverage data files
         run: |
@@ -225,35 +299,42 @@ jobs:
           fi
 
       - name: Generate gcovr HTML Coverage Report
+        # 量产门禁：P0-5 硬化 (2026-10-07)。gcovr 失败必须阻断 CI。
         run: |
           mkdir -p coverage-reports
           gcovr --root . \
             --filter "src/.*" \
             --exclude "tests/.*" \
             --exclude "third_party/.*" \
+            --branches \
             --exclude-unreachable-branches \
             --html --html-details \
             --output coverage-reports/index.html \
-            build-coverage || echo "⚠️  gcovr HTML report had warnings (non-blocking)"
+            build-coverage
 
       - name: Generate gcovr JSON Coverage Report
+        # 量产门禁：P0-5 硬化 (2026-10-07)。加 --branches 输出分支数据，
+        # 供 Coverage Gate Check 分支门禁消费 (此前无分支数据时门禁被跳过)。
         run: |
           mkdir -p coverage-reports
           gcovr --root . \
             --filter "src/.*" \
             --exclude "tests/.*" \
             --exclude "third_party/.*" \
+            --branches \
             --json \
             --output coverage-reports/coverage.json \
             build-coverage
 
       - name: Print Coverage Summary
         run: |
-          echo "=== 行级覆盖率汇总 ==="
+          echo "=== 行级/分支覆盖率汇总 ==="
+          # 量产门禁：P0-5 硬化 (2026-10-07)。加 --branches 输出分支覆盖率。
           gcovr --root . \
             --filter "src/.*" \
             --exclude "tests/.*" \
             --exclude "third_party/.*" \
+            --branches \
             build-coverage | tee coverage-reports/coverage_summary.txt
 
       - name: Upload Coverage Report
@@ -266,6 +347,9 @@ jobs:
       # ==============================================
       # Coverage Gate Check (硬门禁 — 2026-08-07 批D恢复)
       #
+      # 量产门禁：P0-5 硬化 (2026-10-07)。gcovr 已加 --branches，分支门禁
+      # 正式生效；阈值随 ci-config.yaml 提升 (branch 20% → 25%)。
+      #
       # 阈值来源: .yuleosh/ci-config.yaml coverage.c_fail_under
       #   (2026-08-07 校准: 40%, 依据 ASIL 模块重建后当日实测 line 43.25%)
       # ==============================================
@@ -275,14 +359,19 @@ jobs:
           import json, sys, re
 
           # 从 ci-config.yaml 读取阈值 (c_fail_under / threshold_branch)
+          # 量产门禁：P0-5 (2026-10-07)。分支阈值基线 20% → 25%，
+          # 此处默认值与 ci-config.yaml 保持同步（yaml 为权威来源）。
           fail_under = 40
-          branch_thr = 20
+          branch_thr = 25
           try:
               with open('.yuleosh/ci-config.yaml') as f:
                   txt = f.read()
-              m = re.search(r'c_fail_under:\s*(\d+)', txt)
+              # P0-5 (2026-10-07): 锚定行首的真实 YAML 键再取值。此前无行首锚定，
+              # re.search 会先命中注释中的历史阈值文本（如 # threshold_branch: 20.0%），
+              # 注释旧值会覆盖实际键值（阈值提升到 25% 时被误读回 20%）。
+              m = re.search(r'^[ \t]*c_fail_under:\s*(\d+)', txt, re.MULTILINE)
               if m: fail_under = int(m.group(1))
-              m = re.search(r'threshold_branch:\s*([\d.]+)', txt)
+              m = re.search(r'^[ \t]*threshold_branch:\s*([\d.]+)', txt, re.MULTILINE)
               if m: branch_thr = float(m.group(1))
           except Exception as e:
               print(f'⚠️  ci-config.yaml 读取失败, 使用默认阈值: {e}')
@@ -355,14 +444,15 @@ jobs:
               sys.exit(1)
 
           # 分支门禁: 只有本轮确实采集到分支数据时才判定。
-          # gcovr 未加 --branches 时 --json 不输出分支信息，total_branch_found 为 0；
-          # 若直接拿 0.0% 去比 threshold_branch(20%)，会得到一个虚假的失败
+          # P0-5 (2026-10-07): gcovr 已加 --branches，正常应输出分支信息；
+          # total_branch_found 为 0 属于异常（如编译器未插桩分支），保留跳过
+          # 作为兜底，避免拿 0.0% 去比 threshold_branch 得到虚假失败
           # （CI 日志中即表现为 Branches: 0/0 (0.0%)）。
           # 注意: 本段 Python 位于双引号包裹的 shell 字符串内，正文不可出现
           # 未转义的双引号，否则会提前终止该字符串。
           if total_branch_found == 0:
-              print(f'⚠️  SKIP: 未采集到分支数据 (gcovr 调用未加 --branches)，'
-                    f'跳过分支门禁 (配置阈值 {branch_thr}%)')
+              print(f'⚠️  SKIP: 未采集到分支数据 (gcovr 已加 --branches 仍为空，'
+                    f'需检查编译器分支插桩)，跳过分支门禁 (配置阈值 {branch_thr}%)')
               print(f'✅ PASSED: Line {line_rate:.1f}% >= {fail_under}% （分支门禁已跳过）')
           else:
               if branch_rate < branch_thr:
@@ -401,10 +491,11 @@ jobs:
           cmake --build build --target coverage
 
       - name: Upload Coverage
+        # 量产门禁：P0-5 硬化 (2026-10-07)。codecov 上传失败必须阻断 CI。
         uses: codecov/codecov-action@v3
         with:
           files: build/coverage.info
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -428,20 +519,7 @@ jobs:
           name: build-artifacts
           path: build/
 
-      # build/bin/test_e2e_{dds,secoc,e2e} 目前没有对应源码，tests/e2e 也未被
-      # 顶层构建引入 —— 此前因 integration-build 一直失败而 skipped，掩盖了这一点。
-      - name: Check prerequisites
-        id: prereq
-        uses: ./.github/actions/guard-artifacts
-        with:
-          capability: E2E/DDS/SecOC 测试套件尚未实现（无 test_e2e_dds/test_e2e_secoc/test_e2e_e2e 源码与 CMake 目标）
-          required: |
-            build/bin/test_e2e_dds
-            build/bin/test_e2e_secoc
-            build/bin/test_e2e_e2e
-
       - name: Install test dependencies
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -450,26 +528,23 @@ jobs:
             tcpdump
 
       - name: Run E2E DDS Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_e2e_dds
           ./build/bin/test_e2e_dds 2>&1 | tee test-results-e2e-dds.log
 
       - name: Run SecOC E2E Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_e2e_secoc
           ./build/bin/test_e2e_secoc 2>&1 | tee test-results-e2e-secoc.log
 
       - name: Run E2E Protection Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_e2e_e2e
           ./build/bin/test_e2e_e2e 2>&1 | tee test-results-e2e-protection.log
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: always() && steps.prereq.outputs.skip != 'true'
+        if: always()
         with:
           name: e2e-dds-test-results
           path: |
@@ -489,23 +564,14 @@ jobs:
           name: build-artifacts
           path: build/
 
-      - name: Check prerequisites
-        id: prereq
-        uses: ./.github/actions/guard-artifacts
-        with:
-          capability: UDS 诊断测试套件尚未实现（无 test_e2e_uds 源码与 CMake 目标）
-          required: |
-            build/bin/test_e2e_uds
-
       - name: Run UDS E2E Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_e2e_uds
           ./build/bin/test_e2e_uds 2>&1 | tee test-results-uds.log
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: always() && steps.prereq.outputs.skip != 'true'
+        if: always()
         with:
           name: uds-test-results
           path: test-results-uds.log
@@ -523,23 +589,14 @@ jobs:
           name: build-artifacts
           path: build/
 
-      - name: Check prerequisites
-        id: prereq
-        uses: ./.github/actions/guard-artifacts
-        with:
-          capability: OTA E2E 测试套件尚未实现（无 test_e2e_ota 源码与 CMake 目标）
-          required: |
-            build/bin/test_e2e_ota
-
       - name: Run OTA E2E Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_e2e_ota
           ./build/bin/test_e2e_ota 2>&1 | tee test-results-ota.log
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: always() && steps.prereq.outputs.skip != 'true'
+        if: always()
         with:
           name: ota-test-results
           path: test-results-ota.log
@@ -628,30 +685,17 @@ jobs:
           name: build-artifacts
           path: build/
 
-      - name: Check prerequisites
-        id: prereq
-        uses: ./.github/actions/guard-artifacts
-        with:
-          capability: 性能测试套件尚未实现（无 test_latency/test_throughput 源码与 CMake 目标）
-          required: |
-            build/bin/test_latency
-            build/bin/test_throughput
-            build/bin/test_memory
-
       - name: Run Latency Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_latency
           ./build/bin/test_latency --duration 60 2>&1 | tee test-results-latency.log
 
       - name: Run Throughput Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_throughput
           ./build/bin/test_throughput --duration 60 2>&1 | tee test-results-throughput.log
 
       - name: Run Memory Profiling
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_memory
           valgrind --tool=memcheck --leak-check=full \
@@ -660,7 +704,7 @@ jobs:
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: always() && steps.prereq.outputs.skip != 'true'
+        if: always()
         with:
           name: performance-test-results
           path: |
@@ -682,28 +726,21 @@ jobs:
           name: build-artifacts
           path: build/
 
-      - name: Check prerequisites
-        id: prereq
-        uses: ./.github/actions/guard-artifacts
-        with:
-          capability: 安全测试套件尚未实现（无 test_security 源码与 CMake 目标）
-          required: |
-            build/bin/test_security
-
       - name: Run Security Tests
-        if: steps.prereq.outputs.skip != 'true'
         run: |
           chmod +x build/bin/test_security
           ./build/bin/test_security 2>&1 | tee test-results-security.log
 
-      # cppcheck 静态分析不依赖上述二进制，保留执行（其本身已有 `|| true` 兜底）
+      # cppcheck 静态分析不依赖上述二进制，保留执行。
+      # 量产门禁：P0-5 硬化 (2026-10-07)。移除 `|| true` 兜底，cppcheck
+      # 运行失败（内部错误/参数错误）必须阻断 CI。
       - name: Run Static Analysis (cppcheck)
         run: |
           sudo apt-get install -y cppcheck
           cppcheck --enable=all --xml --xml-version=2 \
             --suppress=missingIncludeSystem \
             -i build \
-            src/ 2> cppcheck-report.xml || true
+            src/ 2> cppcheck-report.xml
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -735,11 +772,19 @@ jobs:
           pattern: '*-test-results'
 
       - name: Generate Test Report
+        # 量产门禁：P0-5 硬化 (2026-10-07)。脚本存在但执行失败时必须阻断 CI。
+        # 注: scripts/generate_test_report.py 尚未实现（仓库中不存在），直接移除
+        # `|| echo` 会让本 job 永久失败，违背"先修根因再关门禁"策略；改为显式
+        # 存在性检查 + ::warning 告警，补齐脚本后切换为硬失败。
         run: |
-          python3 scripts/generate_test_report.py \
-            --input all-test-results \
-            --output test-report.html \
-            --format html || echo "⚠️  报告生成脚本缺失，跳过（产物仍会汇总上传）"
+          if [ -f scripts/generate_test_report.py ]; then
+            python3 scripts/generate_test_report.py \
+              --input all-test-results \
+              --output test-report.html \
+              --format html
+          else
+            echo "::warning::scripts/generate_test_report.py 未实现，跳过报告生成（产物仍会汇总上传）。P0-5 遗留项，补齐脚本后切换为硬门禁。"
+          fi
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
@@ -807,7 +852,7 @@ jobs:
   # Release — 依赖核心检查通过后打发布包 (仅 master)
   # ============================================================
   release:
-    needs: [build, test, coverage]
+    needs: [build, test, coverage, config-drift]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
 
@@ -831,3 +876,25 @@ jobs:
         with:
           name: release-package
           path: release/*.tar.gz
+
+  # ============================================================
+  # Doxygen — Generate API documentation from header files
+  # ============================================================
+  doxygen:
+    name: doxygen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      - name: Generate API Documentation
+        run: doxygen Doxyfile
+
+      - name: Upload API Documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-documentation
+          path: docs/api/html/
+          retention-days: 30

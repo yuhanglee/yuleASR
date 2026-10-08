@@ -319,6 +319,15 @@ Std_ReturnType I2c_DeInit(void);
  * @param AddrMode Address mode (7-bit or 10-bit)
  * @return Result of operation
  */
+/**
+ * @brief Write data to channel
+ * @param[in] Channel Channel identifier
+ * @param[in] SlaveAddress Memory address
+ * @param[in] DataBuffer Data buffer
+ * @param[in] Length Data length
+ * @param[in] AddrMode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType I2c_WriteBytes(I2c_ChannelType Channel,
                                I2c_AddressType SlaveAddress,
                                const I2c_DataType* DataBuffer,
@@ -333,6 +342,15 @@ Std_ReturnType I2c_WriteBytes(I2c_ChannelType Channel,
  * @param Length Number of bytes to read
  * @param AddrMode Address mode (7-bit or 10-bit)
  * @return Result of operation
+ */
+/**
+ * @brief Read data from channel
+ * @param[in] Channel Channel identifier
+ * @param[in] SlaveAddress Memory address
+ * @param[in] DataBuffer Data buffer
+ * @param[in] Length Data length
+ * @param[in] AddrMode Operation mode
+ * @return Operation status
  */
 Std_ReturnType I2c_ReadBytes(I2c_ChannelType Channel,
                               I2c_AddressType SlaveAddress,
@@ -350,6 +368,17 @@ Std_ReturnType I2c_ReadBytes(I2c_ChannelType Channel,
  * @param RxLength Number of bytes to read
  * @param AddrMode Address mode (7-bit or 10-bit)
  * @return Result of operation
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] Channel Channel identifier
+ * @param[in] SlaveAddress Memory address
+ * @param[in] TxBuffer Data buffer
+ * @param[in] TxLength Data length
+ * @param[in] RxBuffer Data buffer
+ * @param[in] RxLength Data length
+ * @param[in] AddrMode Operation mode
+ * @return Operation status
  */
 Std_ReturnType I2c_WriteRead(I2c_ChannelType Channel,
                               I2c_AddressType SlaveAddress,
@@ -400,6 +429,13 @@ Std_ReturnType I2c_DisableInterrupt(I2c_ChannelType Channel);
  * @param AddrMode Address mode
  * @return Result of operation
  */
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] SlaveAddress Memory address
+ * @param[in] AddrMode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType I2c_SetSlaveAddress(I2c_ChannelType Channel,
                                     I2c_AddressType SlaveAddress,
                                     I2c_AddrModeType AddrMode);
@@ -447,6 +483,13 @@ Std_ReturnType I2c_CancelTransfer(I2c_ChannelType Channel);
  * @param Length Buffer length
  * @return Result of operation
  */
+/**
+ * @brief prepare slave buffer
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType I2c_PrepareSlaveBuffer(I2c_ChannelType Channel,
                                        I2c_DataType* Buffer,
                                        I2c_LengthType Length);
@@ -458,6 +501,13 @@ Std_ReturnType I2c_PrepareSlaveBuffer(I2c_ChannelType Channel,
  * @param Length Data length
  * @return Result of operation
  */
+/**
+ * @brief slave write buffer
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType I2c_SlaveWriteBuffer(I2c_ChannelType Channel,
                                      const I2c_DataType* Buffer,
                                      I2c_LengthType Length);
@@ -468,6 +518,13 @@ Std_ReturnType I2c_SlaveWriteBuffer(I2c_ChannelType Channel,
  * @param Buffer Pointer to buffer
  * @param Length Number of bytes to read
  * @return Result of operation
+ */
+/**
+ * @brief slave read buffer
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
  */
 Std_ReturnType I2c_SlaveReadBuffer(I2c_ChannelType Channel,
                                     I2c_DataType* Buffer,

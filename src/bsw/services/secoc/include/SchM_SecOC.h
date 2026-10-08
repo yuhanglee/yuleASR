@@ -1,5 +1,7 @@
 /*==================================================================================================
  * SchM_SecOC.h - scheduler header for SecOC module exclusive areas
+ * @file SchM_SecOC.h
+ * @brief BswM scheduler stubs for SecOC
  *================================================================================================*/
 #include "Mcal.h"
 

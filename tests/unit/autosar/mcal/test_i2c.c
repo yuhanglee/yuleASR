@@ -24,18 +24,41 @@ void tearDown(void) {
 /* 初始化测试 */
 /** @req SWS_I2c_00001 */
 void test_i2c_Init_should_initialize_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    /* Normal init with valid config should not crash */
+    I2c_Init(&I2c_Config);
+
+    /* After init, status should be I2C_IDLE */
+    TEST_ASSERT_EQUAL(I2C_IDLE, I2c_GetStatus());
+
+    /* Init with NULL_PTR should be handled by DET (no crash) */
+    I2c_Init(NULL_PTR);
 }
 
 /** @req SWS_I2c_00002 */
 void test_i2c_DeInit_should_cleanup_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    Std_ReturnType result;
+
+    /* Init first, then deinit */
+    I2c_Init(&I2c_Config);
+    result = I2c_DeInit();
+
+    TEST_ASSERT_EQUAL(E_OK, result);
+    TEST_ASSERT_EQUAL(I2C_UNINIT, I2c_GetStatus());
 }
 
 /* 版本信息测试 */
 /** @req SWS_I2c_00007 */
 void test_i2c_GetVersionInfo_should_return_version(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    Std_VersionInfoType versionInfo;
+    memset(&versionInfo, 0, sizeof(versionInfo));
+
+    I2c_GetVersionInfo(&versionInfo);
+
+    TEST_ASSERT_EQUAL(I2C_VENDOR_ID, versionInfo.vendorID);
+    TEST_ASSERT_EQUAL(I2C_MODULE_ID, versionInfo.moduleID);
+    TEST_ASSERT_EQUAL(I2C_SW_MAJOR_VERSION, versionInfo.sw_major_version);
+    TEST_ASSERT_EQUAL(I2C_SW_MINOR_VERSION, versionInfo.sw_minor_version);
+    TEST_ASSERT_EQUAL(I2C_SW_PATCH_VERSION, versionInfo.sw_patch_version);
 }
 
 /* 主函数 */

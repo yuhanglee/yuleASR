@@ -211,6 +211,13 @@ Std_ReturnType PduR_CancelReceiveRequest(PduIdType RxPduId);
  * @param value New value
  * @return Result of operation
  */
+/**
+ * @brief change parameter request
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType PduR_ChangeParameterRequest(PduIdType id, TPParameterType parameter, uint16 value);
 
 /**
@@ -300,6 +307,14 @@ void PduR_FrTpRxIndication(PduIdType RxPduId, Std_ReturnType result);
  * @param bufferSizePtr Pointer to store available buffer size
  * @return Buffer request status
  */
+/**
+ * @brief fr tp start of reception
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] TpSduLength Data length
+ * @param[in] bufferSizePtr Data buffer
+ * @return Operation result
+ */
 BufReq_ReturnType PduR_FrTpStartOfReception(PduIdType RxPduId, 
                                              const PduInfoType* PduInfoPtr,
                                              PduLengthType TpSduLength,
@@ -311,6 +326,13 @@ BufReq_ReturnType PduR_FrTpStartOfReception(PduIdType RxPduId,
  * @param PduInfoPtr Pointer to PDU info for copying
  * @param bufferSizePtr Pointer to store remaining buffer size
  * @return Buffer request status
+ */
+/**
+ * @brief fr tp copy rx data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] bufferSizePtr Data buffer
+ * @return Operation result
  */
 BufReq_ReturnType PduR_FrTpCopyRxData(PduIdType RxPduId,
                                        const PduInfoType* PduInfoPtr,
@@ -324,16 +346,51 @@ BufReq_ReturnType PduR_FrTpCopyRxData(PduIdType RxPduId,
  * @param AvailableDataPtr Pointer to store available data length
  * @return Buffer request status
  */
+/**
+ * @brief fr tp copy tx data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] RetryInfoPtr Pointer reference
+ * @param[in] AvailableDataPtr Data buffer
+ * @return Operation result
+ */
 BufReq_ReturnType PduR_FrTpCopyTxData(PduIdType TxPduId,
                                        PduInfoType* PduInfoPtr,
                                        RetryInfoType* RetryInfoPtr,
                                        PduLengthType* AvailableDataPtr);
 
+/**
+ * @brief sec o c transmit
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType PduR_SecOCTransmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
+/**
+ * @brief sec o c rx indication
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 extern void PduR_SecOCRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 
+/**
+ * @brief ipdu m transmit
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType PduR_IpduMTransmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
+/**
+ * @brief ipdu m rx indication
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 extern void PduR_IpduMRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
+/**
+ * @brief ipdu m tx confirmation
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 extern void PduR_IpduMTxConfirmation(PduIdType TxPduId, Std_ReturnType result);
 
 #define PDUR_STOP_SEC_CODE

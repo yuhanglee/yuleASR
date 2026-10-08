@@ -210,6 +210,12 @@ typedef struct {
 #define MEMIF_SID_ERASEBLOCK                (0x09U)
 #endif
 
+/* Phase 2 duplicate-module convergence: SID for MemIf_EraseImmediateBlock
+ * (merged from the removed ecual/memif duplicate; NvM depends on this API). */
+#ifndef MEMIF_SID_ERASEIMMEDIATEBLOCK
+#define MEMIF_SID_ERASEIMMEDIATEBLOCK       (0x0BU)
+#endif
+
 #ifndef MEMIF_SID_GETVERSIONINFO
 #define MEMIF_SID_GETVERSIONINFO            (0x0AU)
 #endif
@@ -251,6 +257,15 @@ extern void MemIf_Cancel(uint8 DeviceIndex);
  * @param DataPtr Pointer to data buffer
  * @return Std_ReturnType E_OK if successful, E_NOT_OK otherwise
  */
+/**
+ * @brief Read data from channel
+ * @param[in] DeviceIndex Index value
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] BlockOffset Memory offset
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType MemIf_Read(uint8 DeviceIndex, 
                                   uint16 BlockNumber, 
                                   uint16 BlockOffset, 
@@ -263,6 +278,13 @@ extern Std_ReturnType MemIf_Read(uint8 DeviceIndex,
  * @param BlockNumber Block number to write
  * @param DataPtr Pointer to data buffer
  * @return Std_ReturnType E_OK if successful, E_NOT_OK otherwise
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] DeviceIndex Index value
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] DataPtr Data buffer
+ * @return Operation status
  */
 extern Std_ReturnType MemIf_Write(uint8 DeviceIndex, 
                                    uint16 BlockNumber, 

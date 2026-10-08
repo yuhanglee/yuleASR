@@ -328,6 +328,13 @@ Std_ReturnType J1939Tp_CancelReceive(PduIdType RxSduId);
  * @param value New value
  * @return Result of operation
  */
+/**
+ * @brief change parameter
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType J1939Tp_ChangeParameter(PduIdType id, TPParameterType parameter, uint16 value);
 
 /**
@@ -360,6 +367,13 @@ void J1939Tp_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
  * @param PduInfoPtr Pointer to PDU info
  * @param TpSduLength Total TP SDU length
  * @return Result of operation
+ */
+/**
+ * @brief Start the operation
+ * @param[in] RxSduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] TpSduLength Data length
+ * @return Operation status
  */
 Std_ReturnType J1939Tp_StartReception(PduIdType RxSduId, const PduInfoType* PduInfoPtr, PduLengthType TpSduLength);
 

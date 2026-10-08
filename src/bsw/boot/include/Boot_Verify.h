@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Verify.h
+ * @brief Boot loader verify component
+ */
 #ifndef BOOT_VERIFY_H
 #define BOOT_VERIFY_H
 

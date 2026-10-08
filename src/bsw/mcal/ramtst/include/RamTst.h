@@ -154,6 +154,10 @@ extern const RamTst_ConfigType RamTst_Config;
  * @requirement RamTst-100: Shall initialize module state to IDLE
  * @requirement RamTst-110: Shall report DET error if ConfigPtr is NULL
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void RamTst_Init(const RamTst_ConfigType* ConfigPtr);
 
 /**
@@ -169,6 +173,11 @@ void RamTst_DeInit(void);
  * @return Std_ReturnType E_OK if test started, E_NOT_OK otherwise
  *
  * @requirement RamTst-300: Shall validate module state before starting
+ */
+/**
+ * @brief run
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
  */
 Std_ReturnType RamTst_Run(void);
 
@@ -186,6 +195,11 @@ void RamTst_Stop(void);
  *
  * @requirement RamTst-500: Shall return last completed test result
  */
+/**
+ * @brief Get requested information
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation result
+ */
 RamTst_TestResultType RamTst_GetTestResult(void);
 
 /**
@@ -196,6 +210,11 @@ RamTst_TestResultType RamTst_GetTestResult(void);
  *
  * @requirement RamTst-510: Shall provide detailed error info
  */
+/**
+ * @brief Get requested information
+ * @param[in] ErrorRecord Error code
+ * @return Operation status
+ */
 Std_ReturnType RamTst_GetErrorRecord(RamTst_ErrorRecordType* ErrorRecord);
 
 /**
@@ -204,6 +223,11 @@ Std_ReturnType RamTst_GetErrorRecord(RamTst_ErrorRecordType* ErrorRecord);
  * @return RamTst_StatusType Current module status
  *
  * @requirement RamTst-600: Shall return current module state
+ */
+/**
+ * @brief Get current status
+ * @param[in] ErrorRecord Error code
+ * @return Operation status
  */
 RamTst_StatusType RamTst_GetTestStatus(void);
 
@@ -223,6 +247,10 @@ void RamTst_MainFunction(void);
  * @note Only compiled when RAMTST_VERSION_INFO_API == STD_ON
  */
 #if (RAMTST_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void RamTst_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -233,6 +261,11 @@ void RamTst_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @return Std_ReturnType E_OK if successful
  */
 #if (RAMTST_SET_MODE_API == STD_ON)
+/**
+ * @brief Set configuration value
+ * @param[in] Mode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType RamTst_SetMode(RamTst_ModeType Mode);
 #endif
 

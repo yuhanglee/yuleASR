@@ -5,6 +5,8 @@
  * - Native/host builds use the Posix port (portable/posix).
  * - ARM targets (S32K312 / Cortex-M33) use GCC/ARM_CM33.
  * Tick rate 1000 Hz => 1 tick = 1 ms (matches OS_TICKS_PER_MS in Os_Internal.h).
+ * @file FreeRTOSConfig.h
+ * @brief os/FreeRTOSConfig header
  *================================================================================================*/
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H

@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Image.h
+ * @brief Boot loader image component
+ */
 #ifndef BOOT_IMAGE_H
 #define BOOT_IMAGE_H
 

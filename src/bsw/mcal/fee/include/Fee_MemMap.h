@@ -2,6 +2,8 @@
  * Fee_MemMap.h - memory mapping for Fee driver
  *
  * All sections map to their defaults (no special memory placement).
+ * @file Fee_MemMap.h
+ * @brief Fee memory mapping
  *================================================================================================*/
 #ifndef FEE_MEMMAP_H
 #define FEE_MEMMAP_H

@@ -1,7 +1,6 @@
 /*==================================================================================================
 * Project              : YuleTech AutoSAR BSW
 * Platform             : NXP i.MX8M Mini
-* Dependencies         : ...
 *
 * Copyright (c) 2026 Shanghai Yule Electronics Technology Co., Ltd.
 * All rights reserved.
@@ -9,26 +8,18 @@
 * SPDX-License-Identifier: MIT
 *
 *================================================================================================*/
-/* @req SWS_EthSM_00001 @req SWS_EthSM_00002 @req SWS_EthSM_00003 */
 
-
-/**
- * @file EthSM_Lcfg.c
- * @brief Ethernet State Manager Link-Time Configuration
- */
-
-#include "EthSM.h"
-#include "EthSM_Cfg.h"
-
-extern const EthSM_ConfigType EthSM_Config;
-static const EthSM_ChannelConfigType EthSM_Channels[ETHSM_MAX_NETWORKS] = {
-    { ETHSM_NETWORK_ETH0, ETHSM_MAIN_FUNCTION_PERIOD },
-    { ETHSM_NETWORK_ETH1, ETHSM_MAIN_FUNCTION_PERIOD },
-    { 0xFFU, 0U },  /* Unused */
-    { 0xFFU, 0U }   /* Unused */
-};
-
-const EthSM_ConfigType EthSM_Config = {
-    .NumChannels = 2U,
-    .Channels = EthSM_Channels
-};
+/*==================================================================================================
+ *                     PHASE 2 DUPLICATE-MODULE CONVERGENCE - FORWARDING SHIM
+ *==================================================================================================
+ * Canonical EthSM implementation: src/bsw/ecual/ethsm/ (target: ecual_ethsm).
+ * See EthSM.c in this directory for the full convergence rationale.
+ *
+ * This Lcfg previously defined `const EthSM_ConfigType EthSM_Config` (a
+ * config OBJECT), which collided by name with the canonical
+ * `const EthSM_ConfigType* const EthSM_Config` (a config POINTER) defined by
+ * ecual/ethsm/src/EthSM_Lcfg.c. No consumer referenced the services variant,
+ * so the definition was removed. Keep this asymmetry in mind when porting
+ * config access to the canonical side: the canonical EthSM_Config is a
+ * pointer.
+ *================================================================================================*/

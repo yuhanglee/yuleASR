@@ -277,6 +277,7 @@ static void Mock_Reset_All(void)
 *==================================================================================================*/
 
 /* ===== 1. Rte_Call_EngineControl_SetTargetRPM ===== */
+/* @req SWR-007.1-02 */
 
 TEST_CASE(Rte_Call_EngineControl_SetTargetRPM_normal)
 {

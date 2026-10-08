@@ -60,10 +60,15 @@ class StaticAnalyzer:
         
         # MISRA C 规则（简化版）
         self.misra_rules = {
-            "MISRA-C-1.1": {
+            "CHARSET-001": {
+                # P0-5 (2026-10-07) 误报根因修复: 非 ASCII 行注释检测。
+                # 原 entry 误标为 MISRA-C-1.1 (语法规则) 且 severity=error:
+                # 1) 中文 // 注释是本项目文档规范 (见 AGENTS.md)，不构成
+                #    MISRA 1.1 语法违规; 2) 152 条 error 会让 CI 门禁永久失败。
+                # 重分类为 style/warning: 保留可见性，不阻断 CI。
                 "pattern": r'//.*[^\x00-\x7F]',
-                "message": "Code shall not contain unreachable code",
-                "severity": "error"
+                "message": "Line comment contains non-ASCII characters (charset advisory)",
+                "severity": "warning"
             },
             "MISRA-C-2.1": {
                 "pattern": r'goto\s+\w+',
@@ -76,7 +81,15 @@ class StaticAnalyzer:
                 "severity": "info"
             },
             "MISRA-C-8.1": {
-                "pattern": r'^\s*(?!.*\b(static|extern)\b).*\b\w+\s*\([^)]*\)\s*\{',
+                # P0-5 (2026-10-07) 误报根因修复。原模式存在三个缺陷:
+                #   1. \s* / [^)]* 可跨行匹配，报告行号指向任意前行;
+                #   2. if/for/while/switch 等控制语句命中 \w+，导致所有
+                #      同行大括号控制语句被误报 (src/ 中 15743 条误报);
+                #   3. 前缀 .* 允许任意返回类型，显式返回类型的正常函数
+                #      定义 (含大括号在下一行的) 同样被误报。
+                # 新模式: 仅匹配“行首标识符直接跟参数列表与 {”的隐式返回类型
+                # 定义 (K&R 风格)，单行匹配并排除控制关键字。
+                "pattern": r'^[ \t]*(?!(?:if|for|while|switch|return|do|else)\b)[A-Za-z_]\w*[ \t]*\([^()\n]*\)[ \t]*\{[ \t]*$',
                 "message": "Functions shall have explicit return type",
                 "severity": "error"
             },
@@ -235,18 +248,27 @@ class StaticAnalyzer:
         print("YuleTech BSW Static Analysis Tool v1.0.0")
         print("=" * 60)
         
+        # 量产门禁：P0-5 硬化 (2026-10-07)。
+        # 排除 tests/ 与 third_party/ —— 63% MISRA 误报的根因:
+        # 测试代码与第三方库不属于量产代码门禁范围 (与 .yuleosh/ci-config.yaml
+        # 的 misra.exclude_paths 口径一致)。沿用原有排除: tools/ (脚本) 与
+        # generated/ (生成代码)。
+        excluded_dirs = {'tools', 'generated', 'tests', 'third_party'}
+        
         source_files = []
         
-        # 收集源文件
+        # 收集源文件 (排除目录下的文件不进入分析与度量，避免误报)
         for pattern in ['**/*.c', '**/*.h']:
-            source_files.extend(self.project_root.glob(pattern))
+            for file_path in self.project_root.glob(pattern):
+                rel_parts = file_path.relative_to(self.project_root).parts
+                if any(part in excluded_dirs for part in rel_parts[:-1]):
+                    continue
+                source_files.append(file_path)
             
         print(f"Found {len(source_files)} source files")
         
         # 分析每个文件
         for file_path in source_files:
-            if 'tools' in str(file_path) or 'generated' in str(file_path):
-                continue
             print(f"Analyzing: {file_path.relative_to(self.project_root)}")
             results = self.analyze_file(file_path)
             self.results.extend(results)

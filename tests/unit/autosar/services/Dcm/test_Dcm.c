@@ -38,6 +38,7 @@ static int teardown(void **state)
  *                                    Test Cases
  *================================================================================================*/
 
+/* @req SWR-001.1-01 */
 static void test_Dcm_Init_ValidConfig(void **state)
 {
     (void)state;
@@ -64,6 +65,7 @@ static void test_Dcm_GetVersionInfo(void **state)
     assert_int_equal(versionInfo.moduleID, DCM_MODULE_ID);
 }
 
+/* @req SWR-003.1-04 */
 static void test_Dcm_MainFunction_Uninit(void **state)
 {
     (void)state;
@@ -72,6 +74,7 @@ static void test_Dcm_MainFunction_Uninit(void **state)
     assert_true(1);
 }
 
+/* @req SWR-001.1-04 */
 static void test_Dcm_MainFunction_Initialized(void **state)
 {
     (void)state;

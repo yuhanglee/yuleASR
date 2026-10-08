@@ -25,6 +25,12 @@
 #ifndef FEE_H
 #define FEE_H
 
+/**
+ * @file Fee.h
+ * @brief FEE module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -251,6 +257,14 @@ extern void Fee_SetMode(Fee_ModeType Mode);
  * @return Result of operation
  * @req SWS_Fee_00156
  */
+/**
+ * @brief Read data from channel
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] BlockOffset Memory offset
+ * @param[in] DataBufferPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Read(Fee_BlockIdType BlockNumber,
                                 uint16 BlockOffset,
                                 uint8* DataBufferPtr,
@@ -262,6 +276,12 @@ extern Std_ReturnType Fee_Read(Fee_BlockIdType BlockNumber,
  * @param DataBufferPtr Data buffer pointer
  * @return Result of operation
  * @req SWS_Fee_00157
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] DataBufferPtr Data buffer
+ * @return Operation status
  */
 extern Std_ReturnType Fee_Write(Fee_BlockIdType BlockNumber, const uint8* DataBufferPtr);
 

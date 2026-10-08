@@ -8,10 +8,17 @@
  *  conditions are evaluated in BswM_MainFunction() (10ms task context,
  *  wired via OsAlarm_BswM_MainFunction). Action lists run on rule state
  *  transitions only.
+ *
+ *  Performance model: every mode request port carries a dirty flag, set on
+ *  value changes only. Each rule records the bitmask of the ports referenced
+ *  by its condition tree, so a cycle evaluates only rules that depend on a
+ *  port written since the last cycle. Rules are visited in Priority order
+ *  (stable sort, 0 = highest priority first).
  */
 
 #include "BswM.h"
 #include "EcuM.h"
+#include "Com.h"
 #include "Det.h"
 
 /* Version check */
@@ -36,7 +43,12 @@ typedef struct {
     BswM_ModeType           requestedMode;
     boolean                 requestPending;
     BswM_ModeType           portValue[BSWM_MAX_MODE_REQUEST_PORTS];
+    boolean                 portDirty[BSWM_MAX_MODE_REQUEST_PORTS];
     BswM_RuleStateType      ruleState[BSWM_MAX_RULES];
+    boolean                 ruleEnabled[BSWM_MAX_RULES];
+    uint32                  rulePortMask[BSWM_MAX_RULES];
+    uint8                   ruleOrder[BSWM_MAX_RULES];
+    uint8                   ipduGroupState[BSWM_ACTION_VECTOR_MAX_BYTES];
     BswM_EcuMWakeupSourceType wakeupSource;
     BswM_EcuMWakeupStatusType wakeupStatus;
     const BswM_ConfigType*  configPtr;
@@ -47,6 +59,11 @@ static BswM_InternalType BswM_State = {
     BSWM_MODE_VALUE_OFF,
     BSWM_MODE_VALUE_OFF,
     FALSE,
+    { 0U },
+    { FALSE },
+    { 0U },
+    { FALSE },
+    { 0UL },
     { 0U },
     { 0U },
     0U,
@@ -105,6 +122,130 @@ static boolean BswM_EvaluateExpression(uint16 ExpressionIndex, uint8 Depth)
     return result;
 }
 
+/**
+ * @brief Bitmask of the mode request ports referenced by a condition tree.
+ *
+ * Establishes the rule -> port association used by the dirty-flag gate: the
+ * port indices are already part of the leaf configuration (PortIndex of the
+ * MODE_EQUALS / MODE_NOT_EQUALS expressions). A leaf referencing a port
+ * outside the bitmask width marks the rule as always-evaluated (all bits
+ * set) so a wider configuration degrades to the legacy full-scan behavior
+ * instead of losing the rule.
+ */
+static uint32 BswM_CollectRulePorts(uint16 ExpressionIndex, uint8 Depth)
+{
+    const BswM_ExpressionConfigType* expr;
+    uint32 mask = 0UL;
+
+    if ((BswM_State.configPtr == NULL_PTR) || (Depth > BSWM_EXPR_MAX_DEPTH)) {
+        return 0UL;
+    }
+    if ((ExpressionIndex >= BswM_State.configPtr->NumExpressions) ||
+        (BswM_State.configPtr->Expressions == NULL_PTR)) {
+        return 0UL;
+    }
+
+    expr = &BswM_State.configPtr->Expressions[ExpressionIndex];
+
+    switch (expr->ExpressionType) {
+        case BSWM_EXPR_MODE_EQUALS:
+        case BSWM_EXPR_MODE_NOT_EQUALS:
+            if (expr->PortIndex < BSWM_MAX_MODE_REQUEST_PORTS) {
+                mask = (1UL << expr->PortIndex);
+            } else {
+                mask = 0xFFFFFFFFUL;
+            }
+            break;
+
+        case BSWM_EXPR_LOGICAL_AND:
+        case BSWM_EXPR_LOGICAL_OR:
+            mask = (BswM_CollectRulePorts(expr->LeftIndex, (uint8)(Depth + 1U)) |
+                    BswM_CollectRulePorts(expr->RightIndex, (uint8)(Depth + 1U)));
+            break;
+
+        case BSWM_EXPR_LOGICAL_NOT:
+            mask = BswM_CollectRulePorts(expr->LeftIndex, (uint8)(Depth + 1U));
+            break;
+
+        default:
+            mask = 0UL;
+            break;
+    }
+
+    return mask;
+}
+
+/**
+ * @brief Execute a single action entry according to its Kind.
+ */
+static void BswM_ExecuteAction(const BswM_ActionType* Action)
+{
+    uint8 i;
+    Com_IpduGroupVector vector;
+    const uint8 comVectorBytes = (uint8)sizeof(Com_IpduGroupVector);
+
+    switch (Action->Kind) {
+        case BSWM_ACTION_CALLBACK:
+            if (Action->Callback != NULL_PTR) {
+                Action->Callback(Action->Parameter);
+            }
+            break;
+
+        case BSWM_ACTION_PDU_GROUP_SWITCH:
+            /* Merge semantics: set/clear the configured group bits in the
+             * BswM shadow state, then hand the full vector to Com. Bits
+             * beyond the Com vector width are ignored. */
+            for (i = 0U; i < BSWM_ACTION_VECTOR_MAX_BYTES; i++) {
+                if (i < comVectorBytes) {
+                    if (Action->Enable == TRUE) {
+                        BswM_State.ipduGroupState[i] |= Action->IpduGroupVector[i];
+                    } else {
+                        BswM_State.ipduGroupState[i] &= (uint8)(~Action->IpduGroupVector[i]);
+                    }
+                }
+            }
+            for (i = 0U; i < comVectorBytes; i++) {
+                vector[i] = (i < BSWM_ACTION_VECTOR_MAX_BYTES)
+                                ? BswM_State.ipduGroupState[i] : 0U;
+            }
+            Com_IpduGroupControl(vector, FALSE);
+            break;
+
+        case BSWM_ACTION_COM_IPDU_GROUP:
+            /* Absolute control: the configured vector IS the new state */
+            for (i = 0U; i < BSWM_ACTION_VECTOR_MAX_BYTES; i++) {
+                BswM_State.ipduGroupState[i] =
+                    (i < comVectorBytes) ? Action->IpduGroupVector[i] : 0U;
+            }
+            for (i = 0U; i < comVectorBytes; i++) {
+                vector[i] = (i < BSWM_ACTION_VECTOR_MAX_BYTES)
+                                ? BswM_State.ipduGroupState[i] : 0U;
+            }
+            Com_IpduGroupControl(vector, Action->Initialize);
+            break;
+
+        case BSWM_ACTION_ECUM_GO_SLEEP:
+            EcuM_GoSleep();
+            break;
+
+        case BSWM_ACTION_ECUM_GO_HALT:
+            EcuM_GoHalt();
+            break;
+
+        case BSWM_ACTION_ECUM_GO_OFF:
+            /* This EcuM provides no dedicated GoOff callout: select the OFF
+             * shutdown target (shutdown mode carried by Parameter), then
+             * trigger the shutdown sequence. */
+            (void)EcuM_SelectShutdownTarget(ECUM_SHUTDOWN_TARGET_OFF, Action->Parameter);
+            EcuM_Shutdown();
+            break;
+
+        default:
+            /* Unknown kind: ignore */
+            break;
+    }
+}
+
 static void BswM_ExecuteActionList(uint16 ActionListIndex)
 {
     const BswM_ActionListType* list;
@@ -122,8 +263,8 @@ static void BswM_ExecuteActionList(uint16 ActionListIndex)
 
     list = &BswM_State.configPtr->ActionLists[ActionListIndex];
     for (i = 0U; i < list->NumActions; i++) {
-        if ((list->Actions != NULL_PTR) && (list->Actions[i].Callback != NULL_PTR)) {
-            list->Actions[i].Callback(list->Actions[i].Parameter);
+        if (list->Actions != NULL_PTR) {
+            BswM_ExecuteAction(&list->Actions[i]);
         }
     }
 }
@@ -163,9 +304,51 @@ static BswM_ModeType BswM_MapEcuMState(EcuM_StateType EcuMState, boolean* IsMapp
     return mode;
 }
 
+/**
+ * @brief Write a mode request port and mark it dirty on a real value change.
+ *
+ * Re-writes of the current value (e.g. repeated notifications of the same
+ * state) stay clean, so dependent rules are not re-evaluated needlessly.
+ * The very first write is always a change: ports reset to the NONE sentinel.
+ */
+static void BswM_WritePort(uint8 PortIndex, uint8 RawValue)
+{
+    if (PortIndex >= BSWM_MAX_MODE_REQUEST_PORTS) {
+        return;
+    }
+    if (BswM_State.portValue[PortIndex] != RawValue) {
+        BswM_State.portValue[PortIndex] = RawValue;
+        BswM_State.portDirty[PortIndex] = TRUE;
+    }
+}
+
+/**
+ * @brief Write a raw module state to every mode request port bound to a composition.
+ *
+ * Used by the BswM_* notification callbacks: the value is the module's raw
+ * state (e.g. ComM mode 0..2, Nm_StateType) and bypasses the BswM_RequestMode()
+ * mode-domain validation/latching. A composition not bound to any port is
+ * silently dropped — a notification broadcasts a fact, it does not request.
+ */
+static void BswM_WritePortByComposition(uint8 CompositionId, uint8 RawValue)
+{
+    uint8 i;
+
+    if ((BswM_State.configPtr != NULL_PTR) && (BswM_State.configPtr->ModeRequestPorts != NULL_PTR)) {
+        for (i = 0U; i < BswM_State.configPtr->NumModeRequestPorts; i++) {
+            if ((i < BSWM_MAX_MODE_REQUEST_PORTS) &&
+                (BswM_State.configPtr->ModeRequestPorts[i] == CompositionId)) {
+                BswM_WritePort(i, RawValue);
+            }
+        }
+    }
+}
+
 static void BswM_ResetInternalState(const BswM_ConfigType* ConfigPtr)
 {
     uint8 i;
+    uint8 k;
+    uint8 numRules = 0U;
 
     BswM_State.configPtr = ConfigPtr;
     BswM_State.currentMode = BSWM_MODE_VALUE_OFF;
@@ -174,14 +357,47 @@ static void BswM_ResetInternalState(const BswM_ConfigType* ConfigPtr)
     BswM_State.wakeupSource = 0U;
     BswM_State.wakeupStatus = ECUM_WKSTATUS_NONE;
 
+    /* All ports start dirty: the first BswM_MainFunction evaluates every
+     * rule once to reconcile InitialState with the actual conditions. */
     for (i = 0U; i < BSWM_MAX_MODE_REQUEST_PORTS; i++) {
         BswM_State.portValue[i] = BSWM_MODE_VALUE_NONE;
+        BswM_State.portDirty[i] = TRUE;
     }
+    for (i = 0U; i < BSWM_ACTION_VECTOR_MAX_BYTES; i++) {
+        BswM_State.ipduGroupState[i] = 0U;
+    }
+
     for (i = 0U; i < BSWM_MAX_RULES; i++) {
         if ((ConfigPtr != NULL_PTR) && (ConfigPtr->Rules != NULL_PTR) && (i < ConfigPtr->NumRules)) {
             BswM_State.ruleState[i] = ConfigPtr->Rules[i].InitialState;
+            BswM_State.ruleEnabled[i] = ConfigPtr->Rules[i].IsEnabled;
+            BswM_State.rulePortMask[i] = BswM_CollectRulePorts(ConfigPtr->Rules[i].ConditionIndex, 0U);
         } else {
             BswM_State.ruleState[i] = BSWM_RULE_STATE_FALSE;
+            BswM_State.ruleEnabled[i] = FALSE;
+            BswM_State.rulePortMask[i] = 0UL;
+        }
+        BswM_State.ruleOrder[i] = i;
+    }
+
+    /* Build the priority-ordered evaluation sequence: stable insertion sort
+     * on Priority (0 = highest, evaluated first). Equal priorities keep the
+     * configuration order, preserving the legacy behavior for tables without
+     * explicit priorities. */
+    if ((ConfigPtr != NULL_PTR) && (ConfigPtr->Rules != NULL_PTR)) {
+        numRules = (ConfigPtr->NumRules < BSWM_MAX_RULES) ? ConfigPtr->NumRules : BSWM_MAX_RULES;
+
+        for (k = 1U; k < numRules; k++) {
+            uint8 moving = BswM_State.ruleOrder[k];
+            uint8 j = k;
+
+            while ((j > 0U) &&
+                   (ConfigPtr->Rules[BswM_State.ruleOrder[j - 1U]].Priority >
+                    ConfigPtr->Rules[moving].Priority)) {
+                BswM_State.ruleOrder[j] = BswM_State.ruleOrder[j - 1U];
+                j--;
+            }
+            BswM_State.ruleOrder[j] = moving;
         }
     }
 }
@@ -201,6 +417,27 @@ void BswM_Init(const BswM_ConfigType* ConfigPtr)
 /** @req SWS_BswM_00002 */
 void BswM_DeInit(void)
 {
+    /* Reverse-order cleanup: walk the configured rules from last to first
+     * and run the False action list of every enabled rule latched TRUE.
+     * This undoes stateful side effects (e.g. PDU groups enabled by a TRUE
+     * transition) in inverse configuration order before the state resets. */
+    if ((BswM_State.internalState == BSWM_INTERNAL_INIT) && (BswM_State.configPtr != NULL_PTR) &&
+        (BswM_State.configPtr->Rules != NULL_PTR)) {
+        uint8 i;
+
+        for (i = BswM_State.configPtr->NumRules; i > 0U; i--) {
+            uint8 idx = (uint8)(i - 1U);
+
+            if (idx >= BSWM_MAX_RULES) {
+                break;
+            }
+            if ((BswM_State.ruleEnabled[idx] == TRUE) &&
+                (BswM_State.ruleState[idx] == BSWM_RULE_STATE_TRUE)) {
+                BswM_ExecuteActionList(BswM_State.configPtr->Rules[idx].FalseActionListIndex);
+            }
+        }
+    }
+
     BswM_ResetInternalState(NULL_PTR);
     BswM_State.internalState = BSWM_INTERNAL_UNINIT;
 }
@@ -227,7 +464,7 @@ Std_ReturnType BswM_RequestMode(uint8 SwCompositionId, BswM_ModeType Mode)
         for (i = 0U; i < BswM_State.configPtr->NumModeRequestPorts; i++) {
             if ((i < BSWM_MAX_MODE_REQUEST_PORTS) &&
                 (BswM_State.configPtr->ModeRequestPorts[i] == SwCompositionId)) {
-                BswM_State.portValue[i] = Mode;
+                BswM_WritePort(i, (uint8)Mode);
             }
         }
     }
@@ -253,21 +490,41 @@ BswM_ModeType BswM_GetRequestedMode(void)
 void BswM_MainFunction(void)
 {
     uint8 i;
+    uint8 k;
+    uint32 dirtyMask = 0UL;
+    BswM_ModeType portSnapshot[BSWM_MAX_MODE_REQUEST_PORTS];
 
     if ((BswM_State.internalState == BSWM_INTERNAL_UNINIT) || (BswM_State.configPtr == NULL_PTR)) {
         return;
     }
 
-    /* Rule evaluation: action lists execute on state transitions only */
-    for (i = 0U; i < BswM_State.configPtr->NumRules; i++) {
+    /* Snapshot the ports and collect the dirty mask. Rules whose condition
+     * tree does not reference a dirty port skip evaluation entirely. */
+    for (i = 0U; i < BSWM_MAX_MODE_REQUEST_PORTS; i++) {
+        portSnapshot[i] = BswM_State.portValue[i];
+        if (BswM_State.portDirty[i] == TRUE) {
+            dirtyMask |= (1UL << i);
+        }
+    }
+
+    /* Rule evaluation in priority order (ruleOrder: stable sort by Priority,
+     * 0 = highest); action lists execute on state transitions only */
+    for (k = 0U; k < BswM_State.configPtr->NumRules; k++) {
         const BswM_RuleType* rule;
         BswM_RuleStateType result;
+        uint8 idx;
 
-        if ((i >= BSWM_MAX_RULES) || (BswM_State.configPtr->Rules == NULL_PTR)) {
+        if (k >= BSWM_MAX_RULES) {
             break;
         }
-        rule = &BswM_State.configPtr->Rules[i];
-        if (rule->IsEnabled == FALSE) {
+        idx = BswM_State.ruleOrder[k];
+        if ((idx >= BswM_State.configPtr->NumRules) ||
+            (BswM_State.configPtr->Rules == NULL_PTR)) {
+            break;
+        }
+        rule = &BswM_State.configPtr->Rules[idx];
+        if ((BswM_State.ruleEnabled[idx] == FALSE) ||
+            ((BswM_State.rulePortMask[idx] & dirtyMask) == 0UL)) {
             continue;
         }
 
@@ -275,11 +532,20 @@ void BswM_MainFunction(void)
                      ? BSWM_RULE_STATE_TRUE
                      : BSWM_RULE_STATE_FALSE;
 
-        if (result != BswM_State.ruleState[i]) {
-            BswM_State.ruleState[i] = result;
+        if (result != BswM_State.ruleState[idx]) {
+            BswM_State.ruleState[idx] = result;
             BswM_ExecuteActionList((result == BSWM_RULE_STATE_TRUE)
                                        ? rule->TrueActionListIndex
                                        : rule->FalseActionListIndex);
+        }
+    }
+
+    /* Clear the dirty flags of ports that were not written again during the
+     * evaluation: a request landing mid-cycle keeps its dirty flag and is
+     * picked up by the next cycle (no lost edge-triggered rule). */
+    for (i = 0U; i < BSWM_MAX_MODE_REQUEST_PORTS; i++) {
+        if (BswM_State.portValue[i] == portSnapshot[i]) {
+            BswM_State.portDirty[i] = FALSE;
         }
     }
 
@@ -322,6 +588,79 @@ void BswM_ActionSwitchMode(BswM_ModeType Mode)
     BswM_State.requestedMode = Mode;
 }
 
+/*==================================================================================================
+*                                  Runtime rule control APIs
+*================================================================================================*/
+
+Std_ReturnType BswM_RuleEnable(uint16 RuleId)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_RULE_ENABLE, BSWM_E_UNINIT);
+        return E_NOT_OK;
+    }
+#endif
+    if ((BswM_State.configPtr == NULL_PTR) ||
+        (RuleId >= (uint16)BswM_State.configPtr->NumRules) ||
+        (RuleId >= (uint16)BSWM_MAX_RULES)) {
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_RULE_ENABLE, BSWM_E_PARAM_RULE_ID);
+#endif
+        return E_NOT_OK;
+    }
+
+    BswM_State.ruleEnabled[RuleId] = TRUE;
+    return E_OK;
+}
+
+Std_ReturnType BswM_RuleDisable(uint16 RuleId)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_RULE_DISABLE, BSWM_E_UNINIT);
+        return E_NOT_OK;
+    }
+#endif
+    if ((BswM_State.configPtr == NULL_PTR) ||
+        (RuleId >= (uint16)BswM_State.configPtr->NumRules) ||
+        (RuleId >= (uint16)BSWM_MAX_RULES)) {
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_RULE_DISABLE, BSWM_E_PARAM_RULE_ID);
+#endif
+        return E_NOT_OK;
+    }
+
+    BswM_State.ruleEnabled[RuleId] = FALSE;
+    return E_OK;
+}
+
+Std_ReturnType BswM_Com_CurrentPduGroupState(BswM_Com_IpduGroupVector IpduGroupVector)
+{
+    uint8 i;
+    uint8 nBytes;
+    const uint8 comVectorBytes = (uint8)sizeof(Com_IpduGroupVector);
+
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_COMM_CURRENT_PDU_GROUP, BSWM_E_UNINIT);
+        return E_NOT_OK;
+    }
+    if (NULL_PTR == IpduGroupVector) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_COMM_CURRENT_PDU_GROUP, BSWM_E_PARAM_POINTER);
+        return E_NOT_OK;
+    }
+#endif
+
+    nBytes = (BSWM_ACTION_VECTOR_MAX_BYTES < comVectorBytes)
+                 ? BSWM_ACTION_VECTOR_MAX_BYTES
+                 : comVectorBytes;
+    for (i = 0U; i < comVectorBytes; i++) {
+        IpduGroupVector[i] = (i < nBytes) ? BswM_State.ipduGroupState[i] : 0U;
+    }
+
+    return E_OK;
+}
+
 /** @req SWS_BswM_00210 */
 void BswM_EcuM_CurrentState(BswM_EcuMStateType CurrentState)
 {
@@ -343,4 +682,209 @@ void BswM_EcuM_CurrentWakeup(BswM_EcuMWakeupSourceType WakeupSource,
     if (WakeupStatus == ECUM_WKSTATUS_VALIDATED) {
         (void)BswM_RequestMode(BSWM_ECUM_REQUEST, BSWM_MODE_VALUE_WAKEUP);
     }
+}
+
+/*==================================================================================================
+*                        Notification callbacks (raw module state semantics)
+*================================================================================================*/
+
+/** ComM notification: current communication mode of a network */
+void BswM_ComM_CurrentMode(BswM_NetworkHandleType Network, BswM_ComMModeType CurrentMode)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_COMM_CURRENT_MODE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_COMM_REQUEST, (uint8)CurrentMode);
+}
+
+/** ComM notification: current PNC mode (IsPNCActive) of a network */
+void BswM_ComM_CurrentPNCMode(BswM_NetworkHandleType Network, boolean IsPNCActive)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_COMM_CURRENT_PNC_MODE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_COMM_PNC_REQUEST, (uint8)IsPNCActive);
+}
+
+/** Dcm notification: current communication mode request state of a network */
+void BswM_Dcm_CommunicationMode_CurrentState(BswM_NetworkHandleType Network,
+                                             BswM_DcmCommunicationModeType RequestedCommunicationMode)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_DCM_COMM_MODE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_DCM_REQUEST, (uint8)RequestedCommunicationMode);
+}
+
+/** Dcm notification: application updated indication */
+void BswM_Dcm_ApplicationUpdated(BswM_NetworkHandleType Network)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_DCM_APP_UPDATED, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_DCM_APPUPDATED_REQUEST, 1U);
+}
+
+/** Nm notification: network management state changed */
+void BswM_Nm_StateChangeNotification(BswM_NetworkHandleType Network, BswM_NmStateType State)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_NM_STATE_CHANGE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_NM_REQUEST, (uint8)State);
+}
+
+/** Nm notification: car wakeup indication */
+void BswM_Nm_CarWakeUpIndication(BswM_NetworkHandleType Network)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_NM_CAR_WAKEUP, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_NM_CARWAKEUP_REQUEST, 1U);
+}
+
+/** CanSM notification: current CAN network mode */
+void BswM_CanSM_CurrentState(BswM_NetworkHandleType Network, BswM_CanSmStateType CurrentState)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_CANSM_CURRENT_STATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_CANSM_REQUEST, (uint8)CurrentState);
+}
+
+/** EthSM notification: current Ethernet network mode */
+void BswM_EthSM_CurrentState(BswM_NetworkHandleType Network, BswM_EthSmStateType CurrentState)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_ETHSM_CURRENT_STATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_ETHSM_REQUEST, (uint8)CurrentState);
+}
+
+/** FrSM notification: current FlexRay network mode */
+void BswM_FrSM_CurrentState(BswM_NetworkHandleType Network, BswM_FrSmStateType CurrentState)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_FRSM_CURRENT_STATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_FRSM_REQUEST, (uint8)CurrentState);
+}
+
+/** LinSM notification: current LIN network mode */
+void BswM_LinSM_CurrentState(BswM_NetworkHandleType Network, BswM_LinSmStateType CurrentState)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_LINSM_CURRENT_STATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_LINSM_REQUEST, (uint8)CurrentState);
+}
+
+/** LinSM notification: current LIN schedule table */
+void BswM_LinSM_CurrentSchedule(BswM_NetworkHandleType Network, uint8 ScheduleIndex)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_LINSM_CURRENT_SCHEDULE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_LINSM_SCHEDULE_REQUEST, ScheduleIndex);
+}
+
+/** LinTp notification: requested LIN TP mode */
+void BswM_LinTp_RequestMode(BswM_NetworkHandleType Network, BswM_LinTpModeType LinTpMode)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_LINTP_REQUEST_MODE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)Network;
+    BswM_WritePortByComposition(BSWM_LINTP_REQUEST, (uint8)LinTpMode);
+}
+
+/** EcuM notification: requested ECU state, mapped to the BswM mode domain first */
+void BswM_EcuM_RequestedState(BswM_EcuMStateType State)
+{
+    boolean isMapped = FALSE;
+    BswM_ModeType mode;
+
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_ECUM_REQUESTED_STATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    mode = BswM_MapEcuMState((EcuM_StateType)State, &isMapped);
+    if (isMapped == TRUE) {
+        BswM_WritePortByComposition(BSWM_ECUM_REQUESTED, (uint8)mode);
+    }
+    /* Unmapped states are ignored (no port write, no DET). */
+}
+
+/** BswM notification: partition restarted, writes the partition id low byte */
+void BswM_BswMPartitionRestarted(BswM_ApplicationType Application)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_PARTITION_RESTARTED, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    BswM_WritePortByComposition(BSWM_PARTITION_REQUEST, (uint8)(Application & 0x00FFU));
+}
+
+/** EthIf notification: port group link state changed */
+void BswM_EthIf_PortGroupLinkStateChg(uint8 PortGroup, boolean LinkState)
+{
+#if (BSWM_DEV_ERROR_DETECT == STD_ON)
+    if (BswM_State.internalState == BSWM_INTERNAL_UNINIT) {
+        Det_ReportError(BSWM_MODULE_ID, 0U, BSWM_SID_ETHIF_PORTGROUP_LINKSTATE, BSWM_E_UNINIT);
+        return;
+    }
+#endif
+    (void)PortGroup;
+    BswM_WritePortByComposition(BSWM_ETHIF_REQUEST, (uint8)LinkState);
 }

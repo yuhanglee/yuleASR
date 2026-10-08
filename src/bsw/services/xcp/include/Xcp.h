@@ -439,6 +439,13 @@ void Xcp_TxConfirmation(uint8 XcpChannelId, PduIdType XcpTxPduId);
  * @param PduInfoPtr Pointer to PDU info
  * @return Result of operation
  */
+/**
+ * @brief Trigger action
+ * @param[in] XcpChannelId Channel identifier
+ * @param[in] XcpTxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType Xcp_TriggerTransmit(uint8 XcpChannelId, PduIdType XcpTxPduId, PduInfoType* PduInfoPtr);
 
 /** @req SWS_Xcp_00008 */
@@ -489,6 +496,13 @@ void Xcp_SendError(uint8 ChannelId, uint8 ErrorCode, uint8 ErrorInfo);
  * @param EventCode Event code
  * @param Data Event data
  * @param Length Data length
+ */
+/**
+ * @brief send event
+ * @param[in] ChannelId Channel identifier
+ * @param[in] EventCode EventCode value
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
  */
 void Xcp_SendEvent(uint8 ChannelId, uint8 EventCode, const uint8* Data, uint8 Length);
 
@@ -589,28 +603,85 @@ void Xcp_CmdClearDaqList(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00025 */
 void Xcp_CmdSetDaqPtr(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00026 */
+/**
+ * @brief cmd write daq
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdWriteDaq(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00027 */
+/**
+ * @brief cmd set daq list mode
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdSetDaqListMode(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00028 */
+/**
+ * @brief cmd get daq list mode
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdGetDaqListMode(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00029 */
+/**
+ * @brief cmd start stop daq list
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdStartStopDaqList(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00030 */
+/**
+ * @brief cmd start stop synch
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdStartStopSynch(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00031 */
+/**
+ * @brief cmd get daq processor info
+ * @param[in] ChannelId Channel identifier
+ */
 void Xcp_CmdGetDaqProcessorInfo(uint8 ChannelId);
 /** @req SWS_Xcp_00032 */
+/**
+ * @brief cmd get daq resolution info
+ * @param[in] ChannelId Channel identifier
+ */
 void Xcp_CmdGetDaqResolutionInfo(uint8 ChannelId);
 /** @req SWS_Xcp_00033 */
+/**
+ * @brief cmd get daq list info
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdGetDaqListInfo(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00034 */
+/**
+ * @brief cmd free daq
+ * @param[in] ChannelId Channel identifier
+ */
 void Xcp_CmdFreeDaq(uint8 ChannelId);
 /** @req SWS_Xcp_00035 */
+/**
+ * @brief cmd alloc daq
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdAllocDaq(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00036 */
+/**
+ * @brief cmd alloc odt
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdAllocOdt(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00037 */
+/**
+ * @brief cmd alloc odt entry
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdAllocOdtEntry(uint8 ChannelId, const uint8* Data);
 
 /** @req SWS_Xcp_00038 */
@@ -621,10 +692,25 @@ void Xcp_CmdProgramStart(uint8 ChannelId);
 /** @req SWS_Xcp_00039 */
 void Xcp_CmdProgramClear(uint8 ChannelId, const uint8* Data);
 /** @req SWS_Xcp_00040 */
+/**
+ * @brief cmd program
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ */
 void Xcp_CmdProgram(uint8 ChannelId, const uint8* Data, uint8 Length);
 /** @req SWS_Xcp_00041 */
+/**
+ * @brief cmd program reset
+ * @param[in] ChannelId Channel identifier
+ */
 void Xcp_CmdProgramReset(uint8 ChannelId);
 /** @req SWS_Xcp_00042 */
+/**
+ * @brief cmd program verify
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Data Data buffer
+ */
 void Xcp_CmdProgramVerify(uint8 ChannelId, const uint8* Data);
 
 /** @req SWS_Xcp_00043 */
@@ -635,6 +721,11 @@ void Xcp_DaqProcessor(void);
 /** @req SWS_Xcp_00044 */
 void Xcp_DaqSample(uint16 DaqListIdx);
 /** @req SWS_Xcp_00045 */
+/**
+ * @brief daq transmit
+ * @param[in] DaqListIdx Index value
+ * @param[in] OdtIdx Index value
+ */
 void Xcp_DaqTransmit(uint16 DaqListIdx, uint8 OdtIdx);
 
 /** @req SWS_Xcp_00046 */
@@ -652,8 +743,24 @@ void Xcp_StimProcessor(uint8 ChannelId, const uint8* Data, uint8 Length);
  * @param Length Data length
  * @return Result of operation
  */
+/**
+ * @brief Read data from channel
+ * @param[in] Addr Memory address
+ * @param[in] Ext Ext value
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Xcp_ReadMemory(uint32 Addr, uint8 Ext, uint8* Data, uint32 Length);
 /** @req SWS_Xcp_00048 */
+/**
+ * @brief Write data to channel
+ * @param[in] Addr Memory address
+ * @param[in] Ext Ext value
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Xcp_WriteMemory(uint32 Addr, uint8 Ext, const uint8* Data, uint32 Length);
 
 /** @req SWS_Xcp_00049 */

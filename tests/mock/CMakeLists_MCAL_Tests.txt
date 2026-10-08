@@ -454,17 +454,10 @@ endif()
 
 #----------------------------------------------------------------------
 # Fee test
+# Phase 3 duplicate-module convergence: mcal/fee is shimmed; canonical
+# implementation lives in ecual/fee (tested via tests/unit/fee/ and
+# tests/unit/autosar/ecual/test_fee.c).
 #----------------------------------------------------------------------
-if(EXISTS ${MCAL_TEST_SRC_DIR}/fee/test_fee.c)
-    add_bsw_mcal_test(
-        NAME        mcal_fee_test
-        TEST_FILE   ${MCAL_TEST_SRC_DIR}/fee/test_fee.c
-        MCAL_SRCS
-            ${SRC_MCAL}/fee/src/Fee.c
-            ${SRC_MCAL}/fee/src/Fee_Lcfg.c
-            ${SRC_MCAL}/mcu/src/Mcal.c
-    )
-endif()
 
 #----------------------------------------------------------------------
 # Flash test

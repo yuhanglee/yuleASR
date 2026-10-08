@@ -9,6 +9,10 @@ set(BSWM_TEST_INCLUDES
     ${CMAKE_SOURCE_DIR}/src/bsw/services/bswm/include
     ${CMAKE_SOURCE_DIR}/src/bsw/services/det/include
     ${CMAKE_SOURCE_DIR}/src/bsw/services/ecum/include
+    # Com.h is included by BswM.h (Com_IpduGroupVector); placed BEFORE
+    # config/input/services so com/include/Com_Cfg.h (which defines
+    # COM_NUM_IPDU_GROUPS) wins the include resolution.
+    ${CMAKE_SOURCE_DIR}/src/bsw/services/com/include
     ${CMAKE_SOURCE_DIR}/src/bsw/os/include
     ${CMAKE_SOURCE_DIR}/include/autosar
     ${CMAKE_SOURCE_DIR}/src/common/include
@@ -23,7 +27,14 @@ add_executable(bswm_svc_test
     ${CMAKE_CURRENT_SOURCE_DIR}/test_bswm_svc.c
 )
 
-foreach(bswm_target bswm_test bswm_svc_test)
+# Standalone unit-test suite for the Phase 3 BswM enhancements (PDU group
+# control, priority arbitration, dirty-flag gating, EcuM actions, runtime
+# rule enable/disable). Same production library, own mock set.
+add_executable(bswm_unit_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../unit/bswm/test_bswm.c
+)
+
+foreach(bswm_target bswm_test bswm_svc_test bswm_unit_test)
     target_include_directories(${bswm_target}
         PRIVATE
             ${BSWM_TEST_INCLUDES}
@@ -52,5 +63,6 @@ endforeach()
 
 add_test(NAME bswm_test COMMAND bswm_test)
 add_test(NAME bswm_svc_test COMMAND bswm_svc_test)
+add_test(NAME bswm_unit_test COMMAND bswm_unit_test)
 
 message(STATUS "  Unit test: bswm_test, bswm_svc_test (BSW Mode Manager)")

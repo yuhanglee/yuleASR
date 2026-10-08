@@ -106,6 +106,7 @@ typedef struct
     CanIf_HthType hthId;             /* Associated HTH */
     uint8 controllerId;              /* Associated controller */
     uint8 dlc;                       /* Data Length Code (0-8) */
+    boolean fdFrame;                 /* TRUE: CAN FD frame format (BRS=1) */
 } CanIf_TxPduCfgType;
 
 /* Rx L-PDU configuration type */

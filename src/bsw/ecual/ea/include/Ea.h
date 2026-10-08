@@ -168,6 +168,14 @@ void Ea_SetMode(Ea_ModeType Mode);
  * @param Length Data length
  * @return Result of operation
  */
+/**
+ * @brief Read data from channel
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] BlockOffset Memory offset
+ * @param[in] DataBufferPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Ea_Read(Ea_BlockIdType BlockNumber,
                         uint16 BlockOffset,
                         uint8* DataBufferPtr,

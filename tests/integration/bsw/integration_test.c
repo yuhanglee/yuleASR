@@ -552,14 +552,14 @@ static const CanIf_HthConfigType itCanIf_HthConfigs[IT_CANIF_NUM_HTH] = {
 };
 
 static const CanIf_TxPduConfigType itCanIf_TxPdus[IT_CANIF_NUM_TX_PDUS] = {
-    { .PduId = 0U, .CanId = 0x100U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE },
-    { .PduId = 1U, .CanId = 0x200U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE },
-    { .PduId = 2U, .CanId = 0x300U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE },
-    { .PduId = 3U, .CanId = 0x700U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 1U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE },
-    { .PduId = 4U, .CanId = 0x708U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 1U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE },
-    { .PduId = 5U, .CanId = 0x600U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE },
-    { .PduId = 6U, .CanId = 0x601U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE },
-    { .PduId = 7U, .CanId = 0x602U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE }
+    { .PduId = 0U, .CanId = 0x100U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 1U, .CanId = 0x200U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 2U, .CanId = 0x300U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 3U, .CanId = 0x700U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 1U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 4U, .CanId = 0x708U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 1U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = TRUE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 5U, .CanId = 0x600U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 6U, .CanId = 0x601U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE, .FdFrame = FALSE },
+    { .PduId = 7U, .CanId = 0x602U, .CanIdType = CANIF_CANID_TYPE_STANDARD, .Hth = 0U, .ControllerId = 0U, .Length = 8U, .TxConfirmation = FALSE, .UserType = FALSE, .FdFrame = FALSE }
 };
 
 static const CanIf_RxPduConfigType itCanIf_RxPdus[IT_CANIF_NUM_RX_PDUS] = {

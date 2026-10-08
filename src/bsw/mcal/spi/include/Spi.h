@@ -141,13 +141,65 @@ typedef struct {
 } Spi_ConfigType;
 
 /* API函数 */
+/**
+ * @brief Initialize the module
+ * @param[in] Config Configuration reference
+ */
 extern void Spi_Init(const Spi_ConfigType* Config);
+/**
+ * @brief De-initialize the module
+ * @param[in] Config Configuration reference
+ * @return Operation status
+ */
 extern Std_ReturnType Spi_DeInit(void);
+/**
+ * @brief sync transmit
+ * @param[in] DeviceId Identifier
+ * @param[in] TxData Data buffer
+ * @param[in] RxData Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Spi_SyncTransmit(uint8 DeviceId, const uint8* TxData, uint8* RxData, uint32 Length);
+/**
+ * @brief async transmit
+ * @param[in] DeviceId Identifier
+ * @param[in] TxData Data buffer
+ * @param[in] RxData Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Spi_AsyncTransmit(uint8 DeviceId, const uint8* TxData, uint8* RxData, uint32 Length);
+/**
+ * @brief Get current status
+ * @param[in] DeviceId Identifier
+ * @param[in] TxData Data buffer
+ * @param[in] RxData Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Spi_StatusType Spi_GetStatus(void);
+/**
+ * @brief Get requested information
+ * @param[in] DeviceId Identifier
+ * @param[in] TxData Data buffer
+ * @param[in] RxData Data buffer
+ * @param[in] Length Data length
+ * @return Operation result
+ */
 extern Spi_JobResultType Spi_GetJobResult(void);
+/**
+ * @brief Process periodic tasks
+ * @param[in] DeviceId Identifier
+ * @param[in] TxData Data buffer
+ * @param[in] RxData Data buffer
+ * @param[in] Length Data length
+ */
 extern void Spi_MainFunction(void);
+/**
+ * @brief isr handler
+ * @param[in] Channel Channel identifier
+ */
 extern void Spi_IsrHandler(uint8 Channel);
 
 #endif /* SPI_H */

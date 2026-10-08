@@ -267,6 +267,13 @@ extern Std_ReturnType J1939Tp_CancelReceive(PduIdType RxSduId);
  * @param Value New value
  * @return E_OK if changed, E_NOT_OK otherwise
  */
+/**
+ * @brief change parameter
+ * @param[in] SduId Identifier
+ * @param[in] Parameter Function parameter
+ * @param[in] Value Parameter value
+ * @return Operation status
+ */
 extern Std_ReturnType J1939Tp_ChangeParameter(
     PduIdType SduId,
     J1939Tp_ParameterType Parameter,

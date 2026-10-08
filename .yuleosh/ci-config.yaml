@@ -31,14 +31,25 @@ coverage:
   #   strict:           true   硬门禁模式 (2026-08-07 恢复)
   #   threshold_branch: 20.0%  分支覆盖率目标 (实测 31.19%, 留裕量)
   #
-  # Phase 3 目标 (未来):
-  #   strict: true, c_fail_under: 60%
+  # 量产门禁：P0-5 硬化 (2026-10-07)。
+  #   threshold_branch: 20.0 → 25.0 (基线实测 31.19%, +5pt 仍留裕量);
+  #   CI gcovr 已加 --branches, 分支门禁正式生效 (此前无分支数据时被跳过)。
   #
-  threshold_line: 40.0
+  # P1-3 量产整改 (2026-10-08):
+  #   第一阶段目标 (ISO 26262 SWE.4.BP1 最低要求):
+  #     threshold_line: 60.0%   (从 40% 提升)
+  #     c_fail_under:   60      (从 40 提升)
+  #     threshold_branch: 50.0% (从 25% 提升)
+  #   第二阶段目标 (量产成熟度):
+  #     threshold_line: 80.0%
+  #     c_fail_under:   80
+  #     threshold_branch: 70.0%
+  #
+  threshold_line: 60.0
   threshold_condition: 10.0
-  c_fail_under: 40
+  c_fail_under: 60
   strict: true
-  threshold_branch: 20.0
+  threshold_branch: 50.0
 
   # ── 模块级门禁阈值 ──────────────────────────────────────────
   #  每个模块的独立行覆盖率门禁
@@ -63,8 +74,8 @@ misra:
   addon: "misra"
   active_profile: "safety"
   advisory_violations: 20528        # MISRA C:2023 baseline advisory (2026-08-07 重建: 36212 total)
-  fail_on_required: false          # Phase 1: migration — allow baseline
-  fail_on_advisory: false
+  fail_on_required: true           # 量产门禁：P0-5 硬化 (2026-10-07)。required 违规必须阻断 CI
+  fail_on_advisory: false          # advisory 允许偏差 (保持 false)
   fail_threshold: 37000            # 2026-08-07 重建基线: 真实 36212 (business 36106) + 余量
   violations_per_kloc: 200.0       # 2026-08-07 重建基线: 真实密度 188.2/KLOC, with margin
   cppcheck_std: "c11"

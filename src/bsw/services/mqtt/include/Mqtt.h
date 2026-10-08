@@ -284,6 +284,12 @@ extern Mqtt_ReturnType Mqtt_DeInit(void);
  * @return 操作结果
  * @req SWS_Mqtt_00003
  */
+/**
+ * @brief connect
+ * @param[in] connectionId Identifier
+ * @param[in] connConfig Configuration reference
+ * @return Operation result
+ */
 extern Mqtt_ReturnType Mqtt_Connect(
     Mqtt_ConnectionIdType connectionId,
     const Mqtt_ConnectionConfigType* connConfig
@@ -305,6 +311,13 @@ extern Mqtt_ReturnType Mqtt_Disconnect(Mqtt_ConnectionIdType connectionId);
  * @return 操作结果
  * @req SWS_Mqtt_00005
  */
+/**
+ * @brief publish
+ * @param[in] connectionId Identifier
+ * @param[in] message message value
+ * @param[in] callback Callback function
+ * @return Operation result
+ */
 extern Mqtt_ReturnType Mqtt_Publish(
     Mqtt_ConnectionIdType connectionId,
     const Mqtt_PublishMessageType* message,
@@ -319,6 +332,13 @@ extern Mqtt_ReturnType Mqtt_Publish(
  * @return 操作结果
  * @req SWS_Mqtt_00006
  */
+/**
+ * @brief subscribe
+ * @param[in] connectionId Identifier
+ * @param[in] subscription subscription value
+ * @param[in] msgCallback Callback function
+ * @return Operation result
+ */
 extern Mqtt_ReturnType Mqtt_Subscribe(
     Mqtt_ConnectionIdType connectionId,
     const Mqtt_SubscriptionType* subscription,
@@ -331,6 +351,12 @@ extern Mqtt_ReturnType Mqtt_Subscribe(
  * @param topicFilter 主题过滤器
  * @return 操作结果
  * @req SWS_Mqtt_00007
+ */
+/**
+ * @brief unsubscribe
+ * @param[in] connectionId Identifier
+ * @param[in] topicFilter topicFilter value
+ * @return Operation result
  */
 extern Mqtt_ReturnType Mqtt_Unsubscribe(
     Mqtt_ConnectionIdType connectionId,
@@ -361,6 +387,12 @@ extern Mqtt_ConnectionStateType Mqtt_GetConnectionState(
  * @param info 信息结构指针(输出)
  * @return 操作结果
  * @req SWS_Mqtt_00010
+ */
+/**
+ * @brief Get requested information
+ * @param[in] connectionId Identifier
+ * @param[in] info Information pointer
+ * @return Operation result
  */
 extern Mqtt_ReturnType Mqtt_GetConnectionInfo(
     Mqtt_ConnectionIdType connectionId,

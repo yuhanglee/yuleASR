@@ -127,6 +127,11 @@ typedef struct {
  * @pre None
  * @post None
  */
+/**
+ * @brief Read data from channel
+ * @param[in] ChannelId Channel identifier
+ * @return Operation result
+ */
 Dio_LevelType Dio_ReadChannel(Dio_ChannelType ChannelId);
 
 /**
@@ -137,6 +142,11 @@ Dio_LevelType Dio_ReadChannel(Dio_ChannelType ChannelId);
  *
  * @pre None
  * @post Channel level set
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Level Level value
  */
 void Dio_WriteChannel(Dio_ChannelType ChannelId, Dio_LevelType Level);
 
@@ -149,6 +159,11 @@ void Dio_WriteChannel(Dio_ChannelType ChannelId, Dio_LevelType Level);
  * @pre None
  * @post None
  */
+/**
+ * @brief Read data from channel
+ * @param[in] PortId Identifier
+ * @return Operation result
+ */
 Dio_PortLevelType Dio_ReadPort(Dio_PortType PortId);
 
 /**
@@ -159,6 +174,11 @@ Dio_PortLevelType Dio_ReadPort(Dio_PortType PortId);
  *
  * @pre None
  * @post Port level set
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] PortId Identifier
+ * @param[in] Level Level value
  */
 void Dio_WritePort(Dio_PortType PortId, Dio_PortLevelType Level);
 
@@ -171,6 +191,11 @@ void Dio_WritePort(Dio_PortType PortId, Dio_PortLevelType Level);
  * @pre None
  * @post None
  */
+/**
+ * @brief Read data from channel
+ * @param[in] ChannelGroupIdPtr Channel identifier
+ * @return Operation result
+ */
 Dio_PortLevelType Dio_ReadChannelGroup(const Dio_ChannelGroupType* ChannelGroupIdPtr);
 
 /**
@@ -181,6 +206,11 @@ Dio_PortLevelType Dio_ReadChannelGroup(const Dio_ChannelGroupType* ChannelGroupI
  *
  * @pre None
  * @post Channel group level set
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] ChannelGroupIdPtr Channel identifier
+ * @param[in] Level Level value
  */
 void Dio_WriteChannelGroup(const Dio_ChannelGroupType* ChannelGroupIdPtr, Dio_PortLevelType Level);
 
@@ -195,6 +225,10 @@ void Dio_WriteChannelGroup(const Dio_ChannelGroupType* ChannelGroupIdPtr, Dio_Po
  * @note Only available if DIO_VERSION_INFO_API is STD_ON
  */
 #if (DIO_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void Dio_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -210,6 +244,11 @@ void Dio_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @note Only available if DIO_FLIP_CHANNEL_API is STD_ON
  */
 #if (DIO_FLIP_CHANNEL_API == STD_ON)
+/**
+ * @brief flip channel
+ * @param[in] ChannelId Channel identifier
+ * @return Operation result
+ */
 Dio_LevelType Dio_FlipChannel(Dio_ChannelType ChannelId);
 #endif
 

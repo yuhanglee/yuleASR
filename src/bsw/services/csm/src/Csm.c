@@ -439,6 +439,11 @@ STATIC Std_ReturnType Csm_ExecuteJob(uint8 jobIdx)
     }
     
     /* 调用硬件服务层 */
+    /* Seed the job output capacity with the full job buffer: ResetJob leaves
+     * resultLength at 0 and the HW backend validates *outputLength as the
+     * available capacity, so every queued job failed its capacity check
+     * (P1 Phase 8 fix). */
+    job->resultLength = CSM_MAX_DATA_LENGTH;
     result = Csm_Cfg_HwService(
         job->jobId,
         job->service,
@@ -2015,6 +2020,14 @@ Std_ReturnType Csm_Hash(
     
     if ((mode & CSM_OPERATION_MODE_FINISH) != 0U )
     {
+        /* Seed the job output capacity from the caller buffer: ResetJob
+         * leaves resultLength at 0 and the HW backend validates *outputLength
+         * as the available capacity, so the real mbedTLS backend (32B digest)
+         * always failed its capacity check (P1 Phase 8 fix). */
+        if (resultLengthPtr != NULL_PTR)
+        {
+            Csm_Jobs[jobIdx].resultLength = *resultLengthPtr;
+        }
         result = Csm_Cfg_HwService(
             jobId,
             CSM_SERVICE_HASH,
@@ -2096,6 +2109,9 @@ Std_ReturnType Csm_MacGenerate(
     
     if ((mode & CSM_OPERATION_MODE_FINISH) != 0U )
     {
+        /* Seed the job output capacity from the caller buffer (see Csm_Hash,
+         * P1 Phase 8 fix). */
+        Csm_Jobs[jobIdx].resultLength = *macLengthPtr;
         result = Csm_Cfg_HwService(
             jobId,
             CSM_SERVICE_MAC_GENERATE,
@@ -2170,13 +2186,20 @@ Std_ReturnType Csm_MacVerify(
     
     if ((mode & CSM_OPERATION_MODE_FINISH) != 0U )
     {
-        if (calculatedMacLength == macLength)
+        if (calculatedMacLength >= macLength)
         {
-            *verifyPtr = (Mcal_MemCompare(calculatedMac, macPtr, macLength) == 0U );
+            /* Truncated MAC compare (SWS_SecOC): the on-wire authentication
+             * code may be shorter than the backend digest (e.g. HMAC-SHA256:
+             * 32B digest vs 16B SecOC truncated MAC). Compare the leading
+             * macLength bytes.
+             * Result semantics per SWS_Csm_00041 Csm_VerifyResultType:
+             * CSM_E_VER_OK (0) on match, CSM_E_VER_NOT_OK (1) on mismatch. */
+            *verifyPtr = (Mcal_MemCompare(calculatedMac, macPtr, macLength) == 0U )
+                            ? (boolean)CSM_E_VER_OK : (boolean)CSM_E_VER_NOT_OK;
         }
         else
         {
-            *verifyPtr = FALSE;
+            *verifyPtr = (boolean)CSM_E_VER_NOT_OK;
         }
     }
     
@@ -2230,6 +2253,9 @@ Std_ReturnType Csm_Encrypt(
     
     if ((mode & CSM_OPERATION_MODE_FINISH) != 0U )
     {
+        /* Seed the job output capacity from the caller buffer (see Csm_Hash,
+         * P1 Phase 8 fix). */
+        Csm_Jobs[jobIdx].resultLength = *resultLengthPtr;
         result = Csm_Cfg_HwService(
             jobId,
             CSM_SERVICE_ENCRYPT,
@@ -2307,6 +2333,9 @@ Std_ReturnType Csm_Decrypt(
     
     if ((mode & CSM_OPERATION_MODE_FINISH) != 0U )
     {
+        /* Seed the job output capacity from the caller buffer (see Csm_Hash,
+         * P1 Phase 8 fix). */
+        Csm_Jobs[jobIdx].resultLength = *resultLengthPtr;
         result = Csm_Cfg_HwService(
             jobId,
             CSM_SERVICE_DECRYPT,

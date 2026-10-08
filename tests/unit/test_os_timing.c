@@ -52,6 +52,7 @@ void Os_TimingProtection_BudgetExceeded(Os_BudgetType Budget) {
  * @brief 测试任务执行时间监控
  * @test OS_TIMING_EXEC_001
  */
+/* @req SWR-005.1-08 */
 void test_Os_Timing_Execution_Budget(void) {
     Os_TaskType task = 0;
     Os_TickType budget = 1000;  /* 10ms budget @100us tick */

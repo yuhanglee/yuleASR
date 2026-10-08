@@ -205,6 +205,14 @@ void SomeIpTp_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param TxDataCntPtr Pointer to remaining data count
  * @return Result of operation
  */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] RetryInfoPtr Pointer reference
+ * @param[in] TxDataCntPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType SomeIpTp_Transmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr,
                                   const RetryInfoType* RetryInfoPtr,
                                   PduLengthType* TxDataCntPtr);
@@ -247,6 +255,13 @@ void SomeIpTp_MainFunction(void);
  * @param Buffer Output buffer (4 bytes)
  * @return Result of operation
  */
+/**
+ * @brief build tp header
+ * @param[in] Offset Memory offset
+ * @param[in] MoreSegments MoreSegments value
+ * @param[in] Buffer Data buffer
+ * @return Operation status
+ */
 Std_ReturnType SomeIpTp_BuildTpHeader(uint32 Offset, boolean MoreSegments, uint8* Buffer);
 
 /** @req SWS_SomeIpTp_00010 */
@@ -256,6 +271,13 @@ Std_ReturnType SomeIpTp_BuildTpHeader(uint32 Offset, boolean MoreSegments, uint8
  * @param Offset Output offset
  * @param MoreSegments Output more segments flag
  * @return Result of operation
+ */
+/**
+ * @brief parse tp header
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @param[in] MoreSegments MoreSegments value
+ * @return Operation status
  */
 Std_ReturnType SomeIpTp_ParseTpHeader(const uint8* Buffer, uint32* Offset, boolean* MoreSegments);
 

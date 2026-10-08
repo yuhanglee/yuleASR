@@ -8,6 +8,12 @@
 #ifndef CRC_H
 #define CRC_H
 
+/**
+ * @file Crc.h
+ * @brief CRC module public API
+ */
+
+
 /*==================================================================================================
  * INCLUDE FILES
  ==================================================================================================*/
@@ -96,6 +102,22 @@ extern void Crc_Init(const void* configPtr);
  * @param Crc_IsFirstCall TRUE if first call for this data stream
  * @return Calculated CRC8 value
  */
+/**
+ * @brief calculate c r c8
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue8 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
+ */
+/**
+ * @brief calculate c r c8
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue8 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
+ */
 extern uint8 Crc_CalculateCRC8(
     const uint8* Crc_DataPtr,
     uint32 Crc_Length,
@@ -111,6 +133,22 @@ extern uint8 Crc_CalculateCRC8(
  * @param Crc_StartValue16 Initial CRC value (use 0xFFFF for first call)
  * @param Crc_IsFirstCall TRUE if first call for this data stream
  * @return Calculated CRC16 value
+ */
+/**
+ * @brief calculate c r c16
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue16 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
+ */
+/**
+ * @brief calculate c r c16
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue16 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
  */
 extern uint16 Crc_CalculateCRC16(
     const uint8* Crc_DataPtr,
@@ -128,6 +166,22 @@ extern uint16 Crc_CalculateCRC16(
  * @param Crc_IsFirstCall TRUE if first call for this data stream
  * @return Calculated CRC32 value
  */
+/**
+ * @brief calculate c r c32
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue32 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
+ */
+/**
+ * @brief calculate c r c32
+ * @param[in] Crc_DataPtr Data buffer
+ * @param[in] Crc_Length Data length
+ * @param[in] Crc_StartValue32 Parameter value
+ * @param[in] Crc_IsFirstCall Crc_IsFirstCall value
+ * @return Result code
+ */
 extern uint32 Crc_CalculateCRC32(
     const uint8* Crc_DataPtr,
     uint32 Crc_Length,
@@ -142,6 +196,10 @@ extern uint32 Crc_CalculateCRC32(
  */
 #if (CRC_VERSION_INFO_API == STD_ON)
 /** @req SWS_Crc_00002 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void Crc_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 

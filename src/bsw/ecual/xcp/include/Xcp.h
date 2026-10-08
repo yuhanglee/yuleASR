@@ -197,61 +197,242 @@ typedef void (*Xcp_RxIndicationType)(const uint8 *data, uint16 length);
  *===========================================================================*/
 
 /* Initialization */
+/**
+ * @brief cmd build checksum
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdBuildChecksum(const uint8 *cmd);
+/**
+ * @brief Initialize the module
+ * @param[in] config Configuration reference
+ */
 void Xcp_Init(const void *config);
+/**
+ * @brief De-initialize the module
+ * @param[in] config Configuration reference
+ */
 extern void Xcp_DeInit(void);
 
 /* Main function - cyclic call */
+/**
+ * @brief Process periodic tasks
+ * @param[in] config Configuration reference
+ */
 extern void Xcp_MainFunction(void);
 
 /* Reception handling */
+/**
+ * @brief Receive data
+ * @param[in] data Data buffer
+ * @param[in] length Data length
+ */
 extern void Xcp_RxIndication(const uint8 *data, uint16 length);
 
 /* Transmission */
+/**
+ * @brief Transmit data
+ * @param[in] data Data buffer
+ * @param[in] length Data length
+ */
 extern void Xcp_TxConfirmation(void);
 
 /* Internal protocol handlers */
+/**
+ * @brief Process data
+ * @param[in] cmd cmd value
+ * @param[in] len Data length
+ */
 extern void Xcp_ProcessCommand(const uint8 *cmd, uint8 len);
+/**
+ * @brief send response
+ * @param[in] data Data buffer
+ * @param[in] len Data length
+ */
 extern void Xcp_SendResponse(const uint8 *data, uint8 len);
+/**
+ * @brief send error
+ * @param[in] errorCode Error code
+ */
 extern void Xcp_SendError(uint8 errorCode);
 
 /* Command handlers */
+/**
+ * @brief cmd connect
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdConnect(const uint8 *cmd);
+/**
+ * @brief cmd disconnect
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdDisconnect(const uint8 *cmd);
+/**
+ * @brief cmd get status
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdGetStatus(const uint8 *cmd);
+/**
+ * @brief cmd synch
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdSynch(const uint8 *cmd);
+/**
+ * @brief cmd set mta
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdSetMta(const uint8 *cmd);
+/**
+ * @brief cmd upload
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdUpload(const uint8 *cmd);
+/**
+ * @brief cmd short upload
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdShortUpload(const uint8 *cmd);
+/**
+ * @brief cmd download
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdDownload(const uint8 *cmd);
+/**
+ * @brief cmd set cal page
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdSetCalPage(const uint8 *cmd);
+/**
+ * @brief cmd get cal page
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdGetCalPage(const uint8 *cmd);
+/**
+ * @brief cmd copy cal page
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdCopyCalPage(const uint8 *cmd);
+/**
+ * @brief cmd alloc daq
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdAllocDaq(const uint8 *cmd);
+/**
+ * @brief cmd alloc odt
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdAllocOdt(const uint8 *cmd);
+/**
+ * @brief cmd alloc odt entry
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdAllocOdtEntry(const uint8 *cmd);
+/**
+ * @brief cmd free daq
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdFreeDaq(const uint8 *cmd);
+/**
+ * @brief cmd set daq ptr
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdSetDaqPtr(const uint8 *cmd);
+/**
+ * @brief cmd write daq
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdWriteDaq(const uint8 *cmd);
+/**
+ * @brief cmd set daq list mode
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdSetDaqListMode(const uint8 *cmd);
+/**
+ * @brief cmd start stop daq list
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdStartStopDaqList(const uint8 *cmd);
+/**
+ * @brief cmd start stop synch
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdStartStopSynch(const uint8 *cmd);
+/**
+ * @brief cmd get daq processor info
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_CmdGetDaqProcessorInfo(const uint8 *cmd);
 
 /* DAQ processing */
+/**
+ * @brief daq processor
+ * @param[in] cmd cmd value
+ */
 extern void Xcp_DaqProcessor(void);
+/**
+ * @brief daq trigger
+ * @param[in] eventChannel Channel identifier
+ */
 extern void Xcp_DaqTrigger(uint8 eventChannel);
+/**
+ * @brief send daq packet
+ * @param[in] daqList daqList value
+ * @param[in] odtIndex Index value
+ */
 extern void Xcp_SendDaqPacket(const Xcp_DaqListType *daqList, uint8 odtIndex);
 
 /* Calibration page switching */
+/**
+ * @brief Set configuration value
+ * @param[in] segment segment value
+ * @param[in] page page value
+ * @param[in] mode Operation mode
+ * @return Result code
+ */
 extern uint8 Xcp_SetCalPage(uint8 segment, uint8 page, uint8 mode);
+/**
+ * @brief Get requested information
+ * @param[in] segment segment value
+ * @param[in] mode Operation mode
+ * @return Result code
+ */
 extern uint8 Xcp_GetCalPage(uint8 segment, uint8 mode);
+/**
+ * @brief copy cal page
+ * @param[in] srcSeg srcSeg value
+ * @param[in] srcPage srcPage value
+ * @param[in] destSeg destSeg value
+ * @param[in] destPage destPage value
+ * @return Result code
+ */
 extern uint8 Xcp_CopyCalPage(uint8 srcSeg, uint8 srcPage, uint8 destSeg, uint8 destPage);
 
 /* Utility functions */
+/**
+ * @brief Check condition
+ * @param[in] data Data buffer
+ * @param[in] size Data length
+ * @return Result code
+ */
 extern uint8 Xcp_ChecksumCalculate(const uint8 *data, uint32 size);
+/**
+ * @brief mta set
+ * @param[in] address Memory address
+ * @param[in] extension extension value
+ */
 extern void Xcp_MtaSet(uint32 address, uint8 extension);
+/**
+ * @brief mta read
+ * @param[in] buffer Data buffer
+ * @param[in] count Element count
+ * @return Result code
+ */
 extern uint8 Xcp_MtaRead(uint8 *buffer, uint8 count);
+/**
+ * @brief mta write
+ * @param[in] buffer Data buffer
+ * @param[in] count Element count
+ * @return Result code
+ */
 extern uint8 Xcp_MtaWrite(const uint8 *buffer, uint8 count);
 
 /*============================================================================

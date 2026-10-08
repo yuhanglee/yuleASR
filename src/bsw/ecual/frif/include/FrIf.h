@@ -254,6 +254,14 @@ Std_ReturnType FrIf_ControllerInit(uint8 FrIf_CtrlIdx);
  * @param FrIf_Offset Offset
  * @return Result of operation
  */
+/**
+ * @brief Set configuration value
+ * @param[in] FrIf_CtrlIdx Index value
+ * @param[in] FrIf_AbsTimerIdx Index value
+ * @param[in] FrIf_Cycle Cycle period
+ * @param[in] FrIf_Offset Memory offset
+ * @return Operation status
+ */
 Std_ReturnType FrIf_SetAbsoluteTimer(uint8 FrIf_CtrlIdx,
                                       uint8 FrIf_AbsTimerIdx,
                                       uint8 FrIf_Cycle,
@@ -266,6 +274,13 @@ Std_ReturnType FrIf_SetAbsoluteTimer(uint8 FrIf_CtrlIdx,
  * @param FrIf_RelTimerIdx Timer index
  * @param FrIf_Offset Offset
  * @return Result of operation
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] FrIf_CtrlIdx Index value
+ * @param[in] FrIf_RelTimerIdx Index value
+ * @param[in] FrIf_Offset Memory offset
+ * @return Operation status
  */
 Std_ReturnType FrIf_SetRelativeTimer(uint8 FrIf_CtrlIdx,
                                       uint8 FrIf_RelTimerIdx,
@@ -314,6 +329,13 @@ Std_ReturnType FrIf_GetPOCStatus(uint8 FrIf_CtrlIdx, FrIf_POCStatusType* FrIf_PO
  * @param FrIf_CyclePtr Pointer to cycle
  * @param FrIf_MacrotickPtr Pointer to macrotick
  * @return Result of operation
+ */
+/**
+ * @brief Get requested information
+ * @param[in] FrIf_CtrlIdx Index value
+ * @param[in] FrIf_CyclePtr Pointer reference
+ * @param[in] FrIf_MacrotickPtr Pointer reference
+ * @return Operation status
  */
 Std_ReturnType FrIf_GetGlobalTime(uint8 FrIf_CtrlIdx,
                                    uint8* FrIf_CyclePtr,

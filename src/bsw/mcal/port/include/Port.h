@@ -136,6 +136,10 @@ extern const Port_ConfigType Port_Config;
  *
  * @note This function must be called before any other Port function
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Port_Init(const Port_ConfigType* ConfigPtr);
 
 /**
@@ -147,6 +151,10 @@ void Port_Init(const Port_ConfigType* ConfigPtr);
  * @note Resets the driver state (used by low-power transitions and tests)
  */
 #if (PORT_DE_INIT_API == STD_ON)
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Port_DeInit(void);
 #endif
 
@@ -162,6 +170,11 @@ void Port_DeInit(void);
  * @note Only available if PORT_SET_PIN_DIRECTION_API is STD_ON
  */
 #if (PORT_SET_PIN_DIRECTION_API == STD_ON)
+/**
+ * @brief Set configuration value
+ * @param[in] Pin Pin value
+ * @param[in] Direction Direction value
+ */
 void Port_SetPinDirection(Port_PinType Pin, Port_PinDirectionType Direction);
 #endif
 
@@ -172,6 +185,11 @@ void Port_SetPinDirection(Port_PinType Pin, Port_PinDirectionType Direction);
  * @post All port pins refreshed
  *
  * @note Used to refresh the direction of all configured ports to the configured direction
+ */
+/**
+ * @brief refresh port direction
+ * @param[in] Pin Pin value
+ * @param[in] Direction Direction value
  */
 void Port_RefreshPortDirection(void);
 
@@ -186,6 +204,10 @@ void Port_RefreshPortDirection(void);
  * @note Only available if PORT_VERSION_INFO_API is STD_ON
  */
 #if (PORT_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void Port_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -201,6 +223,11 @@ void Port_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @note Only available if PORT_SET_PIN_MODE_API is STD_ON
  */
 #if (PORT_SET_PIN_MODE_API == STD_ON)
+/**
+ * @brief Set configuration value
+ * @param[in] Pin Pin value
+ * @param[in] Mode Operation mode
+ */
 void Port_SetPinMode(Port_PinType Pin, Port_PinModeType Mode);
 #endif
 

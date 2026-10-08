@@ -12,6 +12,12 @@
 #ifndef FLASH_H
 #define FLASH_H
 
+/**
+ * @file Flash.h
+ * @brief FLASH module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -153,51 +159,172 @@ typedef enum
  ************************************************************************************/
 
 /* Initialization and De-initialization */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Fls_Init(const Fls_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Fls_DeInit(void);
 
 /* Flash Operations */
+/**
+ * @brief erase
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_Erase(Fls_AddressType TargetAddress, 
                          Fls_LengthType Length);
+/**
+ * @brief Write data to channel
+ * @param[in] TargetAddress Memory address
+ * @param[in] SourceAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_Write(Fls_AddressType TargetAddress,
                          const uint8* SourceAddressPtr,
                          Fls_LengthType Length);
+/**
+ * @brief Read data from channel
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_Read(Fls_AddressType SourceAddress,
                         uint8* TargetAddressPtr,
                         Fls_LengthType Length);
 
 /* Control Functions */
+/**
+ * @brief Cancel pending operation
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ */
 void Fls_Cancel(void);
+/**
+ * @brief Get current status
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 MemIf_StatusType Fls_GetStatus(void);
+/**
+ * @brief Get requested information
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation result
+ */
 MemIf_JobResultType Fls_GetJobResult(void);
+/**
+ * @brief compare
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_Compare(Fls_AddressType SourceAddress,
                            const uint8* TargetAddressPtr,
                            Fls_LengthType Length);
+/**
+ * @brief blank check
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_BlankCheck(Fls_AddressType TargetAddress,
                               Fls_LengthType Length);
+/**
+ * @brief Set configuration value
+ * @param[in] Mode Operation mode
+ */
 void Fls_SetMode(MemIf_ModeType Mode);
 
 /* Version Info */
 #if (FLS_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void Fls_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
 /* Main Function for asynchronous operations */
+/**
+ * @brief Process periodic tasks
+ * @param[in] versioninfo Version info
+ */
 void Fls_MainFunction(void);
 
 /* Flash Controller Interface */
+/**
+ * @brief unlock control registers
+ * @param[in] versioninfo Version info
+ * @return Operation status
+ */
 Std_ReturnType Fls_UnlockControlRegisters(void);
+/**
+ * @brief lock control registers
+ * @param[in] versioninfo Version info
+ * @return Operation status
+ */
 Std_ReturnType Fls_LockControlRegisters(void);
+/**
+ * @brief clear error flags
+ * @param[in] versioninfo Version info
+ * @return Operation status
+ */
 Std_ReturnType Fls_ClearErrorFlags(void);
+/**
+ * @brief wait for operation
+ * @param[in] Timeout Timeout value
+ * @return Operation status
+ */
 Std_ReturnType Fls_WaitForOperation(uint32 Timeout);
 
 /* Protection Functions */
+/**
+ * @brief Configure the module
+ * @param[in] Protection Protection value
+ * @return Operation status
+ */
 Std_ReturnType Fls_ConfigureReadProtection(Fls_ProtectionType Protection);
+/**
+ * @brief Configure the module
+ * @param[in] SectorMask Bit mask
+ * @param[in] Enable Enable value
+ * @return Operation status
+ */
 Std_ReturnType Fls_ConfigureWriteProtection(uint32 SectorMask, boolean Enable);
 
 /* Utility Functions */
+/**
+ * @brief Get requested information
+ * @param[in] Address Memory address
+ * @return Result code
+ */
 uint32 Fls_GetSectorIndex(Fls_AddressType Address);
+/**
+ * @brief verify sector erased
+ * @param[in] SectorIndex Index value
+ * @return Operation status
+ */
 Std_ReturnType Fls_VerifySectorErased(uint32 SectorIndex);
+/**
+ * @brief verify written data
+ * @param[in] Address Memory address
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Fls_VerifyWrittenData(Fls_AddressType Address,
                                      const uint8* DataPtr,
                                      Fls_LengthType Length);

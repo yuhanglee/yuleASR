@@ -67,22 +67,65 @@ typedef struct {
 } Srp_ConfigType;
 
 /** @req SWS_Srp_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Srp_Init(const void* ConfigPtr);
 /** @req SWS_Srp_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Srp_DeInit(void);
 /** @req SWS_Srp_00005 */
+/**
+ * @brief Register callback or handler
+ * @param[in] TalkerInfo Information pointer
+ * @return Operation status
+ */
 Std_ReturnType Srp_RegisterTalker(const Srp_TalkerAdvertiseType* TalkerInfo);
 /** @req SWS_Srp_00006 */
+/**
+ * @brief Register callback or handler
+ * @param[in] StreamId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Srp_RegisterListener(const Srp_StreamIdType StreamId);
 /** @req SWS_Srp_00007 */
+/**
+ * @brief deregister stream
+ * @param[in] StreamId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Srp_DeregisterStream(const Srp_StreamIdType StreamId);
 /** @req SWS_Srp_00008 */
+/**
+ * @brief Get current status
+ * @param[in] StreamId Identifier
+ * @param[in] Status State value
+ * @return Operation status
+ */
 Std_ReturnType Srp_GetStreamStatus(const Srp_StreamIdType StreamId, Srp_ReservationStateType* Status);
 /** @req SWS_Srp_00009 */
+/**
+ * @brief Receive data
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ */
 void Srp_RxIndication(const uint8* DataPtr, uint16 Length);
 /** @req SWS_Srp_00004 */
+/**
+ * @brief Process periodic tasks
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ */
 void Srp_MainFunction(void);
 /** @req SWS_Srp_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void Srp_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* SRP_H */

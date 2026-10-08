@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Loader.h
+ * @brief Boot loader loader component
+ */
 #ifndef BOOT_LOADER_H
 #define BOOT_LOADER_H
 

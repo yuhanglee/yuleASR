@@ -55,6 +55,13 @@
 #define CANSM_SID_GETCBKSTATUS                  (0x13U)
 #define CANSM_SID_SETBAUDRATE                   (0x14U)
 #define CANSM_SID_GETBAUDRATE                   (0x15U)
+#define CANSM_SID_STARTWAKEUPSOURCE             (0x16U)
+#define CANSM_SID_STOPWAKEUPSOURCE              (0x17U)
+#define CANSM_SID_SETNETWORKPASSIVE             (0x18U)
+#define CANSM_SID_TRANSCEIVERMODEINDICATION     (0x19U)
+#define CANSM_SID_CHECKTRCVWAKEFLAGINDICATION   (0x1AU)
+#define CANSM_SID_SETPNREQUEST                  (0x1BU)
+#define CANSM_SID_GETPNSTATE                    (0x1CU)
 
 /*==================================================================================================
 *                                    DET ERROR CODES
@@ -102,6 +109,20 @@ typedef enum {
     /* Change Baudrate State */
     CANSM_BSM_S_CHANGEBAUDRATE
 } CanSm_BsmStateType;
+
+/**
+ * @brief Partial Network Sleep Availability (PNSA) states of a network
+ * @details CANSM_PNSA_NO_PN is the default after init and while the network
+ *          has no communication. A pending PN request (CanSM_SetPnRequest) is
+ *          promoted to CANSM_PNSA_PN_REQUESTED by CanSM_MainFunction once the
+ *          network is in full communication. CanSM_ConfirmPnAvailability
+ *          moves the state to CANSM_PNSA_PN_AVAILABLE.
+ */
+typedef enum {
+    CANSM_PNSA_NO_PN = 0,           /**< No PN sleep availability (default) */
+    CANSM_PNSA_PN_REQUESTED,        /**< PN requested, waiting for the transceiver confirmation */
+    CANSM_PNSA_PN_AVAILABLE         /**< PN confirmed available by CanIf / the transceiver */
+} CanSm_PnStateType;
 
 /**
  * @brief CANSM Network Sub-states for BSM_S_NOCOM
@@ -228,6 +249,12 @@ void CanSM_DeInit(void);
  * @return E_OK if request was accepted, E_NOT_OK otherwise
  * @details This is the main API used by ComM to request communication mode changes
  */
+/**
+ * @brief Request operation
+ * @param[in] Network Network value
+ * @param[in] ComM_Mode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType CanSM_RequestComMode(ComM_UserHandleType Network, ComM_ModeType ComM_Mode);
 
 /**
@@ -268,6 +295,32 @@ void CanSM_ControllerModeIndication(uint8 ControllerId, CanIf_ControllerModeType
 Std_ReturnType CanSM_ConfirmPnAvailability(NetworkHandleType NetworkHandle);
 
 /**
+ * @brief Sets the PN (partial networking) wake-up request of a network
+ * @param NetworkHandle Network handle
+ * @param PnRequest TRUE: PN selective wake-up requested, FALSE: cancel request
+ * @return E_OK if the request was accepted, E_NOT_OK otherwise
+ * @details The request is latched and consumed by CanSM_MainFunction: in full
+ *          communication the PN state advances from CANSM_PNSA_NO_PN to
+ *          CANSM_PNSA_PN_REQUESTED. Requires transceiver support in the
+ *          network configuration.
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] PnRequest PnRequest value
+ * @return Operation status
+ */
+Std_ReturnType CanSM_SetPnRequest(NetworkHandleType NetworkHandle, boolean PnRequest);
+
+/**
+ * @brief Gets the PN sleep availability state of a network
+ * @param NetworkHandle Network handle
+ * @param PnStatePtr Pointer to store the PNSA state
+ * @return E_OK if successful, E_NOT_OK otherwise
+ */
+Std_ReturnType CanSM_GetPnState(NetworkHandleType NetworkHandle, CanSm_PnStateType* PnStatePtr);
+
+/**
  * @brief Clears the transceiver wakeup-flag indication of a network
  * @param NetworkHandle Network handle
  * @return E_OK if the indication was cleared, E_NOT_OK otherwise
@@ -304,6 +357,102 @@ Std_ReturnType CanSM_GetBaudrate(ComM_UserHandleType Network, uint16* BaudRatePt
  * @return E_OK if successful, E_NOT_OK otherwise
  */
 Std_ReturnType CanSM_GetCurrentInternalState(uint8 Network, CanSm_BsmStateType* StatePtr);
+
+/**
+ * @brief Starts the wakeup source of a network (wakeup validation)
+ * @param Network Network handle
+ * @return E_OK if the request was accepted, E_NOT_OK otherwise
+ * @details Latches a wakeup source request which is consumed by the next
+ *          CanSM_MainFunction cycle: the network enters the wakeup validation
+ *          state (CANSM_BSM_S_CHECKWAKEUP, controller STOPPED + transceiver
+ *          NORMAL when transceiver management is configured)
+ */
+/**
+ * @brief Start the operation
+ * @param[in] Network Network value
+ * @return Operation status
+ */
+Std_ReturnType CanSM_StartWakeupSource(NetworkHandleType Network);
+
+/**
+ * @brief Stops the wakeup source of a network
+ * @param Network Network handle
+ * @return E_OK if the request was accepted, E_NOT_OK otherwise
+ * @details Clears a pending wakeup source request; a network currently in
+ *          wakeup validation (CANSM_BSM_S_CHECKWAKEUP) returns to the regular
+ *          NOCOM flow
+ */
+/**
+ * @brief Stop the operation
+ * @param[in] Network Network value
+ * @return Operation status
+ */
+Std_ReturnType CanSM_StopWakeupSource(NetworkHandleType Network);
+
+/**
+ * @brief Sets the ECU-wide passive mode
+ * @param passive TRUE: ECU passive, FALSE: ECU active
+ * @return E_OK always
+ * @details While the ECU is passive, FULL_COMMUNICATION requests of a network
+ *          are degraded to SILENT_COMMUNICATION unless the network was
+ *          explicitly set non-passive via CanSM_SetNetworkPassive(Network, FALSE)
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] passive passive value
+ * @return Operation status
+ */
+Std_ReturnType CanSM_SetEcuPassive(boolean passive);
+
+/**
+ * @brief Sets the passive mode of a single network (overrides the ECU-wide mode)
+ * @param NetworkHandle Network handle
+ * @param passive TRUE: force passive (degrade FULL requests), FALSE: explicitly
+ *        non-passive (takes precedence over an ECU-wide passive mode)
+ * @return E_OK if the request was accepted, E_NOT_OK otherwise
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] passive passive value
+ * @return Operation status
+ */
+Std_ReturnType CanSM_SetNetworkPassive(NetworkHandleType NetworkHandle, boolean passive);
+
+/**
+ * @brief TX timeout exception notification (CanIf timeout exception)
+ * @param Network Network handle
+ * @details Triggers the bus-off recovery entry semantics for the network:
+ *          the network enters CANSM_BSM_S_SILENTCOM_BOR (initial sub-state),
+ *          sharing the entry logic with CanSM_ControllerBusOff
+ */
+/**
+ * @brief Transmit data
+ * @param[in] Network Network value
+ */
+void CanSM_TxTimeoutException(NetworkHandleType Network);
+
+/**
+ * @brief Transceiver mode indication callback from CanIf
+ * @param TransceiverId Transceiver that changed mode
+ * @param TransceiverMode New transceiver mode
+ * @details Updates the transceiver mode recorded in the CanSM runtime,
+ *          matched against the TransceiverId of the network configuration
+ */
+/**
+ * @brief transceiver mode indication
+ * @param[in] TransceiverId Identifier
+ * @param[in] TransceiverMode Operation mode
+ */
+void CanSM_TransceiverModeIndication(uint8 TransceiverId, CanIf_TransceiverModeType TransceiverMode);
+
+/**
+ * @brief Check transceiver wakeup flag indication callback from CanIf
+ * @param TransceiverId Transceiver whose wakeup flag was checked
+ * @details Clears the pending transceiver wakeup-flag check of the matching
+ *          network ( wakeup validation completion marker )
+ */
+void CanSM_CheckTransceiverWakeFlagIndication(uint8 TransceiverId);
 
 #define CANSM_STOP_SEC_CODE
 #include "MemMap.h"

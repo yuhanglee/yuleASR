@@ -384,6 +384,10 @@ typedef struct
  *
  * @requirements SWS_CanTrcv_00001
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void CanTrcv_Init(const CanTrcv_ConfigType* ConfigPtr);
 
 /*================================================================================================*/
@@ -399,6 +403,11 @@ extern void CanTrcv_Init(const CanTrcv_ConfigType* ConfigPtr);
  * @post Module is de-initialized, transceivers in safe state
  *
  * @requirements SWS_CanTrcv_00002
+ */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
  */
 extern Std_ReturnType CanTrcv_DeInit(void);
 
@@ -421,6 +430,12 @@ extern Std_ReturnType CanTrcv_DeInit(void);
  *
  * @requirements SWS_CanTrcv_00003
  */
+/**
+ * @brief Set configuration value
+ * @param[in] Transceiver Transceiver value
+ * @param[in] OpMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType CanTrcv_SetOpMode(uint8 Transceiver, CanTrcv_TrcvModeType OpMode);
 
 /*================================================================================================*/
@@ -440,6 +455,12 @@ extern Std_ReturnType CanTrcv_SetOpMode(uint8 Transceiver, CanTrcv_TrcvModeType 
  * @post Current operation mode is returned via OpMode parameter
  *
  * @requirements SWS_CanTrcv_00004
+ */
+/**
+ * @brief Get requested information
+ * @param[in] Transceiver Transceiver value
+ * @param[in] OpMode Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType CanTrcv_GetOpMode(uint8 Transceiver, CanTrcv_TrcvModeType* OpMode);
 
@@ -462,6 +483,12 @@ extern Std_ReturnType CanTrcv_GetOpMode(uint8 Transceiver, CanTrcv_TrcvModeType*
  *
  * @requirements SWS_CanTrcv_00005
  */
+/**
+ * @brief Get requested information
+ * @param[in] Transceiver Transceiver value
+ * @param[in] Reason Reason value
+ * @return Operation status
+ */
 extern Std_ReturnType CanTrcv_GetBusWuReason(uint8 Transceiver, CanTrcv_TrcvWakeupReasonType* Reason);
 
 /*================================================================================================*/
@@ -483,6 +510,12 @@ extern Std_ReturnType CanTrcv_GetBusWuReason(uint8 Transceiver, CanTrcv_TrcvWake
  *
  * @requirements SWS_CanTrcv_00006
  */
+/**
+ * @brief Set configuration value
+ * @param[in] Transceiver Transceiver value
+ * @param[in] TrcvWakeupMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType CanTrcv_SetWakeupMode(uint8 Transceiver, CanTrcv_TrcvWakeupModeType TrcvWakeupMode);
 
 /*================================================================================================*/
@@ -499,6 +532,10 @@ extern Std_ReturnType CanTrcv_SetWakeupMode(uint8 Transceiver, CanTrcv_TrcvWakeu
  * @requirements SWS_CanTrcv_00007
  */
 #if (CANTRCV_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void CanTrcv_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif /* CANTRCV_VERSION_INFO_API == STD_ON */
 
@@ -517,6 +554,10 @@ extern void CanTrcv_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @post Periodic tasks are executed
  *
  * @requirements SWS_CanTrcv_00008
+ */
+/**
+ * @brief Process periodic tasks
+ * @param[in] versioninfo Version info
  */
 extern void CanTrcv_MainFunction(void);
 
@@ -537,6 +578,10 @@ extern void CanTrcv_MainFunction(void);
  * @requirements SWS_CanTrcv_00108
  */
 #if (CANTRCV_WAKEUP_BY_BUS_USED == STD_ON)
+/**
+ * @brief Check condition
+ * @param[in] WakeupSource WakeupSource value
+ */
 extern void CanTrcv_CheckWakeup(EcuM_WakeupSourceType WakeupSource);
 #endif /* CANTRCV_WAKEUP_BY_BUS_USED == STD_ON */
 
@@ -556,6 +601,11 @@ extern void CanTrcv_CheckWakeup(EcuM_WakeupSourceType WakeupSource);
  * @post Wake-up events for the specified transceiver are checked
  *
  * @requirements SWS_CanTrcv_00180
+ */
+/**
+ * @brief Check condition
+ * @param[in] Transceiver Transceiver value
+ * @return Operation status
  */
 extern Std_ReturnType CanTrcv_CheckWakeupByTransceiver(uint8 Transceiver);
 

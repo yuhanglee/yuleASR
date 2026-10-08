@@ -1,5 +1,7 @@
 /*==================================================================================================
  * SchM_Fee.h - scheduler header for Fee driver exclusive areas
+ * @file SchM_Fee.h
+ * @brief BswM scheduler stubs for Fee
  *================================================================================================*/
 #include "Mcal.h"
 

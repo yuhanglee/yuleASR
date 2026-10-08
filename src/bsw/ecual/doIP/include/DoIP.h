@@ -21,6 +21,12 @@
 #ifndef DOIP_H
 #define DOIP_H
 
+/**
+ * @file DoIP.h
+ * @brief DOIP module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -146,70 +152,159 @@ typedef struct
 ================================================================================*/
 
 /* Module lifecycle */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void DoIP_Init(const DoIP_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void DoIP_DeInit(void);
 
 /* Activation line management */
+/**
+ * @brief activation line switch active
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void DoIP_ActivationLineSwitchActive(void);
+/**
+ * @brief activation line switch inactive
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void DoIP_ActivationLineSwitchInactive(void);
 
 /* Version info */
 #if (DOIP_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void DoIP_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
 /* SoAd callbacks */
+/**
+ * @brief so ad if rx indication
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 extern void DoIP_SoAdIfRxIndication(
     PduIdType RxPduId,
     const PduInfoType* PduInfoPtr
 );
 
+/**
+ * @brief so ad if tx confirmation
+ * @param[in] TxPduId Identifier
+ */
 extern void DoIP_SoAdIfTxConfirmation(
     PduIdType TxPduId
 );
 
+/**
+ * @brief so ad tp rx indication
+ * @param[in] RxPduId Identifier
+ * @param[in] result Result value
+ */
 extern void DoIP_SoAdTpRxIndication(
     PduIdType RxPduId,
     Std_ReturnType result
 );
 
+/**
+ * @brief so ad tp tx confirmation
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 extern void DoIP_SoAdTpTxConfirmation(
     PduIdType TxPduId,
     Std_ReturnType result
 );
 
+/**
+ * @brief so ad trigger transmit
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType DoIP_SoAdTriggerTransmit(
     PduIdType TxPduId,
     PduInfoType* PduInfoPtr
 );
 
 /* PduR callbacks */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType DoIP_Transmit(
     PduIdType TxPduId,
     const PduInfoType* PduInfoPtr
 );
 
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 extern void DoIP_RxIndication(
     PduIdType RxPduId,
     const PduInfoType* PduInfoPtr
 );
 
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 extern void DoIP_TxConfirmation(
     PduIdType TxPduId,
     Std_ReturnType result
 );
 
 /* Main function */
+/**
+ * @brief Process periodic tasks
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 extern void DoIP_MainFunction(void);
 
 /* Internal functions exposed for testing */
+/**
+ * @brief send vehicle announcement
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ * @return Operation status
+ */
 extern Std_ReturnType DoIP_SendVehicleAnnouncement(void);
+/**
+ * @brief Process data
+ * @param[in] socketId Identifier
+ * @param[in] requestPtr Pointer reference
+ * @param[in] requestLength Data length
+ * @return Operation status
+ */
 extern Std_ReturnType DoIP_ProcessRoutingActivation(
     uint16 socketId,
     const uint8* requestPtr,
     uint16 requestLength
 );
+/**
+ * @brief send alive check request
+ * @param[in] socketId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType DoIP_SendAliveCheckRequest(uint16 socketId);
+/**
+ * @brief Process data
+ * @param[in] socketId Identifier
+ * @param[in] responsePtr Pointer reference
+ */
 extern void DoIP_ProcessAliveCheckResponse(
     uint16 socketId,
     const uint8* responsePtr

@@ -252,6 +252,13 @@ Std_ReturnType LinNm_NetworkRelease(NetworkHandleType nmChannelHandle);
  * @return E_OK: No error
  *         E_NOT_OK: Getting state and mode has failed
  */
+/**
+ * @brief Get current module state
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmStatePtr State value
+ * @param[in] nmModePtr Operation mode
+ * @return Operation status
+ */
 Std_ReturnType LinNm_GetState(NetworkHandleType nmChannelHandle, 
                               Nm_StateType* nmStatePtr, 
                               Nm_ModeType* nmModePtr);
@@ -270,6 +277,12 @@ Std_ReturnType LinNm_RequestBusSynchronization(NetworkHandleType nmChannelHandle
  * @param nmRemoteSleepIndPtr Pointer where remote sleep check result shall be copied to
  * @return E_OK: No error
  *         E_NOT_OK: Checking remote sleep indication has failed
+ */
+/**
+ * @brief Check condition
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmRemoteSleepIndPtr Pointer reference
+ * @return Operation status
  */
 Std_ReturnType LinNm_CheckRemoteSleepIndication(NetworkHandleType nmChannelHandle, 
                                                  boolean* nmRemoteSleepIndPtr);
@@ -290,6 +303,12 @@ void LinNm_MainFunction(void);
  * @return E_OK: No error
  *         E_NOT_OK: Setting communication mode has failed
  */
+/**
+ * @brief Request operation
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmComMode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType LinNm_RequestComMode(NetworkHandleType nmChannelHandle, 
                                      ComM_ModeType nmComMode);
 
@@ -299,6 +318,12 @@ Std_ReturnType LinNm_RequestComMode(NetworkHandleType nmChannelHandle,
  * @param nmComModePtr Pointer where current communication mode shall be stored
  * @return E_OK: No error
  *         E_NOT_OK: Getting communication mode has failed
+ */
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmComModePtr Operation mode
+ * @return Operation status
  */
 Std_ReturnType LinNm_GetCurrentComMode(NetworkHandleType nmChannelHandle, 
                                         ComM_ModeType* nmComModePtr);
@@ -311,6 +336,12 @@ Std_ReturnType LinNm_GetCurrentComMode(NetworkHandleType nmChannelHandle,
  * @return E_OK: No error
  *         E_NOT_OK: Setting user data has failed
  */
+/**
+ * @brief Set configuration value
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType LinNm_SetUserData(NetworkHandleType nmChannelHandle, 
                                   const uint8* nmUserDataPtr);
 
@@ -320,6 +351,12 @@ Std_ReturnType LinNm_SetUserData(NetworkHandleType nmChannelHandle,
  * @param nmUserDataPtr Pointer where user data shall be copied to
  * @return E_OK: No error
  *         E_NOT_OK: Getting user data has failed
+ */
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
  */
 Std_ReturnType LinNm_GetUserData(NetworkHandleType nmChannelHandle, 
                                   uint8* nmUserDataPtr);
@@ -349,6 +386,10 @@ void LinIf_ScheduleRequestConfirmation(uint8 Channel, uint8 ScheduleIndex);
  */
 void LinNm_ComM_BusSleepMode(NetworkHandleType Channel);
 void LinNm_ComM_PrepareBusSleepMode(NetworkHandleType Channel);
+/**
+ * @brief com m_ network mode
+ * @param[in] Channel Channel identifier
+ */
 void LinNm_ComM_NetworkMode(NetworkHandleType Channel);
 
 /* Nm Call-back Functions (for communication with Nm module if used) */

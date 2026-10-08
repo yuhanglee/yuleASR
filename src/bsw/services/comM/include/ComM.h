@@ -155,84 +155,232 @@ typedef struct {
 
 /** @req SWS_ComM_00001 */
 /* Function Prototypes - Core API */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void ComM_Init(const ComM_ConfigType* ConfigPtr);
 /** @req SWS_ComM_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void ComM_DeInit(void);
 /** @req SWS_ComM_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void ComM_GetVersionInfo(Std_VersionInfoType* VersionInfo);
 
 /** @req SWS_ComM_00005 */
 /* Function Prototypes - Communication Mode Management */
+/**
+ * @brief Request operation
+ * @param[in] User User value
+ * @param[in] ComMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_RequestComMode(ComM_UserHandleType User, ComM_ModeType ComMode);
 /** @req SWS_ComM_00006 */
+/**
+ * @brief Get requested information
+ * @param[in] User User value
+ * @param[in] ComModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_GetMaxComMode(ComM_UserHandleType User, ComM_ModeType* ComModePtr);
 /** @req SWS_ComM_00007 */
+/**
+ * @brief Get requested information
+ * @param[in] User User value
+ * @param[in] ComModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_GetRequestedComMode(ComM_UserHandleType User, ComM_ModeType* ComModePtr);
 /** @req SWS_ComM_00008 */
+/**
+ * @brief Get requested information
+ * @param[in] User User value
+ * @param[in] ComModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_GetCurrentComMode(ComM_UserHandleType User, ComM_ModeType* ComModePtr);
 
 /** @req SWS_ComM_00009 */
 /* Function Prototypes - Channel Management */
+/**
+ * @brief communication allowed
+ * @param[in] Channel Channel identifier
+ * @param[in] Allowed Allowed value
+ */
 extern void ComM_CommunicationAllowed(ComM_ChannelHandleType Channel, boolean Allowed);
 /** @req SWS_ComM_00004 */
+/**
+ * @brief Process periodic tasks
+ * @param[in] Channel Channel identifier
+ * @param[in] Allowed Allowed value
+ */
 extern void ComM_MainFunction(void);
 
 /** @req SWS_ComM_00010 */
 /* Function Prototypes - PNC Management */
+/**
+ * @brief Process periodic tasks
+ * @param[in] Channel Channel identifier
+ * @param[in] Allowed Allowed value
+ */
 extern void ComM_MainFunctionPnc(void);
 /** @req SWS_ComM_00011 */
+/**
+ * @brief Request operation
+ * @param[in] Pnc Pnc value
+ * @param[in] PncMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_RequestPncMode(ComM_PncHandleType Pnc, ComM_PncModeType PncMode);
 /** @req SWS_ComM_00012 */
+/**
+ * @brief Get requested information
+ * @param[in] Pnc Pnc value
+ * @param[in] PncModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_GetPncMode(ComM_PncHandleType Pnc, ComM_PncModeType* PncModePtr);
 
 /** @req SWS_ComM_00013 */
 /* Function Prototypes - ECU State Manager Integration */
+/**
+ * @brief ecu m_ wake up indication
+ * @param[in] WakeupType Type selector
+ */
 extern void ComM_EcuM_WakeUpIndication(ComM_EcuM_WakeUpType WakeupType);
 /** @req SWS_ComM_00014 */
+/**
+ * @brief ecu m_ bus wake up indication
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_EcuM_BusWakeUpIndication(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00015 */
+/**
+ * @brief ecu m_ run request indication
+ * @param[in] Requested Requested value
+ */
 extern void ComM_EcuM_RunRequestIndication(boolean Requested);
 
 /** @req SWS_ComM_00016 */
 /* Function Prototypes - Bus State Manager Interface */
+/**
+ * @brief bus s m_ mode indication
+ * @param[in] Channel Channel identifier
+ * @param[in] Mode Operation mode
+ */
 extern void ComM_BusSM_ModeIndication(ComM_ChannelHandleType Channel, ComM_ModeType Mode);
 /** @req SWS_ComM_00017 */
+/**
+ * @brief bus s m_ bus sleep mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_BusSM_BusSleepMode(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00018 */
+/**
+ * @brief bus s m_ network mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_BusSM_NetworkMode(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00019 */
+/**
+ * @brief bus s m_ prepare bus sleep mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_BusSM_PrepareBusSleepMode(ComM_ChannelHandleType Channel);
 
 /** @req SWS_ComM_00020 */
 /* Function Prototypes - DCM Integration */
+/**
+ * @brief d c m_ active diagnostic
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_DCM_ActiveDiagnostic(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00021 */
+/**
+ * @brief d c m_ inactive diagnostic
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_DCM_InactiveDiagnostic(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00022 */
+/**
+ * @brief d c m_ passive diagnostic
+ * @param[in] Channel Channel identifier
+ * @param[in] Active Active value
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_DCM_PassiveDiagnostic(ComM_ChannelHandleType Channel, boolean Active);
 
 /** @req SWS_ComM_00023 */
 /* Function Prototypes - ECNM Integration */
+/**
+ * @brief e c n m_ network mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_ECNM_NetworkMode(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00024 */
+/**
+ * @brief e c n m_ prepare bus sleep mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_ECNM_PrepareBusSleepMode(ComM_ChannelHandleType Channel);
 /** @req SWS_ComM_00025 */
+/**
+ * @brief e c n m_ bus sleep mode
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_ECNM_BusSleepMode(ComM_ChannelHandleType Channel);
 
 /** @req SWS_ComM_00026 */
 /* Function Prototypes - NVM Integration */
+/**
+ * @brief nvm_ start up error
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_Nvm_StartUpError(void);
 /** @req SWS_ComM_00027 */
+/**
+ * @brief nvm_ store inhibition status
+ * @param[in] Channel Channel identifier
+ */
 extern void ComM_Nvm_StoreInhibitionStatus(void);
 
 /** @req SWS_ComM_00028 */
 /* Function Prototypes - Diagnostic Support */
+/**
+ * @brief Get current status
+ * @param[in] Channel Channel identifier
+ * @param[in] StatusPtr State value
+ * @return Operation status
+ */
 extern Std_ReturnType ComM_GetInhibitionStatus(ComM_ChannelHandleType Channel, ComM_InhibitionStatusType* StatusPtr);
 /** @req SWS_ComM_00029 */
+/**
+ * @brief limit channel to no com mode
+ * @param[in] Channel Channel identifier
+ * @param[in] Status State value
+ */
 extern void ComM_LimitChannelToNoComMode(ComM_ChannelHandleType Channel, boolean Status);
 /** @req SWS_ComM_00030 */
+/**
+ * @brief limit e c u to no com mode
+ * @param[in] Status State value
+ */
 extern void ComM_LimitECUToNoComMode(boolean Status);
 /** @req SWS_ComM_00031 */
+/**
+ * @brief prevent wake up
+ * @param[in] Channel Channel identifier
+ * @param[in] Status State value
+ */
 extern void ComM_PreventWakeUp(ComM_ChannelHandleType Channel, boolean Status);
 /** @req SWS_ComM_00032 */
 /**
@@ -243,8 +391,16 @@ extern void ComM_PreventWakeUp(ComM_ChannelHandleType Channel, boolean Status);
  */
 extern void ComM_Nm_NetworkMode(uint8 NetworkHandle);
 /** @req SWS_ComM_00033 */
+/**
+ * @brief nm_ prepare bus sleep mode
+ * @param[in] NetworkHandle NetworkHandle value
+ */
 extern void ComM_Nm_PrepareBusSleepMode(uint8 NetworkHandle);
 /** @req SWS_ComM_00034 */
+/**
+ * @brief nm_ bus sleep mode
+ * @param[in] NetworkHandle NetworkHandle value
+ */
 extern void ComM_Nm_BusSleepMode(uint8 NetworkHandle);
 
 #endif /* COMM_H */

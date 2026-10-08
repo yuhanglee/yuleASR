@@ -96,8 +96,18 @@ typedef enum {
 /*=============================================================================*
  * Global Function Prototypes
  *=============================================================================*/
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
+ */
 Std_ReturnType E2E_Init(const void* ConfigPtr);
 /** @req SWS_E2E_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
+ */
 Std_ReturnType E2E_DeInit(void);
 
 #endif /* E2E_H */

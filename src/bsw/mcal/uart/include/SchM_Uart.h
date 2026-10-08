@@ -1,5 +1,7 @@
 /*==================================================================================================
  * SchM_Uart.h - scheduler header for Uart driver exclusive areas
+ * @file SchM_Uart.h
+ * @brief BswM scheduler stubs for Uart
  *================================================================================================*/
 #include "Mcal.h"
 

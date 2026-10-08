@@ -261,12 +261,16 @@ if __name__ == "__main__":
     if os.path.isfile(CI_CONFIG):
         with open(CI_CONFIG) as f:
             text = f.read()
+        # P0-5 (2026-10-07): anchor to real YAML keys at line start.
+        # Unanchored re.search hits historical threshold values inside
+        # comments (e.g. "# threshold_branch: 20.0%") and the comment value
+        # would shadow the actual key value.
         # Read threshold_line (Phase 2 minimum target)
-        m = re.search(r"threshold_line:\s*([\d.]+)", text)
+        m = re.search(r"^[ \t]*threshold_line:\s*([\d.]+)", text, re.MULTILINE)
         if m:
             thresholds["line"] = float(m.group(1))
         # Read threshold_branch (Phase 2 minimum target)
-        m = re.search(r"threshold_branch:\s*([\d.]+)", text)
+        m = re.search(r"^[ \t]*threshold_branch:\s*([\d.]+)", text, re.MULTILINE)
         if m:
             thresholds["branch"] = float(m.group(1))
 

@@ -32,6 +32,7 @@ static int teardown(void **state)
  *                                    Test Cases
  *================================================================================================*/
 
+/* @req SWR-004.1-01 */
 static void test_NvM_Init_ValidConfig(void **state)
 {
     (void)state;

@@ -59,3 +59,65 @@ add_integration_suite(integration_safety_tests RUN_SAFETY
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src/bsw/services/e2e/src/E2E_P01.c)
 add_integration_suite(integration_mem_tests RUN_MEM
     test_memory_stack.c)
+
+# ── P1 Phase 8: SecOC + Csm + KeyM full-chain integration test ────────────────
+# Real production code on both sides of every interface: keys are provisioned
+# through the real KeyM, mirrored into the real Csm keystore (mbedTLS
+# HMAC-SHA256 backend) and consumed by the real SecOC Tx-auth/Rx-verify
+# pipeline. Only PduR/Det/SchM are test doubles provided by the test file
+# itself (self-contained, own main() — hence not an add_integration_suite).
+add_executable(secoc_chain_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_secoc_chain.c
+)
+
+target_include_directories(secoc_chain_test PRIVATE
+    ${TEST_FRAMEWORK_INCLUDE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/bsw/services/secoc/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/bsw/services/csm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/bsw/services/keym/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/common/include
+    ${CMAKE_SOURCE_DIR}/include/autosar
+)
+
+target_compile_options(secoc_chain_test PRIVATE -Wall -Wextra -g -O0)
+
+set_target_properties(secoc_chain_test PROPERTIES
+    C_STANDARD 99
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
+)
+
+target_link_libraries(secoc_chain_test PRIVATE
+    service_secoc
+    service_csm
+    service_keym
+)
+
+if(TEST_FRAMEWORK_LIB)
+    target_link_libraries(secoc_chain_test PRIVATE ${TEST_FRAMEWORK_LIB})
+endif()
+
+add_test(NAME secoc_chain_test COMMAND secoc_chain_test)
+
+message(STATUS "  Integration test: secoc_chain_test (SecOC+Csm+KeyM full chain, P1 Phase 8)")
+
+# ── P1-12: DoIP full-chain integration test ────────────────────────────────────
+# Self-contained test with mock SoAd/EthIf/Eth layers validating the DoIP
+# protocol flow: Vehicle Announcement + Diagnostic Message routing.
+add_executable(test_doip_chain
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_doip_chain.c
+)
+
+target_include_directories(test_doip_chain PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/common/include
+)
+
+target_compile_options(test_doip_chain PRIVATE -Wall -Wextra -g -O0)
+
+set_target_properties(test_doip_chain PROPERTIES
+    C_STANDARD 99
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+add_test(NAME test_doip_chain COMMAND test_doip_chain)
+
+message(STATUS "  Integration test: test_doip_chain (DoIP->SoAd->EthIf->Eth, P1-12)")

@@ -268,6 +268,12 @@ extern void CanNm_MainFunction(void);
  * @return E_OK: Transmission successful
  *         E_NOT_OK: Transmission failed
  */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType CanNm_Transmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
 
 /**
@@ -291,6 +297,12 @@ extern void CanNm_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
  * @return E_OK: Data copied successfully
  *         E_NOT_OK: Data copy failed
  */
+/**
+ * @brief Trigger action
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType CanNm_TriggerTransmit(PduIdType TxPduId, PduInfoType* PduInfoPtr);
 
 /**
@@ -306,6 +318,13 @@ extern void CanNm_ConfirmPnAvailability(NetworkHandleType nmChannelHandle);
  * @param[out] nmModePtr Pointer to store mode
  * @return E_OK: State retrieved successfully
  *         E_NOT_OK: State retrieval failed
+ */
+/**
+ * @brief Get current module state
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmStatePtr State value
+ * @param[in] nmModePtr Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType CanNm_GetState(NetworkHandleType nmChannelHandle, 
                                       Nm_StateType* nmStatePtr, 
@@ -326,6 +345,12 @@ extern void CanNm_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @return E_OK: User data set successfully
  *         E_NOT_OK: Setting user data failed
  */
+/**
+ * @brief Set configuration value
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType CanNm_SetUserData(NetworkHandleType nmChannelHandle, 
                                          const uint8* nmUserDataPtr);
 
@@ -336,6 +361,12 @@ extern Std_ReturnType CanNm_SetUserData(NetworkHandleType nmChannelHandle,
  * @return E_OK: User data retrieved successfully
  *         E_NOT_OK: User data retrieval failed
  */
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType CanNm_GetUserData(NetworkHandleType nmChannelHandle, 
                                          uint8* nmUserDataPtr);
 
@@ -345,6 +376,12 @@ extern Std_ReturnType CanNm_GetUserData(NetworkHandleType nmChannelHandle,
  * @param[in] nmSleepReadyBit Sleep ready bit value
  * @return E_OK: Sleep ready bit set successfully
  *         E_NOT_OK: Setting sleep ready bit failed
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmSleepReadyBit nmSleepReadyBit value
+ * @return Operation status
  */
 extern Std_ReturnType CanNm_SetSleepReadyBit(NetworkHandleType nmChannelHandle, 
                                               boolean nmSleepReadyBit);

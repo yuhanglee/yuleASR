@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Hsm.h
+ * @brief Boot loader hsm component
+ */
 #ifndef BOOT_HSM_H
 #define BOOT_HSM_H
 

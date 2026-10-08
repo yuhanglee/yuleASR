@@ -63,18 +63,52 @@ typedef struct {
 } SomeIpIf_ConfigType;
 
 /** @req SWS_SomeIpIf_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SomeIpIf_Init(const SomeIpIf_ConfigType* ConfigPtr);
 /** @req SWS_SomeIpIf_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SomeIpIf_DeInit(void);
 /** @req SWS_SomeIpIf_00005 */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType SomeIpIf_Transmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
 /** @req SWS_SomeIpIf_00006 */
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void SomeIpIf_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 /** @req SWS_SomeIpIf_00004 */
+/**
+ * @brief Process periodic tasks
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void SomeIpIf_MainFunction(void);
 /** @req SWS_SomeIpIf_00007 */
+/**
+ * @brief Set configuration value
+ * @param[in] ChannelId Channel identifier
+ * @param[in] Online Online value
+ * @return Operation status
+ */
 Std_ReturnType SomeIpIf_SetState(uint8 ChannelId, boolean Online);
 /** @req SWS_SomeIpIf_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void SomeIpIf_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* SOMEIPIF_H */

@@ -242,6 +242,9 @@ extern void Dem_IntUpdateFilteredCount(void);
 /* DTC clearing */
 extern void Dem_IntClearSingleDTC(uint8 DtcIndex);
 extern void Dem_IntClearAllDTCs(void);
+/* P1 Phase 8: functional DTC group clear (UDS 0x14 mask semantics) */
+extern uint8 Dem_IntCountDTCGroupMatches(Dem_DTCType DtcGroup);
+extern void Dem_IntClearDTCGroup(Dem_DTCType DtcGroup);
 
 /* Event status callbacks */
 extern void Dem_IntNotifyEventStatusChange(Dem_EventIdType EventId,

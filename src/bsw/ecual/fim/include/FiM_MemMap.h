@@ -2,6 +2,8 @@
  * FiM_MemMap.h - memory mapping for FiM module
  *
  * All sections map to their defaults (no special memory placement).
+ * @file FiM_MemMap.h
+ * @brief FiM memory mapping
  *================================================================================================*/
 #ifndef FIM_MEMMAP_H
 #define FIM_MEMMAP_H

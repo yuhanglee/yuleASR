@@ -2,6 +2,8 @@
  * RamSafety_MemMap.h - memory mapping for RamSafety module
  *
  * All sections map to their defaults (no special memory placement).
+ * @file RamSafety_MemMap.h
+ * @brief RamSafety memory mapping
  *================================================================================================*/
 #ifndef RAMSAFETY_MEMMAP_H
 #define RAMSAFETY_MEMMAP_H

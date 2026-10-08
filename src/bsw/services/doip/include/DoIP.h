@@ -391,6 +391,20 @@ void DoIP_IfRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
  * @param ActivationType Routing activation type
  * @return Result of operation
  */
+/**
+ * @brief activate routing
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddress Memory address
+ * @param[in] ActivationType Type selector
+ * @return Operation status
+ */
+/**
+ * @brief activate routing
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddress Memory address
+ * @param[in] ActivationType Type selector
+ * @return Operation status
+ */
 Std_ReturnType DoIP_ActivateRouting(uint16 SourceAddress, uint16 TargetAddress, uint8 ActivationType);
 
 /** @req SWS_DoIP_00008 */

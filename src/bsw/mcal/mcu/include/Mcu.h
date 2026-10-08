@@ -211,6 +211,11 @@ extern const Mcu_ConfigType Mcu_Config;
  * @note 必须在其他模块初始化之前调用
  * @note 如果 ConfigPtr 为 NULL_PTR，使用默认配置
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
+ */
 Std_ReturnType Mcu_Init(const Mcu_ConfigType* ConfigPtr);
 
 /**
@@ -226,6 +231,11 @@ Std_ReturnType Mcu_Init(const Mcu_ConfigType* ConfigPtr);
  *
  * @note 此函数会等待 PLL 锁定
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ClockSetting ClockSetting value
+ * @return Operation status
+ */
 Std_ReturnType Mcu_InitClock(Mcu_ClockType ClockSetting);
 
 /**
@@ -237,6 +247,10 @@ Std_ReturnType Mcu_InitClock(Mcu_ClockType ClockSetting);
  *
  * @pre PLL 已锁定
  * @post 系统时钟已切换到 PLL
+ */
+/**
+ * @brief distribute pll clock
+ * @param[in] ClockSetting ClockSetting value
  */
 void Mcu_DistributePllClock(void);
 
@@ -257,6 +271,10 @@ Mcu_PllStatusType Mcu_GetPllStatus(void);
  *
  * @note 支持正常模式、睡眠模式、深度睡眠模式
  */
+/**
+ * @brief Set configuration value
+ * @param[in] McuMode Operation mode
+ */
 void Mcu_SetMode(Mcu_ModeType McuMode);
 
 /**
@@ -265,6 +283,11 @@ void Mcu_SetMode(Mcu_ModeType McuMode);
  * @return Mcu_ResetType 复位原因
  *
  * @note 读取后复位原因寄存器会被清除
+ */
+/**
+ * @brief Get requested information
+ * @param[in] McuMode Operation mode
+ * @return Operation result
  */
 Mcu_ResetType Mcu_GetResetReason(void);
 
@@ -283,6 +306,10 @@ Mcu_RawResetType Mcu_GetResetRawValue(void);
  *
  * @warning 此函数不会返回
  */
+/**
+ * @brief perform reset
+ * @param[in] McuMode Operation mode
+ */
 void Mcu_PerformReset(void);
 
 /**
@@ -291,6 +318,10 @@ void Mcu_PerformReset(void);
  * @param[out] versioninfo 指向版本信息结构的指针
  *
  * @note 如果 versioninfo 为 NULL_PTR，报告开发错误
+ */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
  */
 void Mcu_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
@@ -301,6 +332,11 @@ void Mcu_GetVersionInfo(Std_VersionInfoType* versioninfo);
  *
  * @pre MCU 模块已初始化
  * @post 返回 RAM 有效/无效/初始化/未初始化状态
+ */
+/**
+ * @brief Get current module state
+ * @param[in] versioninfo Version info
+ * @return Operation result
  */
 Mcu_RamStateType Mcu_GetRamState(void);
 
@@ -314,6 +350,11 @@ Mcu_RamStateType Mcu_GetRamState(void);
  *
  * @pre MCU 模块已初始化
  * @post RAM 段已初始化
+ */
+/**
+ * @brief Initialize the module
+ * @param[in] RamSection RamSection value
+ * @return Operation status
  */
 Std_ReturnType Mcu_InitRamSection(uint8 RamSection);
 

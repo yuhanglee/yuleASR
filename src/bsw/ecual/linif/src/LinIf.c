@@ -8,6 +8,7 @@
 #include "LinIf.h"
 #include "LinIf_Cfg.h"
 #include "Lin.h"
+#include "LinTrcv.h"
 #include "Det.h"
 #include <string.h>
 
@@ -30,11 +31,17 @@
 #define LINIF_SID_GOTOSLEEP         0x0AU
 #define LINIF_SID_SCHEDULEREQUEST   0x0BU
 
-#define LINIF_E_PARAM_POINTER       0x10U
+/* LINIF_E_PARAM_POINTER (0x10) and LINIF_E_PARAM_CHANNEL (0x50) are exported
+ * in LinIf.h. */
 #define LINIF_E_UNINIT              0x20U
 #define LINIF_E_PARAM_PDU           0x30U
 #define LINIF_E_PARAM_SCHEDULE      0x40U
-#define LINIF_E_PARAM_CHANNEL       0x50U
+
+/* Node configuration runtime limits (see AD2: NAD/PID live in the channel
+ * runtime, not in static config tables). The per-channel PID table is capped
+ * by the frame-array capacity of the configuration. */
+#define LINIF_MAX_CHANNEL_FRAMES    LINIF_MAX_FRAMES
+#define LINIF_DEFAULT_NAD           0x60U
 
 /* Diagnostic frames use the classic checksum, all other identifiers the
  * enhanced checksum (LIN 2.x, SWS_LinIf_00period). */
@@ -81,12 +88,40 @@ typedef struct {
     boolean txPending[LINIF_MAX_FRAMES];
     uint8 rxBuffer[LINIF_MAX_FRAMES][LINIF_MAX_FRAME_LENGTH];
     boolean rxValid[LINIF_MAX_FRAMES];
+    /* Node configuration runtime state (AD2) */
+    uint8 configuredNad;
+    uint8 pidFrameCount;
+    uint8 pidTable[LINIF_MAX_CHANNEL_FRAMES];
+    /* Tracked because the LinTrcv driver exposes no SetWakeupMode API */
+    LinIf_TrcvWakeupModeType trcvWakeupMode;
 } LinIf_ChannelRuntimeType;
 
 static struct {
     const LinIf_ConfigType* configPtr;
     LinIf_ChannelRuntimeType channels[LINIF_MAX_CHANNELS];
 } LinIf_State;
+
+/* (Re)establish the node configuration defaults for one channel: NAD 0x60,
+ * wake-up enabled and the PID table copied from the configured frames. */
+static void LinIf_ResetChannelNodeConfig(uint8 Channel, const LinIf_ChannelConfigType* ch)
+{
+    LinIf_ChannelRuntimeType* rt = &LinIf_State.channels[Channel];
+    uint8 i;
+    uint8 count = 0U;
+
+    rt->configuredNad = LINIF_DEFAULT_NAD;
+    rt->trcvWakeupMode = LINIF_TRCV_WU_ENABLE;
+    rt->pidFrameCount = 0U;
+    (void)memset(rt->pidTable, 0, sizeof(rt->pidTable));
+
+    if ((ch != NULL_PTR) && (ch->Frames != NULL_PTR)) {
+        count = (ch->NumFrames > LINIF_MAX_CHANNEL_FRAMES) ? LINIF_MAX_CHANNEL_FRAMES : ch->NumFrames;
+        for (i = 0U; i < count; i++) {
+            rt->pidTable[i] = ch->Frames[i].Pid;
+        }
+        rt->pidFrameCount = count;
+    }
+}
 
 static const LinIf_ChannelConfigType* LinIf_GetChannelConfig(uint8 Channel)
 {
@@ -186,13 +221,31 @@ void LinIf_Init(const LinIf_ConfigType* ConfigPtr)
         LinIf_State.channels[ch].state = LINIF_CHANNEL_INIT;
         LinIf_State.channels[ch].currentSchedule = LINIF_NULL_SCHEDULE;
         LinIf_State.channels[ch].requestedSchedule = LINIF_NULL_SCHEDULE;
+        if (ConfigPtr->Channels != NULL_PTR) {
+            LinIf_ResetChannelNodeConfig(ch, &ConfigPtr->Channels[ch]);
+        } else {
+            LinIf_ResetChannelNodeConfig(ch, NULL_PTR);
+        }
     }
 }
 
 /** @req SWS_LinIf_00002 */
 void LinIf_DeInit(void)
 {
+    const LinIf_ConfigType* cfg = LinIf_State.configPtr;
+    uint8 ch;
+
     (void)memset(&LinIf_State, 0, sizeof(LinIf_State));
+
+    /* Restore the NAD/PID defaults so a subsequent Init starts from a clean
+     * node configuration even if the caller passes a different config. */
+    if (cfg != NULL_PTR) {
+        for (ch = 0U; (ch < LINIF_MAX_CHANNELS) && (ch < cfg->NumChannels); ch++) {
+            const LinIf_ChannelConfigType* chCfg =
+                (cfg->Channels != NULL_PTR) ? &cfg->Channels[ch] : NULL_PTR;
+            LinIf_ResetChannelNodeConfig(ch, chCfg);
+        }
+    }
 }
 
 /** @req SWS_LinIf_00003 */
@@ -473,4 +526,349 @@ void LinIf_GetVersionInfo(Std_VersionInfoType* versioninfo)
     versioninfo->sw_major_version = LINIF_SW_MAJOR_VERSION;
     versioninfo->sw_minor_version = LINIF_SW_MINOR_VERSION;
     versioninfo->sw_patch_version = LINIF_SW_PATCH_VERSION;
+}
+
+/*=============================================================================
+ * Transceiver control (AD2) - delegated to the LinTrcv driver. The LinIf
+ * channel ID is passed through as the LinTrcv channel ID.
+ *===========================================================================*/
+
+static Std_ReturnType LinIf_TrcvModeToLinTrcv(LinIf_TrcvModeType Mode, LinTrcv_OpmodeType* TrcvModePtr)
+{
+    Std_ReturnType ret = E_OK;
+    switch (Mode) {
+        case LINIF_TRCV_MODE_NORMAL:  *TrcvModePtr = LINTRCV_OPMODE_NORMAL;  break;
+        case LINIF_TRCV_MODE_STANDBY: *TrcvModePtr = LINTRCV_OPMODE_STANDBY; break;
+        case LINIF_TRCV_MODE_SLEEP:   *TrcvModePtr = LINTRCV_OPMODE_SLEEP;   break;
+        default:                      ret = E_NOT_OK;                        break;
+    }
+    return ret;
+}
+
+static Std_ReturnType LinIf_TrcvModeFromLinTrcv(LinTrcv_OpmodeType TrcvMode, LinIf_TrcvModeType* ModePtr)
+{
+    Std_ReturnType ret = E_OK;
+    switch (TrcvMode) {
+        case LINTRCV_OPMODE_NORMAL:  *ModePtr = LINIF_TRCV_MODE_NORMAL;  break;
+        case LINTRCV_OPMODE_STANDBY: *ModePtr = LINIF_TRCV_MODE_STANDBY; break;
+        case LINTRCV_OPMODE_SLEEP:   *ModePtr = LINIF_TRCV_MODE_SLEEP;   break;
+        default:                     ret = E_NOT_OK;                     break;
+    }
+    return ret;
+}
+
+static Std_ReturnType LinIf_WuReasonFromLinTrcv(LinTrcv_WakeupReasonType TrcvReason, LinIf_TrcvWakeupReasonType* ReasonPtr)
+{
+    Std_ReturnType ret = E_OK;
+    switch (TrcvReason) {
+        case LINTRCV_WU_ERROR:         *ReasonPtr = LINIF_TRCV_WU_ERROR;         break;
+        case LINTRCV_WU_BY_BUS:
+        case LINTRCV_WU_BY_BUS_CS:     *ReasonPtr = LINIF_TRCV_WU_BY_BUS;        break;
+        case LINTRCV_WU_BY_PIN:        *ReasonPtr = LINIF_TRCV_WU_BY_PIN;        break;
+        case LINTRCV_WU_INTERNAL:      *ReasonPtr = LINIF_TRCV_WU_INTERNALLY;    break;
+        case LINTRCV_WU_NOT_SUPPORTED: *ReasonPtr = LINIF_TRCV_WU_NOT_SUPPORTED; break;
+        case LINTRCV_WU_POWER_ON:      *ReasonPtr = LINIF_TRCV_WU_POWER_ON;      break;
+        case LINTRCV_WU_RESET:         *ReasonPtr = LINIF_TRCV_WU_RESET;         break;
+        case LINTRCV_WU_BY_SYSERR:     *ReasonPtr = LINIF_TRCV_WU_BY_SYSERR;     break;
+        default:                       ret = E_NOT_OK;                           break;
+    }
+    return ret;
+}
+
+/** @req SWS_LinIf_00679 */
+Std_ReturnType LinIf_SetTrcvMode(uint8 Channel, LinIf_TrcvModeType Mode)
+{
+    LinTrcv_OpmodeType trcvMode;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVMODE, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVMODE, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_TrcvModeToLinTrcv(Mode, &trcvMode) != E_OK) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVMODE, LINIF_E_PARAM_VALUE);
+#endif
+        return E_NOT_OK;
+    }
+    return LinTrcv_SetOpMode(Channel, trcvMode);
+}
+
+/** @req SWS_LinIf_00680 */
+Std_ReturnType LinIf_GetTrcvMode(uint8 Channel, LinIf_TrcvModeType* ModePtr)
+{
+    LinTrcv_OpmodeType trcvMode;
+    Std_ReturnType ret;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVMODE, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVMODE, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if (NULL_PTR == ModePtr) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVMODE, LINIF_E_PARAM_POINTER);
+#endif
+        return E_NOT_OK;
+    }
+
+    ret = LinTrcv_GetOpMode(Channel, &trcvMode);
+    if (ret != E_OK) {
+        return ret;
+    }
+    if (LinIf_TrcvModeFromLinTrcv(trcvMode, ModePtr) != E_OK) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVMODE, LINIF_E_PARAM_VALUE);
+#endif
+        return E_NOT_OK;
+    }
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00681 */
+Std_ReturnType LinIf_SetTrcvWakeupMode(uint8 Channel, LinIf_TrcvWakeupModeType Mode)
+{
+    LinIf_ChannelRuntimeType* rt;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVWAKEUPMODE, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVWAKEUPMODE, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if ((Mode != LINIF_TRCV_WU_ENABLE)
+        && (Mode != LINIF_TRCV_WU_DISABLE)
+        && (Mode != LINIF_TRCV_WU_CLEAR)) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETTRCVWAKEUPMODE, LINIF_E_PARAM_VALUE);
+#endif
+        return E_NOT_OK;
+    }
+
+    /* The LinTrcv driver exposes no SetWakeupMode API: the requested mode is
+     * tracked in the LinIf channel runtime. */
+    rt = &LinIf_State.channels[Channel];
+    rt->trcvWakeupMode = Mode;
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00682 */
+Std_ReturnType LinIf_GetTrcvWakeupReason(uint8 Channel, LinIf_TrcvWakeupReasonType* ReasonPtr)
+{
+    LinTrcv_WakeupReasonType trcvReason;
+    Std_ReturnType ret;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVWAKEUPREASON, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVWAKEUPREASON, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if (NULL_PTR == ReasonPtr) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVWAKEUPREASON, LINIF_E_PARAM_POINTER);
+#endif
+        return E_NOT_OK;
+    }
+
+    ret = LinTrcv_GetBusWuReason(Channel, &trcvReason);
+    if (ret != E_OK) {
+        return ret;
+    }
+    if (LinIf_WuReasonFromLinTrcv(trcvReason, ReasonPtr) != E_OK) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETTRCVWAKEUPREASON, LINIF_E_PARAM_VALUE);
+#endif
+        return E_NOT_OK;
+    }
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00683 */
+Std_ReturnType LinIf_CheckWakeup(uint8 Channel)
+{
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_CHECKWAKEUP, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_CHECKWAKEUP, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    return LinTrcv_CheckWakeup(Channel);
+}
+
+/*=============================================================================
+ * Node configuration (AD2) - runtime state per channel
+ *===========================================================================*/
+
+/** @req SWS_LinIf_00580 */
+Std_ReturnType LinIf_SetConfiguredNAD(uint8 Channel, uint8 NAD)
+{
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETCONFIGUREDNAD, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETCONFIGUREDNAD, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+
+    LinIf_State.channels[Channel].configuredNad = NAD;
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00581 */
+Std_ReturnType LinIf_GetConfiguredNAD(uint8 Channel, uint8* NADPtr)
+{
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETCONFIGUREDNAD, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETCONFIGUREDNAD, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if (NULL_PTR == NADPtr) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETCONFIGUREDNAD, LINIF_E_PARAM_POINTER);
+#endif
+        return E_NOT_OK;
+    }
+
+    *NADPtr = LinIf_State.channels[Channel].configuredNad;
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00582 */
+Std_ReturnType LinIf_SetPIDTable(uint8 Channel, const uint8* PidTable, uint8 NumFrames)
+{
+    const LinIf_ChannelConfigType* ch;
+    LinIf_ChannelRuntimeType* rt;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETPIDTABLE, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    ch = LinIf_GetChannelConfig(Channel);
+    if (ch == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETPIDTABLE, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if (NULL_PTR == PidTable) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETPIDTABLE, LINIF_E_PARAM_POINTER);
+#endif
+        return E_NOT_OK;
+    }
+    if ((NumFrames > ch->NumFrames) || (NumFrames > LINIF_MAX_CHANNEL_FRAMES)) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_SETPIDTABLE, LINIF_E_PARAM_VALUE);
+#endif
+        return E_NOT_OK;
+    }
+
+    rt = &LinIf_State.channels[Channel];
+    (void)memcpy(rt->pidTable, PidTable, NumFrames);
+    rt->pidFrameCount = NumFrames;
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00583 */
+Std_ReturnType LinIf_GetPIDTable(uint8 Channel, uint8* PidTable, uint8* NumFramesPtr)
+{
+    const LinIf_ChannelRuntimeType* rt;
+    uint8 count;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETPIDTABLE, LINIF_E_UNINIT);
+#endif
+        return E_NOT_OK;
+    }
+    if (LinIf_GetChannelConfig(Channel) == NULL_PTR) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETPIDTABLE, LINIF_E_PARAM_CHANNEL);
+#endif
+        return E_NOT_OK;
+    }
+    if ((NULL_PTR == PidTable) || (NULL_PTR == NumFramesPtr)) {
+#if (LINIF_DEV_ERROR_DETECT == STD_ON)
+        Det_ReportError(LINIF_MODULE_ID, 0U, LINIF_SID_GETPIDTABLE, LINIF_E_PARAM_POINTER);
+#endif
+        return E_NOT_OK;
+    }
+
+    rt = &LinIf_State.channels[Channel];
+    count = rt->pidFrameCount;
+    (void)memcpy(PidTable, rt->pidTable, count);
+    *NumFramesPtr = count;
+    return E_OK;
+}
+
+/** @req SWS_LinIf_00585 */
+boolean LinIf_IsSupportTpTransmit(uint8 Channel)
+{
+    const LinIf_ChannelConfigType* ch;
+    uint8 i;
+
+    if (LinIf_State.configPtr == NULL_PTR) {
+        return FALSE;
+    }
+    ch = LinIf_GetChannelConfig(Channel);
+    if ((ch == NULL_PTR) || (ch->Frames == NULL_PTR)) {
+        return FALSE;
+    }
+    if (LinIf_State.channels[Channel].state < LINIF_CHANNEL_INIT) {
+        return FALSE;
+    }
+
+    for (i = 0U; (i < ch->NumFrames) && (i < LINIF_MAX_FRAMES); i++) {
+        if (ch->Frames[i].FrameType == LINIF_DIAGNOSTIC_FRAME) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }

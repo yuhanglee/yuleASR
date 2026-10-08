@@ -1,131 +1,41 @@
-/** @file IpduM.c
- *  @brief I-PDU Multiplexer implementation
- *  @copyright Copyright (c) 2026 YuleTech
+/*==================================================================================================
+* Project              : YuleTech AutoSAR BSW
+* Platform             : NXP i.MX8M Mini
+*
+* Copyright (c) 2026 Shanghai Yule Electronics Technology Co., Ltd.
+* All rights reserved.
+*
+* SPDX-License-Identifier: MIT
+*
+*================================================================================================*/
+
+/*==================================================================================================
+ *                     PHASE 2 DUPLICATE-MODULE CONVERGENCE - FORWARDING SHIM
+ *==================================================================================================
+ * IpduM previously existed in two layers (ecual + services) with divergent
+ * implementations. Per the Phase 2 convergence decision matrix, the canonical
+ * implementation is retained in:
  *
- *  @implements AUTOSAR_SWS_IPDUMultiplexer.pdf
- */
-
-#include "IpduM.h"
-#include "Det.h"
-
-/* Version check */
-#if defined(IPDUM_AR_RELEASE_MAJOR_VERSION) && (IPDUM_AR_RELEASE_MAJOR_VERSION != 4u)
-#error "IpduM: AR major mismatch"
-#endif
-#if defined(IPDUM_AR_RELEASE_MINOR_VERSION) && (IPDUM_AR_RELEASE_MINOR_VERSION != 4u)
-#error "IpduM: AR minor mismatch"
-#endif
-
-#define IPDUM_SID_INIT              0x00U
-#define IPDUM_SID_DEINIT            0x01U
-#define IPDUM_SID_SET_IPDU_MODE     0x02U
-#define IPDUM_SID_GET_IPDU_MODE     0x03U
-#define IPDUM_SID_MAINFUNCTION      0x04U
-
-#define IPDUM_E_PARAM_POINTER       0x10U
-#define IPDUM_E_UNINIT              0x20U
-#define IPDUM_E_PARAM_IPDU          0x30U
-#define IPDUM_E_PARAM_MODE          0x40U
-
-typedef enum { IPDUM_UNINIT = 0, IPDUM_IDLE, IPDUM_BUSY } IpduM_StateType;
-typedef struct {
-    IpduM_StateType state;
-    uint16 activeIpduId;
-    const IpduM_ConfigType* configPtr;
-} IpduM_InternalType;
-
-static IpduM_InternalType IpduM_State = { IPDUM_UNINIT, 0U, NULL_PTR };
-
-/** @req SWS_IpduM_00001 */
-void IpduM_Init(const IpduM_ConfigType* ConfigPtr)
-{
-#if (IPDUM_DEV_ERROR_DETECT == STD_ON)
-    if (NULL_PTR == ConfigPtr) {
-        Det_ReportError(IPDUM_MODULE_ID, 0U, IPDUM_SID_INIT, IPDUM_E_PARAM_POINTER);
-        return;
-    }
-#endif
-    IpduM_State.configPtr = ConfigPtr;
-    IpduM_State.state = IPDUM_IDLE;
-}
-
-/** @req SWS_IpduM_00002 */
-void IpduM_DeInit(void)
-{
-    IpduM_State.state = IPDUM_UNINIT;
-    IpduM_State.configPtr = NULL_PTR;
-}
-
-/** @req SWS_IpduM_00003 */
-Std_ReturnType IpduM_SetIpduMode(uint16 IpduId, IpduM_IpduModeType Mode)
-{
-#if (IPDUM_DEV_ERROR_DETECT == STD_ON)
-    if (IpduM_State.state == IPDUM_UNINIT) {
-        Det_ReportError(IPDUM_MODULE_ID, 0U, IPDUM_SID_SET_IPDU_MODE, IPDUM_E_UNINIT);
-        return E_NOT_OK;
-    }
-#endif
-    boolean found = FALSE;
-    if (IpduM_State.configPtr != NULL_PTR) {
-        for (uint8 i = 0U; i < IpduM_State.configPtr->NumIpduMappings; i++) {
-            if (IpduM_State.configPtr->IpduMapping[i].IpduId == IpduId) {
-                found = TRUE;
-                IpduM_State.activeIpduId = IpduId;
-                break;
-            }
-        }
-    }
-#if (IPDUM_DEV_ERROR_DETECT == STD_ON)
-    if (!found) {
-        Det_ReportError(IPDUM_MODULE_ID, 0U, IPDUM_SID_SET_IPDU_MODE, IPDUM_E_PARAM_IPDU);
-        return E_NOT_OK;
-    }
-#endif
-    (void)Mode;
-    return E_OK;
-}
-
-/** @req SWS_IpduM_00004 */
-IpduM_IpduModeType IpduM_GetIpduMode(uint16 IpduId)
-{
-#if (IPDUM_DEV_ERROR_DETECT == STD_ON)
-    if (IpduM_State.state == IPDUM_UNINIT) {
-        Det_ReportError(IPDUM_MODULE_ID, 0U, IPDUM_SID_GET_IPDU_MODE, IPDUM_E_UNINIT);
-        return IPDUM_IPDU_MODE_OFF;
-    }
-#endif
-    (void)IpduId;
-    return IPDUM_IPDU_MODE_ON;
-}
-
-/** @req SWS_IpduM_00005 */
-void IpduM_MainFunction(void)
-{
-    if (IpduM_State.state == IPDUM_UNINIT) { return; }
-
-    /* Route PDUs based on active I-PDU mode */
-    if (IpduM_State.configPtr != NULL_PTR) {
-        for (uint8 i = 0U; i < IpduM_State.configPtr->NumIpduMappings; i++) {
-            const IpduM_IpduMappingType* map = &IpduM_State.configPtr->IpduMapping[i];
-            if ((map->IpduId == IpduM_State.activeIpduId) && (map->RoutingCallback != NULL_PTR)) {
-                map->RoutingCallback(map->SourcePduId, map->DestPduId);
-            }
-        }
-    }
-}
-
-/** @req SWS_IpduM_00006 */
-void IpduM_GetVersionInfo(Std_VersionInfoType* versioninfo)
-{
-#if (IPDUM_DEV_ERROR_DETECT == STD_ON)
-    if (NULL_PTR == versioninfo) {
-        Det_ReportError(IPDUM_MODULE_ID, 0U, 0xFFU, IPDUM_E_PARAM_POINTER);
-        return;
-    }
-#endif
-    versioninfo->vendorID = IPDUM_VENDOR_ID;
-    versioninfo->moduleID = IPDUM_MODULE_ID;
-    versioninfo->sw_major_version = 1U;
-    versioninfo->sw_minor_version = 0U;
-    versioninfo->sw_patch_version = 0U;
-}
+ *     src/bsw/ecual/ipdum/           (target: ecual_ipdum, ~448 LOC)
+ *
+ * The ecual version is canonical because it is a real multiplexing
+ * implementation (Tx mux, Rx mux, static/dynamic part handling), while the
+ * services version was a ~130 LOC stub.
+ *
+ * This file is intentionally emptied of all function and data definitions so
+ * that the duplicate target compiles no symbols and cannot collide with the
+ * canonical library at link time. Removed conflicting symbols: IpduM_Init,
+ * IpduM_DeInit, IpduM_GetVersionInfo, IpduM_MainFunction (note: the two
+ * sides even disagreed on the IpduM_DeInit signature: Std_ReturnType here
+ * vs. void in the canonical version).
+ *
+ * Unique API disposition:
+ *   - IpduM_SetIpduMode / IpduM_GetIpduMode had no consumers anywhere in the
+ *     repository and are not declared by the canonical IpduM.h. They are
+ *     recorded here as pending canonical-side work if IPdu mode switching
+ *     support is ever required (implement against the canonical IpduM.h
+ *     contract).
+ *
+ * The include/ directory and the CMake target name are kept for
+ * compatibility (see src/bsw/services/CMakeLists.txt, SERVICES_SHIMMED_MODULES).
+ *================================================================================================*/

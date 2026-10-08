@@ -2,6 +2,8 @@
  * Eth_GeneralTypes.h - AUTOSAR Ethernet general types
  *
  * Provides the common Ethernet types shared by Eth/EthIf/EthTrcv/EthSM.
+ * @file Eth_GeneralTypes.h
+ * @brief Ethernet driver general type definitions
  *================================================================================================*/
 #ifndef ETH_GENERALTYPES_H
 #define ETH_GENERALTYPES_H

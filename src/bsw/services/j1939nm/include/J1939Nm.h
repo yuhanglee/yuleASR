@@ -278,6 +278,13 @@ extern void J1939Nm_BusOffCbk(J1939Nm_ChannelType Channel);
  * @param Data Pointer to received data
  * @param DataLength Length of received data
  */
+/**
+ * @brief Receive data
+ * @param[in] Channel Channel identifier
+ * @param[in] CanId Identifier
+ * @param[in] Data Data buffer
+ * @param[in] DataLength Data buffer
+ */
 extern void J1939Nm_RxIndication(
     J1939Nm_ChannelType Channel,
     uint32 CanId,

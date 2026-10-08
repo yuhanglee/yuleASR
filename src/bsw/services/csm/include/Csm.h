@@ -120,6 +120,22 @@ extern Std_ReturnType Csm_DeInit(void);
  * @param keyLength 密钥数据长度
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief key element set
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element set
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_KeyElementSet(
     uint32 keyId,
     uint32 keyElementId,
@@ -135,6 +151,11 @@ extern Std_ReturnType Csm_KeyElementSet(
  * @param keyId 密钥ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief key set valid
+ * @param[in] keyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_KeySetValid(uint32 keyId);
 
 /**
@@ -145,6 +166,22 @@ extern Std_ReturnType Csm_KeySetValid(uint32 keyId);
  * @param keyPtr 输出缓冲区指针
  * @param keyLengthPtr 长度指针 (输入缓冲区大小，输出实际长度)
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief key element get
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element get
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_KeyElementGet(
     uint32 keyId,
@@ -162,6 +199,22 @@ extern Std_ReturnType Csm_KeyElementGet(
  * @param targetKeyElementId 目标密钥元素ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief key element copy
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief key element copy
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_KeyElementCopy(
     uint32 keyId,
     uint32 keyElementId,
@@ -176,6 +229,12 @@ extern Std_ReturnType Csm_KeyElementCopy(
  * @param targetKeyId 目标密钥ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief key copy
+ * @param[in] keyId Identifier
+ * @param[in] targetKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_KeyCopy(
     uint32 keyId,
     uint32 targetKeyId
@@ -188,6 +247,20 @@ extern Std_ReturnType Csm_KeyCopy(
  * @param keyElementIdsPtr 输出缓冲区
  * @param keyElementIdsLengthPtr 长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief key element ids get
+ * @param[in] keyId Identifier
+ * @param[in] keyElementIdsPtr Identifier
+ * @param[in] keyElementIdsLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element ids get
+ * @param[in] keyId Identifier
+ * @param[in] keyElementIdsPtr Identifier
+ * @param[in] keyElementIdsLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_KeyElementIdsGet(
     uint32 keyId,
@@ -210,6 +283,12 @@ extern Std_ReturnType Csm_KeyGenerate(uint32 keyId);
  * @param targetKeyId 目标密钥ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief key derive
+ * @param[in] keyId Identifier
+ * @param[in] targetKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_KeyDerive(
     uint32 keyId,
     uint32 targetKeyId
@@ -222,6 +301,20 @@ extern Std_ReturnType Csm_KeyDerive(
  * @param publicValuePtr 输出缓冲区
  * @param publicValueLengthPtr 长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief key exchange calc pub val
+ * @param[in] keyId Identifier
+ * @param[in] publicValuePtr Parameter value
+ * @param[in] publicValueLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key exchange calc pub val
+ * @param[in] keyId Identifier
+ * @param[in] publicValuePtr Parameter value
+ * @param[in] publicValueLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_KeyExchangeCalcPubVal(
     uint32 keyId,
@@ -236,6 +329,20 @@ extern Std_ReturnType Csm_KeyExchangeCalcPubVal(
  * @param partnerPublicValuePtr 对方公共值
  * @param partnerPublicValueLength 对方公共值长度
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief key exchange calc secret
+ * @param[in] keyId Identifier
+ * @param[in] partnerPublicValuePtr Parameter value
+ * @param[in] partnerPublicValueLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief key exchange calc secret
+ * @param[in] keyId Identifier
+ * @param[in] partnerPublicValuePtr Parameter value
+ * @param[in] partnerPublicValueLength Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_KeyExchangeCalcSecret(
     uint32 keyId,
@@ -253,6 +360,26 @@ extern Std_ReturnType Csm_KeyExchangeCalcSecret(
  * @param resultPtr 输出缓冲区指针 (用于FINISH阶段)
  * @param resultLengthPtr 输出长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief hash
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief hash
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_Hash(
     uint32 jobId,
@@ -274,6 +401,26 @@ extern Std_ReturnType Csm_Hash(
  * @param macLengthPtr MAC长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief mac generate
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] macPtr Pointer reference
+ * @param[in] macLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief mac generate
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] macPtr Pointer reference
+ * @param[in] macLengthPtr Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_MacGenerate(
     uint32 jobId,
     uint8 mode,
@@ -292,8 +439,31 @@ extern Std_ReturnType Csm_MacGenerate(
  * @param dataLength 输入数据长度
  * @param macPtr MAC数据指针
  * @param macLength MAC长度
- * @param verifyPtr 验证结果输出 (TRUE: 匹配, FALSE: 不匹配)
+ * @param verifyPtr 验证结果输出 (Csm_VerifyResultType: CSM_E_VER_OK=匹配,
+ *                  CSM_E_VER_NOT_OK=不匹配, SWS_Csm_00041)
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief mac verify
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] macPtr Pointer reference
+ * @param[in] macLength Data length
+ * @param[in] verifyPtr Pointer reference
+ * @return Operation status
+ */
+/**
+ * @brief mac verify
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] macPtr Pointer reference
+ * @param[in] macLength Data length
+ * @param[in] verifyPtr Pointer reference
+ * @return Operation status
  */
 extern Std_ReturnType Csm_MacVerify(
     uint32 jobId,
@@ -316,6 +486,26 @@ extern Std_ReturnType Csm_MacVerify(
  * @param resultLengthPtr 密文长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief encrypt
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief encrypt
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_Encrypt(
     uint32 jobId,
     uint8 mode,
@@ -336,6 +526,26 @@ extern Std_ReturnType Csm_Encrypt(
  * @param resultLengthPtr 明文长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief decrypt
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief decrypt
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_Decrypt(
     uint32 jobId,
     uint8 mode,
@@ -355,6 +565,26 @@ extern Std_ReturnType Csm_Decrypt(
  * @param resultPtr 签名输出缓冲区
  * @param resultLengthPtr 签名长度指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief signature generate
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief signature generate
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType Csm_SignatureGenerate(
     uint32 jobId,
@@ -377,6 +607,28 @@ extern Std_ReturnType Csm_SignatureGenerate(
  * @param verifyPtr 验证结果输出 (TRUE: 验证通过, FALSE: 验证失败)
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief signature verify
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] signaturePtr Pointer reference
+ * @param[in] signatureLength Data length
+ * @param[in] verifyPtr Pointer reference
+ * @return Operation status
+ */
+/**
+ * @brief signature verify
+ * @param[in] jobId Identifier
+ * @param[in] mode Operation mode
+ * @param[in] dataPtr Data buffer
+ * @param[in] dataLength Data buffer
+ * @param[in] signaturePtr Pointer reference
+ * @param[in] signatureLength Data length
+ * @param[in] verifyPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_SignatureVerify(
     uint32 jobId,
     uint8 mode,
@@ -395,6 +647,20 @@ extern Std_ReturnType Csm_SignatureVerify(
  * @param resultLength 需要的随机数长度
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief random generate
+ * @param[in] jobId Identifier
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief random generate
+ * @param[in] jobId Identifier
+ * @param[in] resultPtr Pointer reference
+ * @param[in] resultLength Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_RandomGenerate(
     uint32 jobId,
     uint8* resultPtr,
@@ -408,6 +674,12 @@ extern Std_ReturnType Csm_RandomGenerate(
  * @param keyId 密钥ID
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief job key set up
+ * @param[in] jobId Identifier
+ * @param[in] keyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_JobKeySetUp(uint32 jobId, uint32 keyId);
 
 /**
@@ -416,6 +688,12 @@ extern Std_ReturnType Csm_JobKeySetUp(uint32 jobId, uint32 keyId);
  * @param jobId 作业ID
  * @param keyId 密钥ID
  * @return E_OK: 接受请求, E_NOT_OK: 失败
+ */
+/**
+ * @brief job key set up async
+ * @param[in] jobId Identifier
+ * @param[in] keyId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType Csm_JobKeySetUpAsync(uint32 jobId, uint32 keyId);
 
@@ -442,6 +720,20 @@ extern void Csm_MainFunction(void);
  * @param userContext 用户上下文
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Register callback or handler
+ * @param[in] jobId Identifier
+ * @param[in] callback Callback function
+ * @param[in] userContext userContext value
+ * @return Operation status
+ */
+/**
+ * @brief Register callback or handler
+ * @param[in] jobId Identifier
+ * @param[in] callback Callback function
+ * @param[in] userContext userContext value
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_RegisterCallback(
     uint32 jobId,
     Csm_CallbackType callback,
@@ -455,6 +747,12 @@ extern Std_ReturnType Csm_RegisterCallback(
  * @param keyStatusPtr 状态输出指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  */
+/**
+ * @brief Get current status
+ * @param[in] keyId Identifier
+ * @param[in] keyStatusPtr State value
+ * @return Operation status
+ */
 extern Std_ReturnType Csm_GetKeyStatus(
     uint32 keyId,
     Csm_KeyStatusType* keyStatusPtr
@@ -466,6 +764,12 @@ extern Std_ReturnType Csm_GetKeyStatus(
  * @param jobId 作业ID
  * @param jobStatePtr 状态输出指针
  * @return E_OK: 成功, E_NOT_OK: 失败
+ */
+/**
+ * @brief Get current module state
+ * @param[in] jobId Identifier
+ * @param[in] jobStatePtr State value
+ * @return Operation status
  */
 extern Std_ReturnType Csm_GetJobState(
     uint32 jobId,

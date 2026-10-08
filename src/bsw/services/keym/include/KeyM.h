@@ -25,6 +25,12 @@
 #ifndef KEYM_H
 #define KEYM_H
 
+/**
+ * @file KeyM.h
+ * @brief KEYM module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -295,6 +301,10 @@ extern void KeyM_DeInit(void);
  * @req SWS_KeyM_00003
  */
 #if (KEYM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void KeyM_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -306,6 +316,14 @@ extern void KeyM_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param keyFormat Format of the key data
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00100
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] keyId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @param[in] keyFormat keyFormat value
+ * @return Operation status
  */
 extern Std_ReturnType KeyM_SetKey(KeyM_KeyIdType keyId,
                                    const uint8* keyPtr,
@@ -321,6 +339,14 @@ extern Std_ReturnType KeyM_SetKey(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00110
  */
+/**
+ * @brief Get requested information
+ * @param[in] keyId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @param[in] keyFormatPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_GetKey(KeyM_KeyIdType keyId,
                                    uint8* keyPtr,
                                    uint32* keyLengthPtr,
@@ -334,6 +360,14 @@ extern Std_ReturnType KeyM_GetKey(KeyM_KeyIdType keyId,
  * @param keyFormat Format of the key data
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00120
+ */
+/**
+ * @brief update key
+ * @param[in] keyId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @param[in] keyFormat keyFormat value
+ * @return Operation status
  */
 extern Std_ReturnType KeyM_UpdateKey(KeyM_KeyIdType keyId,
                                       const uint8* keyPtr,
@@ -357,6 +391,14 @@ extern Std_ReturnType KeyM_FinalizeKey(KeyM_KeyIdType keyId);
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00200
  */
+/**
+ * @brief parse key
+ * @param[in] keyId Identifier
+ * @param[in] inputPtr Pointer reference
+ * @param[in] inputLength Data length
+ * @param[in] inputFormat inputFormat value
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_ParseKey(KeyM_KeyIdType keyId,
                                      const uint8* inputPtr,
                                      uint32 inputLength,
@@ -371,6 +413,14 @@ extern Std_ReturnType KeyM_ParseKey(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00210
  */
+/**
+ * @brief convert key
+ * @param[in] keyId Identifier
+ * @param[in] outputPtr Pointer reference
+ * @param[in] outputLengthPtr Data length
+ * @param[in] outputFormat outputFormat value
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_ConvertKey(KeyM_KeyIdType keyId,
                                        uint8* outputPtr,
                                        uint32* outputLengthPtr,
@@ -383,6 +433,12 @@ extern Std_ReturnType KeyM_ConvertKey(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00220
  */
+/**
+ * @brief copy key
+ * @param[in] srcKeyId Identifier
+ * @param[in] destKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_CopyKey(KeyM_KeyIdType srcKeyId,
                                     KeyM_KeyIdType destKeyId);
 
@@ -394,6 +450,14 @@ extern Std_ReturnType KeyM_CopyKey(KeyM_KeyIdType srcKeyId,
  * @param keyElementLength Key element data length
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00300
+ */
+/**
+ * @brief key element set
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyElementPtr Pointer reference
+ * @param[in] keyElementLength Data length
+ * @return Operation status
  */
 extern Std_ReturnType KeyM_KeyElementSet(KeyM_KeyIdType keyId,
                                           KeyM_KeyElementIdType keyElementId,
@@ -409,6 +473,14 @@ extern Std_ReturnType KeyM_KeyElementSet(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00310
  */
+/**
+ * @brief key element get
+ * @param[in] keyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyElementPtr Pointer reference
+ * @param[in] keyElementLengthPtr Data length
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_KeyElementGet(KeyM_KeyIdType keyId,
                                           KeyM_KeyElementIdType keyElementId,
                                           uint8* keyElementPtr,
@@ -421,6 +493,12 @@ extern Std_ReturnType KeyM_KeyElementGet(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00400
  */
+/**
+ * @brief key status get
+ * @param[in] keyId Identifier
+ * @param[in] keyStatusPtr State value
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_KeyStatusGet(KeyM_KeyIdType keyId,
                                          KeyM_KeyStatusType* keyStatusPtr);
 
@@ -430,6 +508,12 @@ extern Std_ReturnType KeyM_KeyStatusGet(KeyM_KeyIdType keyId,
  * @param keyVersionPtr Pointer to store key version
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00410
+ */
+/**
+ * @brief key version get
+ * @param[in] keyId Identifier
+ * @param[in] keyVersionPtr Pointer reference
+ * @return Operation status
  */
 extern Std_ReturnType KeyM_KeyVersionGet(KeyM_KeyIdType keyId,
                                           uint32* keyVersionPtr);
@@ -442,6 +526,13 @@ extern Std_ReturnType KeyM_KeyVersionGet(KeyM_KeyIdType keyId,
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00420
  */
+/**
+ * @brief key validity get
+ * @param[in] keyId Identifier
+ * @param[in] validFromPtr Identifier
+ * @param[in] validToPtr Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType KeyM_KeyValidityGet(KeyM_KeyIdType keyId,
                                            uint32* validFromPtr,
                                            uint32* validToPtr);
@@ -452,6 +543,12 @@ extern Std_ReturnType KeyM_KeyValidityGet(KeyM_KeyIdType keyId,
  * @param keyInfoPtr Pointer to key info structure
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_KeyM_00430
+ */
+/**
+ * @brief key info get
+ * @param[in] keyId Identifier
+ * @param[in] keyInfoPtr Pointer reference
+ * @return Operation status
  */
 extern Std_ReturnType KeyM_KeyInfoGet(KeyM_KeyIdType keyId,
                                        KeyM_KeyInfoType* keyInfoPtr);

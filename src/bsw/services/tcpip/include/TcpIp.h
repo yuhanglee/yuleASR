@@ -307,6 +307,12 @@ TcpIp_ReturnType TcpIp_Create(TcpIp_DomainType domain, TcpIp_SockTypeType type, 
  *  initiates a graceful close (FIN_WAIT_1, driven by TcpIp_ChangeTcpState
  *  from the lwIP adapter; native simulation completes immediately).
  */
+/**
+ * @brief close
+ * @param[in] SocketId Identifier
+ * @param[in] Force Force value
+ * @return Operation result
+ */
 TcpIp_ReturnType TcpIp_Close(TcpIp_SocketIdType SocketId, boolean Force);
 
 /** @brief Bind a socket to a local address */
@@ -368,6 +374,12 @@ void TcpIp_MainFunction(void);
  *  OpenSocket + Accept); provided explicitly to drive the connection
  *  state machine.
  */
+/**
+ * @brief listen
+ * @param[in] SocketId Identifier
+ * @param[in] Backlog Backlog value
+ * @return Operation result
+ */
 TcpIp_ReturnType TcpIp_Listen(TcpIp_SocketIdType SocketId, uint8 Backlog);
 
 /** @brief Initiate a connection to a remote address (AUTOSAR TcpIp_Connect).
@@ -375,6 +387,12 @@ TcpIp_ReturnType TcpIp_Listen(TcpIp_SocketIdType SocketId, uint8 Backlog);
  *  Native (non-lwIP) builds simulate the handshake and reach
  *  TCPIP_TCPSTATE_ESTABLISHED synchronously.  lwIP builds use
  *  tcp_connect() and the state is driven by the adapter callbacks.
+ */
+/**
+ * @brief connect
+ * @param[in] SocketId Identifier
+ * @param[in] RemoteAddr Memory address
+ * @return Operation result
  */
 TcpIp_ReturnType TcpIp_Connect(TcpIp_SocketIdType SocketId, const TcpIp_SockAddrType* RemoteAddr);
 

@@ -1,5 +1,7 @@
 /*==================================================================================================
  * SchM_DoIP.h - scheduler header for DoIP module exclusive areas
+ * @file SchM_DoIP.h
+ * @brief BswM scheduler stubs for DoIP
  *================================================================================================*/
 #include "Mcal.h"
 

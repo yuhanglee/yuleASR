@@ -33,7 +33,7 @@
 | [R09] | MISRA 合规报告 | docs/misra_compliance_report.md | MISRA C:2012/C:2023 合规 |
 | [R10] | MISRA 偏差报告 | docs/misra_deviations.md | MISRA 偏差许可 |
 | [R11] | 需求追溯矩阵 | docs/requirement-traceability-matrix.md | SHALL → 测试追溯 |
-| [R12] | 模块审查证据 | .osh/evidence/ | E2E/WdgM/NvM/Can/Com/Dcm/Lin/SecOC/CryIf/RamSafety/Dem/Det/EcuM 审查 |
+| [R12] | 模块审查证据 | .osh/evidence/reviews/ | 13 个 ASIL-B 模块审查记录：Can/CanIf/CanSM/CanTp/Com/PduR/NvM/Dcm/Dem/E2E/WdgM/SecOC/BswM |
 | [R13] | CI 层报告 | .yuleosh/reports/ | CI L1/L2/L3 自动化证据 |
 | [R14] | 硬件安全分析 | docs/safety/safety-architecture.md §4 | S32K312 FMEDA + PMHF |
 

@@ -47,11 +47,36 @@ typedef struct {
     const IpduM_IpduMappingType* IpduMapping;
 } IpduM_ConfigType;
 
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void IpduM_Init(const IpduM_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ */
 void IpduM_DeInit(void);
+/**
+ * @brief Set configuration value
+ * @param[in] IpduId Identifier
+ * @param[in] Mode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType IpduM_SetIpduMode(uint16 IpduId, IpduM_IpduModeType Mode);
+/**
+ * @brief Get requested information
+ * @param[in] IpduId Identifier
+ * @return Operation result
+ */
 IpduM_IpduModeType IpduM_GetIpduMode(uint16 IpduId);
+/**
+ * @brief Process periodic tasks
+ */
 void IpduM_MainFunction(void);
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void IpduM_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* IPDUM_H */

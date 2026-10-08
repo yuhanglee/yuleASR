@@ -25,6 +25,12 @@
 #ifndef DET_H
 #define DET_H
 
+/**
+ * @file Det.h
+ * @brief DET module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -187,6 +193,22 @@ extern void Det_Init(const Det_ConfigType* ConfigPtr);
  * @return Always returns E_OK (for compatibility)
  * @req SWS_Det_00006
  */
+/**
+ * @brief report error
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] ErrorId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief report error
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] ErrorId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Det_ReportError(
     uint16 ModuleId,
     uint8 InstanceId,
@@ -210,6 +232,22 @@ extern void Det_Start(void);
  * @return E_OK if error was handled, E_NOT_OK otherwise
  * @req SWS_Det_00012
  */
+/**
+ * @brief report runtime error
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] ErrorId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief report runtime error
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] ErrorId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Det_ReportRuntimeError(
     uint16 ModuleId,
     uint8 InstanceId,
@@ -226,6 +264,22 @@ extern Std_ReturnType Det_ReportRuntimeError(
  * @return E_OK if fault was handled, E_NOT_OK otherwise
  * @req SWS_Det_00013
  */
+/**
+ * @brief report transient fault
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] FaultId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief report transient fault
+ * @param[in] ModuleId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] ApiId Identifier
+ * @param[in] FaultId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Det_ReportTransientFault(
     uint16 ModuleId,
     uint8 InstanceId,
@@ -240,6 +294,10 @@ extern Std_ReturnType Det_ReportTransientFault(
  * @req SWS_Det_00011
  */
 #if (DET_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void Det_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 

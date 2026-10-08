@@ -18,6 +18,10 @@ add_subdirectory(rte)
 # EthSM 双网络回归测试 (P0-A: trcvIdx/ctrlIdx 赋值恢复验证)
 add_subdirectory(ethsm)
 
+# ── P1 Phase 8: Dcm UDS 测试矩阵 + Dem DTC 测试矩阵 ──
+add_subdirectory(dcm)
+add_subdirectory(dem)
+
 # EthSwt 单元测试 (B2: VLAN/流控/统计/镜像补全)
 add_subdirectory(ecual)
 

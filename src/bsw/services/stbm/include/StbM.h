@@ -223,6 +223,13 @@ void StbM_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param userDataPtr Pointer to store user data (NULL if not needed)
  * @return Result of operation
  */
+/**
+ * @brief Get requested information
+ * @param[in] timeBaseId Identifier
+ * @param[in] timeStampPtr Pointer reference
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType StbM_GetCurrentTime(uint8 timeBaseId, 
                                     StbM_TimeStampType* timeStampPtr,
                                     StbM_UserDataType* userDataPtr);
@@ -245,6 +252,13 @@ Std_ReturnType StbM_GetCurrentVirtualTime(uint8 timeBaseId,
  * @param userDataPtr Pointer to user data (NULL if not needed)
  * @return Result of operation
  */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] timeStampPtr Pointer reference
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType StbM_SetGlobalTime(uint8 timeBaseId,
                                    const StbM_TimeStampType* timeStampPtr,
                                    const StbM_UserDataType* userDataPtr);
@@ -258,6 +272,14 @@ Std_ReturnType StbM_SetGlobalTime(uint8 timeBaseId,
  * @param userDataPtr Pointer to received user data
  * @return Result of operation
  */
+/**
+ * @brief bus set global time
+ * @param[in] timeBaseId Identifier
+ * @param[in] timeStampPtr Pointer reference
+ * @param[in] virtualLocalTimePtr Pointer reference
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType StbM_BusSetGlobalTime(uint8 timeBaseId,
                                       const StbM_TimeStampType* timeStampPtr,
                                       const StbM_VirtualLocalTimeType* virtualLocalTimePtr,
@@ -270,6 +292,13 @@ Std_ReturnType StbM_BusSetGlobalTime(uint8 timeBaseId,
  * @param syncStatusPtr Pointer to store sync status
  * @param timeBaseStatusPtr Pointer to store time base status
  * @return Result of operation
+ */
+/**
+ * @brief Get current status
+ * @param[in] timeBaseId Identifier
+ * @param[in] syncStatusPtr State value
+ * @param[in] timeBaseStatusPtr State value
+ * @return Operation status
  */
 Std_ReturnType StbM_GetTimeBaseStatus(uint8 timeBaseId,
                                        uint8* syncStatusPtr,

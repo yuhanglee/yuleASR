@@ -124,6 +124,10 @@ extern void CryIf_DeInit(void);
  */
 #if (CRYIF_VERSION_INFO_API == STD_ON)
 /** @req SWS_CryIf_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void CryIf_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -141,6 +145,12 @@ extern void CryIf_GetVersionInfo(Std_VersionInfoType* versioninfo);
  *         CRYIF_E_BUSY: Channel busy
  * @serviceid CRYIF_SID_PROCESSJOB
  */
+/**
+ * @brief Process data
+ * @param[in] channelId Channel identifier
+ * @param[in] job job value
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_ProcessJob(
     CryIf_ChannelIdType channelId,
     CryIf_JobType* job
@@ -154,6 +164,12 @@ extern Std_ReturnType CryIf_ProcessJob(
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_CANCELJOB
+ */
+/**
+ * @brief Cancel pending operation
+ * @param[in] channelId Channel identifier
+ * @param[in] job job value
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_CancelJob(
     CryIf_ChannelIdType channelId,
@@ -175,6 +191,22 @@ extern Std_ReturnType CryIf_CancelJob(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYELEMENTSET
  */
+/**
+ * @brief key element set
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element set
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLength Data length
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeyElementSet(
     CryIf_KeyIdType cryIfKeyId,
     CryIf_KeyElementIdType keyElementId,
@@ -190,6 +222,11 @@ extern Std_ReturnType CryIf_KeyElementSet(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYSETVALID
  */
+/**
+ * @brief key set valid
+ * @param[in] cryIfKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeySetValid(CryIf_KeyIdType cryIfKeyId);
 
 /** @req SWS_CryIf_00009 */
@@ -202,6 +239,22 @@ extern Std_ReturnType CryIf_KeySetValid(CryIf_KeyIdType cryIfKeyId);
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYELEMENTGET
+ */
+/**
+ * @brief key element get
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element get
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyPtr Pointer reference
+ * @param[in] keyLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_KeyElementGet(
     CryIf_KeyIdType cryIfKeyId,
@@ -222,6 +275,22 @@ extern Std_ReturnType CryIf_KeyElementGet(
  */
 #if (CRYIF_KEY_ELEMENT_COPY_API == STD_ON)
 /** @req SWS_CryIf_00010 */
+/**
+ * @brief key element copy
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetCryIfKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief key element copy
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] targetCryIfKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeyElementCopy(
     CryIf_KeyIdType cryIfKeyId,
     CryIf_KeyElementIdType keyElementId,
@@ -241,6 +310,28 @@ extern Std_ReturnType CryIf_KeyElementCopy(
  * @param[in] targetKeyElementId Target key element identifier
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
+ */
+/**
+ * @brief key element copy partial
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyElementSourceOffset Memory offset
+ * @param[in] keyElementTargetOffset Memory offset
+ * @param[in] keyElementCopyLength Data length
+ * @param[in] targetCryIfKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
+ */
+/**
+ * @brief key element copy partial
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementId Identifier
+ * @param[in] keyElementSourceOffset Memory offset
+ * @param[in] keyElementTargetOffset Memory offset
+ * @param[in] keyElementCopyLength Data length
+ * @param[in] targetCryIfKeyId Identifier
+ * @param[in] targetKeyElementId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_KeyElementCopyPartial(
     CryIf_KeyIdType cryIfKeyId,
@@ -262,6 +353,12 @@ extern Std_ReturnType CryIf_KeyElementCopyPartial(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYCOPY
  */
+/**
+ * @brief key copy
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] targetCryIfKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeyCopy(
     CryIf_KeyIdType cryIfKeyId,
     CryIf_KeyIdType targetCryIfKeyId
@@ -276,6 +373,20 @@ extern Std_ReturnType CryIf_KeyCopy(
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYELEMENTIDSGET
+ */
+/**
+ * @brief key element ids get
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementIdsPtr Identifier
+ * @param[in] keyElementIdsLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key element ids get
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] keyElementIdsPtr Identifier
+ * @param[in] keyElementIdsLengthPtr Data length
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_KeyElementIdsGet(
     CryIf_KeyIdType cryIfKeyId,
@@ -308,6 +419,20 @@ extern Std_ReturnType CryIf_KeyValidCheck(CryIf_KeyIdType cryIfKeyId);
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_RANDOMSEED
  */
+/**
+ * @brief random seed
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] seedPtr Pointer reference
+ * @param[in] seedLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief random seed
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] seedPtr Pointer reference
+ * @param[in] seedLength Data length
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_RandomSeed(
     CryIf_KeyIdType cryIfKeyId,
     const uint8* seedPtr,
@@ -322,6 +447,11 @@ extern Std_ReturnType CryIf_RandomSeed(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYGENERATE
  */
+/**
+ * @brief key generate
+ * @param[in] cryIfKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeyGenerate(CryIf_KeyIdType cryIfKeyId);
 
 /** @req SWS_CryIf_00017 */
@@ -332,6 +462,12 @@ extern Std_ReturnType CryIf_KeyGenerate(CryIf_KeyIdType cryIfKeyId);
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYDERIVE
+ */
+/**
+ * @brief key derive
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] targetCryIfKeyId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_KeyDerive(
     CryIf_KeyIdType cryIfKeyId,
@@ -348,6 +484,20 @@ extern Std_ReturnType CryIf_KeyDerive(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYEXCHANGECALCPUBVALUE
  */
+/**
+ * @brief key exchange calc pub value
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] publicValuePtr Parameter value
+ * @param[in] publicValueLengthPtr Data length
+ * @return Operation status
+ */
+/**
+ * @brief key exchange calc pub value
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] publicValuePtr Parameter value
+ * @param[in] publicValueLengthPtr Data length
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_KeyExchangeCalcPubValue(
     CryIf_KeyIdType cryIfKeyId,
     uint8* publicValuePtr,
@@ -363,6 +513,20 @@ extern Std_ReturnType CryIf_KeyExchangeCalcPubValue(
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_KEYEXCHANGECALCSECRET
+ */
+/**
+ * @brief key exchange calc secret
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] partnerPublicValuePtr Parameter value
+ * @param[in] partnerPublicValueLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief key exchange calc secret
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] partnerPublicValuePtr Parameter value
+ * @param[in] partnerPublicValueLength Data length
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_KeyExchangeCalcSecret(
     CryIf_KeyIdType cryIfKeyId,
@@ -382,6 +546,11 @@ extern Std_ReturnType CryIf_KeyExchangeCalcSecret(
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_CERTIFICATEPARSE
  */
+/**
+ * @brief certificate parse
+ * @param[in] cryIfKeyId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType CryIf_CertificateParse(CryIf_KeyIdType cryIfKeyId);
 
 /** @req SWS_CryIf_00021 */
@@ -392,6 +561,12 @@ extern Std_ReturnType CryIf_CertificateParse(CryIf_KeyIdType cryIfKeyId);
  * @return E_OK: Request successful
  *         E_NOT_OK: Request failed
  * @serviceid CRYIF_SID_CERTIFICATEVERIFY
+ */
+/**
+ * @brief certificate verify
+ * @param[in] cryIfKeyId Identifier
+ * @param[in] verifyCryIfKeyId Identifier
+ * @return Operation status
  */
 extern Std_ReturnType CryIf_CertificateVerify(
     CryIf_KeyIdType cryIfKeyId,
@@ -410,6 +585,12 @@ extern Std_ReturnType CryIf_CertificateVerify(
  * @param[in] result Result of the operation
  * @return void
  * @serviceid CRYIF_SID_CALLBACKNOTIFICATION
+ */
+/**
+ * @brief callback notification
+ * @param[in] channelId Channel identifier
+ * @param[in] job job value
+ * @param[in] result Result value
  */
 extern void CryIf_CallbackNotification(
     CryIf_ChannelIdType channelId,

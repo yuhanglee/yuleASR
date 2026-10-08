@@ -26,6 +26,12 @@
 #ifndef FEE_MCAL_H
 #define FEE_MCAL_H
 
+/**
+ * @file Fee.h
+ * @brief FEE module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -270,6 +276,11 @@ extern const Fee_ConfigType Fee_Config;
  *         - E_NOT_OK: Initialization failed
  * @req SWS_Fee_00001
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Init(const Fee_ConfigType* ConfigPtr);
 
 /**
@@ -278,6 +289,11 @@ extern Std_ReturnType Fee_Init(const Fee_ConfigType* ConfigPtr);
  *         - E_OK: De-initialization successful
  *         - E_NOT_OK: De-initialization failed
  * @req SWS_Fee_00002
+ */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ * @return Operation status
  */
 extern Std_ReturnType Fee_DeInit(void);
 
@@ -288,6 +304,11 @@ extern Std_ReturnType Fee_DeInit(void);
  *         - E_OK: Mode change successful
  *         - E_NOT_OK: Mode change failed
  * @req SWS_Fee_00003
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] Mode Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType Fee_SetMode(Fee_ModeType Mode);
 
@@ -300,6 +321,13 @@ extern Std_ReturnType Fee_SetMode(Fee_ModeType Mode);
  *         - E_OK: Read operation started successfully
  *         - E_NOT_OK: Read operation failed
  * @req SWS_Fee_00004
+ */
+/**
+ * @brief Read data from channel
+ * @param[in] SourceAddress Memory address
+ * @param[in] Length Data length
+ * @param[in] DestPtr Pointer reference
+ * @return Operation status
  */
 extern Std_ReturnType Fee_Read(Fee_AddressType SourceAddress,
                                 Fee_LengthType Length,
@@ -315,6 +343,13 @@ extern Std_ReturnType Fee_Read(Fee_AddressType SourceAddress,
  *         - E_NOT_OK: Write operation failed
  * @req SWS_Fee_00005
  */
+/**
+ * @brief Write data to channel
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @param[in] SourcePtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Write(Fee_AddressType TargetAddress,
                                  Fee_LengthType Length,
                                  const uint8* SourcePtr);
@@ -327,6 +362,12 @@ extern Std_ReturnType Fee_Write(Fee_AddressType TargetAddress,
  *         - E_OK: Erase operation started successfully
  *         - E_NOT_OK: Erase operation failed
  * @req SWS_Fee_00006
+ */
+/**
+ * @brief erase
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
  */
 extern Std_ReturnType Fee_Erase(Fee_AddressType TargetAddress,
                                  Fee_LengthType Length);
@@ -341,6 +382,13 @@ extern Std_ReturnType Fee_Erase(Fee_AddressType TargetAddress,
  *         - E_NOT_OK: Compare operation failed
  * @req SWS_Fee_00007
  */
+/**
+ * @brief compare
+ * @param[in] SourceAddress Memory address
+ * @param[in] Length Data length
+ * @param[in] DataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Compare(Fee_AddressType SourceAddress,
                                    Fee_LengthType Length,
                                    const uint8* DataPtr);
@@ -353,6 +401,12 @@ extern Std_ReturnType Fee_Compare(Fee_AddressType SourceAddress,
  *         - E_OK: Blank check started successfully
  *         - E_NOT_OK: Blank check failed
  * @req SWS_Fee_00008
+ */
+/**
+ * @brief blank check
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
  */
 extern Std_ReturnType Fee_BlankCheck(Fee_AddressType TargetAddress,
                                       Fee_LengthType Length);
@@ -378,6 +432,12 @@ extern Fee_JobResultType Fee_GetJobResult(void);
  *         - E_NOT_OK: Cancel failed
  * @req SWS_Fee_00011
  */
+/**
+ * @brief Cancel pending operation
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Cancel(void);
 
 /**
@@ -387,6 +447,12 @@ extern Std_ReturnType Fee_Cancel(void);
  *         - E_NOT_OK: Suspend failed
  * @req SWS_Fee_00012
  */
+/**
+ * @brief suspend
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Fee_Suspend(void);
 
 /**
@@ -395,6 +461,12 @@ extern Std_ReturnType Fee_Suspend(void);
  *         - E_OK: Resume successful
  *         - E_NOT_OK: Resume failed
  * @req SWS_Fee_00013
+ */
+/**
+ * @brief resume
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
  */
 extern Std_ReturnType Fee_Resume(void);
 

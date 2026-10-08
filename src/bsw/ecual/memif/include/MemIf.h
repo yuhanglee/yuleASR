@@ -159,6 +159,15 @@ void MemIf_Init(const MemIf_ConfigType* ConfigPtr);
  * @param Length Data length
  * @return Result of operation
  */
+/**
+ * @brief Read data from channel
+ * @param[in] DeviceIndex Index value
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] BlockOffset Memory offset
+ * @param[in] DataBufferPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType MemIf_Read(MemIf_DeviceIdType DeviceIndex,
                            MemIf_BlockIdType BlockNumber,
                            uint16 BlockOffset,
@@ -171,6 +180,13 @@ Std_ReturnType MemIf_Read(MemIf_DeviceIdType DeviceIndex,
  * @param BlockNumber Block number
  * @param DataBufferPtr Data buffer pointer
  * @return Result of operation
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] DeviceIndex Index value
+ * @param[in] BlockNumber BlockNumber value
+ * @param[in] DataBufferPtr Data buffer
+ * @return Operation status
  */
 Std_ReturnType MemIf_Write(MemIf_DeviceIdType DeviceIndex,
                             MemIf_BlockIdType BlockNumber,

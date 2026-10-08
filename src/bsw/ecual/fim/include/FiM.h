@@ -18,6 +18,12 @@
 #ifndef FIM_H
 #define FIM_H
 
+/**
+ * @file FiM.h
+ * @brief FIM module public API
+ */
+
+
 #include "Std_Types.h"
 #include "FiM_Cfg.h"
 #include "ModuleId.h"
@@ -74,19 +80,61 @@ extern const uint16 FiM_EventIdFidMap[];
 extern const uint8 FiM_EventFidInhibitionMask[];
 
 /* Function prototypes */
+/**
+ * @brief Initialize the module
+ * @param[in] configPtr Configuration reference
+ */
 extern void FiM_Init(const void* configPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] configPtr Configuration reference
+ */
 extern void FiM_DeInit(void);
+/**
+ * @brief Get requested information
+ * @param[in] FID Identifier
+ * @param[in] Permission Permission value
+ * @return Operation status
+ */
 extern Std_ReturnType FiM_GetFunctionPermission(FiM_FunctionIdType FID, boolean* Permission);
+/**
+ * @brief Set configuration value
+ * @param[in] FID Identifier
+ * @param[in] Availability Availability value
+ * @return Operation status
+ */
 extern Std_ReturnType FiM_SetFunctionAvailable(FiM_FunctionIdType FID, boolean Availability);
+/**
+ * @brief dem trigger on monitor status
+ * @param[in] EventId Identifier
+ */
 extern void FiM_DemTriggerOnMonitorStatus(uint16 EventId);
+/**
+ * @brief dem trigger on event status
+ * @param[in] EventId Identifier
+ */
 extern void FiM_DemTriggerOnEventStatus(uint16 EventId);
+/**
+ * @brief Process periodic tasks
+ * @param[in] EventId Identifier
+ */
 extern void FiM_MainFunction(void);
 
 #if (FIM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void FiM_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
 /* Callback functions for Dem integration */
+/**
+ * @brief dem trigger on event status uds
+ * @param[in] EventId Identifier
+ * @param[in] EventStatusByteOld State value
+ * @param[in] EventStatusByteNew State value
+ */
 extern void FiM_DemTriggerOnEventStatusUds(uint16 EventId, uint8 EventStatusByteOld, uint8 EventStatusByteNew);
 
 #endif /* FIM_H */

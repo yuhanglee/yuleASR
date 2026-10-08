@@ -521,6 +521,53 @@ Std_ReturnType MemIf_EraseBlock(uint8 DeviceIndex, uint16 BlockNumber)
 }
 
 /**
+ * @brief Erases an immediate block
+ * @req SWS_MemIf_00008
+ * @param DeviceIndex Index of the device
+ * @param BlockNumber Number of the block to erase
+ * @return E_OK if request accepted, E_NOT_OK if rejected
+ * @note Phase 2 duplicate-module convergence: this API was previously defined
+ *       only in the duplicate ecual/memif copy although the canonical MemIf.h
+ *       already declares it and NvM depends on it. Merged here so that
+ *       service_memif fully covers its declared API surface with a single
+ *       definition per symbol (the ecual copy is now an empty forwarding shim).
+ */
+Std_ReturnType MemIf_EraseImmediateBlock(uint8 DeviceIndex, uint16 BlockNumber)
+{
+    Std_ReturnType result = E_NOT_OK;
+
+#if (MEMIF_DEV_ERROR_DETECT == STD_ON)
+    MEMIF_VALIDATE_INITIALIZED_RET(MEMIF_SID_ERASEIMMEDIATEBLOCK, E_NOT_OK);
+    MEMIF_VALIDATE_DEVICE_INDEX_RET(MEMIF_SID_ERASEIMMEDIATEBLOCK, DeviceIndex, E_NOT_OK);
+
+    if (MemIf_IsBlockNumberValid(DeviceIndex, BlockNumber) == FALSE) {
+        Det_ReportError(MEMIF_MODULE_ID, MEMIF_INSTANCE_ID, MEMIF_SID_ERASEIMMEDIATEBLOCK, MEMIF_E_PARAM_BLOCK);
+        return E_NOT_OK;
+    }
+#endif
+
+    if (MemIf_DeviceState[DeviceIndex].status == MEMIF_IDLE) {
+        /* Route to appropriate underlying driver */
+        if (DeviceIndex == MEMIF_DEVICE_INDEX_FEE) {
+#if (MEMIF_FEE_ENABLED == STD_ON)
+            result = Fee_EraseImmediateBlock(BlockNumber);
+#endif
+        } else if (DeviceIndex == MEMIF_DEVICE_INDEX_EA) {
+#if (MEMIF_EA_ENABLED == STD_ON)
+            result = Ea_EraseImmediateBlock(BlockNumber);
+#endif
+        }
+
+        if (result == E_OK) {
+            MemIf_DeviceState[DeviceIndex].status = MEMIF_BUSY;
+            MemIf_DeviceState[DeviceIndex].jobResult = MEMIF_JOB_PENDING;
+        }
+    }
+
+    return result;
+}
+
+/**
  * @brief Main function for periodic processing
  * @req SWS_MemIf_00011
  * @param DeviceIndex Index of the device

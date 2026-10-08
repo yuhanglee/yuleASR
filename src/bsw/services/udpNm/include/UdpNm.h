@@ -289,6 +289,13 @@ Std_ReturnType UdpNm_GetPduData(Nm_ChannelHandleType nmChannelHandle, uint8 *nmP
  * @param nmModePtr Pointer to store mode
  * @return Result of operation
  */
+/**
+ * @brief Get current module state
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmStatePtr State value
+ * @param[in] nmModePtr Operation mode
+ * @return Operation status
+ */
 Std_ReturnType UdpNm_GetState(Nm_ChannelHandleType nmChannelHandle, 
                                Nm_StateType *nmStatePtr, 
                                Nm_ModeType *nmModePtr);

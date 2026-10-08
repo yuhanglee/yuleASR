@@ -66,7 +66,8 @@ const CanIf_TxPduCfgType CanIf_TxPduCfg[CANIF_TX_LPDU_CNT] =
         /* canId */           0x100U,
         /* hthId */           CANIF_HTH_0,
         /* controllerId */    CANIF_CONTROLLER_0,
-        /* dlc */             8U
+        /* dlc */             8U,
+        /* fdFrame */         FALSE
     },
     /* Tx L-PDU 1: Vehicle Speed (0x200) via HTH_0 */
     {
@@ -74,7 +75,8 @@ const CanIf_TxPduCfgType CanIf_TxPduCfg[CANIF_TX_LPDU_CNT] =
         /* canId */           0x200U,
         /* hthId */           CANIF_HTH_0,
         /* controllerId */    CANIF_CONTROLLER_0,
-        /* dlc */             4U
+        /* dlc */             4U,
+        /* fdFrame */         FALSE
     },
     /* Tx L-PDU 2: Temperature (0x300) via HTH_1 */
     {
@@ -82,7 +84,8 @@ const CanIf_TxPduCfgType CanIf_TxPduCfg[CANIF_TX_LPDU_CNT] =
         /* canId */           0x300U,
         /* hthId */           CANIF_HTH_1,
         /* controllerId */    CANIF_CONTROLLER_0,
-        /* dlc */             2U
+        /* dlc */             2U,
+        /* fdFrame */         FALSE
     },
     /* Tx L-PDU 3: Diagnostics (0x700) via HTH_1 */
     {
@@ -90,7 +93,8 @@ const CanIf_TxPduCfgType CanIf_TxPduCfg[CANIF_TX_LPDU_CNT] =
         /* canId */           0x700U,
         /* hthId */           CANIF_HTH_1,
         /* controllerId */    CANIF_CONTROLLER_0,
-        /* dlc */             8U
+        /* dlc */             8U,
+        /* fdFrame */         FALSE
     }
 };
 

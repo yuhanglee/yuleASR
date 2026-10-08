@@ -89,6 +89,7 @@ void Test_Det_RegisterHooks(void)
 /**
  * @brief Test Det_Init with valid configuration
  */
+/* @req SWR-005.1-04 */
 void Test_Det_Init_Valid(void)
 {
     Det_ConfigType config = {0};

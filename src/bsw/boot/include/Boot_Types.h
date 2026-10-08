@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Types.h
+ * @brief Boot loader types component
+ */
 #ifndef BOOT_TYPES_H
 #define BOOT_TYPES_H
 

@@ -52,6 +52,20 @@ static const Com_ConfigType triggeredConfig =
 /* Empty configuration: module init succeeds but no signal/IPDU is resolvable. */
 static const Com_ConfigType emptyConfig = { NULL_PTR, 0U, NULL_PTR, 0U };
 
+/* P1 Phase 8 Com_IpduGroupControl regression configuration: two cyclic
+ * I-PDUs (TimePeriod 1) in different groups — IPDU 0 -> group 0,
+ * IPDU 1 -> group 1. */
+static const Com_SignalConfigType testSignals_Group2[2] = {
+    { 0U, 0U, 8U, COM_LITTLE_ENDIAN, COM_PENDING, COM_ALWAYS, 0U, 0U, 0U },
+    { 1U, 0U, 8U, COM_LITTLE_ENDIAN, COM_PENDING, COM_ALWAYS, 0U, 0U, 0U }
+};
+static const Com_IPduConfigType testIPdus_Group2[2] = {
+    { 0U, 8U, FALSE, 0U, 0U, 1U, 0U },
+    { 1U, 8U, FALSE, 0U, 0U, 1U, 1U }
+};
+static const Com_ConfigType groupConfig =
+    { testSignals_Group2, 2U, testIPdus_Group2, 2U };
+
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -213,6 +227,48 @@ void test_Com_TriggerTransmit_AfterInit_ShouldReturnResult(void) {
     TEST_ASSERT_EQUAL_UINT8(0U, mock_DetCalls);
 }
 
+/** @req SWS_Com_00021 */
+void test_Com_IpduGroupControl_Disable_ShouldHonorVector(void) {
+    Com_Init(&groupConfig);
+    mock_reset();
+    /* Control: both cyclic I-PDUs transmit on the first tick. */
+    Com_MainFunctionTx();
+    TEST_ASSERT_EQUAL_UINT32(2U, mock_PduR_Transmit_Count);
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_PduR_Transmit_LastPduId);
+
+    /* Disable ONLY group 0: IPDU 0 stops, IPDU 1 (group 1 not covered by
+     * the vector) must keep its enabled state and keep transmitting. */
+    Com_IpduGroupVector vector = { 0x01U, 0x00U };
+    Com_IpduGroupControl(vector, FALSE);
+    mock_reset();
+    /* Two ticks: tick 1 only decrements IPDU 1's mid-period counter,
+     * tick 2 fires it — proving it kept transmitting while IPDU 0 is
+     * stopped. (The pre-P1-Phase-8 bug deactivated every I-PDU -> 0.) */
+    Com_MainFunctionTx();
+    TEST_ASSERT_EQUAL_UINT32(0U, mock_PduR_Transmit_Count);
+    Com_MainFunctionTx();
+    TEST_ASSERT_EQUAL_UINT32(1U, mock_PduR_Transmit_Count);
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_PduR_Transmit_LastPduId);
+    TEST_ASSERT_EQUAL_UINT8(0U, mock_DetCalls);
+}
+
+/** @req SWS_Com_00021 */
+void test_Com_IpduGroupControl_Enable_ShouldRestoreTx(void) {
+    Com_Init(&groupConfig);
+    Com_IpduGroupVector vector = { 0x01U, 0x00U };
+    Com_IpduGroupControl(vector, FALSE);
+    Com_MainFunctionTx(); /* IPDU 1 transmits, IPDU 0 stays idle */
+    mock_reset();
+
+    /* Re-enable group 0: IPDU 0 resumes (its tick counter is still 0),
+     * IPDU 1 is mid-period and must NOT transmit on this tick. */
+    Com_IpduGroupControl(vector, TRUE);
+    Com_MainFunctionTx();
+    TEST_ASSERT_EQUAL_UINT32(1U, mock_PduR_Transmit_Count);
+    TEST_ASSERT_EQUAL_UINT8(0U, mock_PduR_Transmit_LastPduId);
+    TEST_ASSERT_EQUAL_UINT8(0U, mock_DetCalls);
+}
+
 void test_Com_Init_DoubleInit_ShouldNotCrash(void) {
     Com_Init(&emptyConfig);
     mock_reset();
@@ -245,6 +301,8 @@ int main(void) {
     RUN_TEST(test_Com_TxConfirmation_ShouldNotCrash);
     RUN_TEST(test_Com_RxIndication_ShouldNotCrash);
     RUN_TEST(test_Com_TriggerTransmit_AfterInit_ShouldReturnResult);
+    RUN_TEST(test_Com_IpduGroupControl_Disable_ShouldHonorVector);
+    RUN_TEST(test_Com_IpduGroupControl_Enable_ShouldRestoreTx);
     RUN_TEST(test_Com_Init_DoubleInit_ShouldNotCrash);
     RUN_TEST(test_Com_DeInit_BeforeInit_ShouldNotCrash);
     return UnityEnd();

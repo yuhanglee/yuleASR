@@ -263,6 +263,14 @@ void SomeIpXf_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param TargetBuffer Target buffer for serialized data
  * @return Result of operation
  */
+/**
+ * @brief transform
+ * @param[in] TransformerId Identifier
+ * @param[in] DataElementId Data buffer
+ * @param[in] SourceBuffer Data buffer
+ * @param[in] TargetBuffer Data buffer
+ * @return Operation status
+ */
 Std_ReturnType SomeIpXf_Transform(uint16 TransformerId, uint16 DataElementId,
                                    const SomeIpXf_BufferType* SourceBuffer,
                                    SomeIpXf_BufferType* TargetBuffer);
@@ -275,6 +283,14 @@ Std_ReturnType SomeIpXf_Transform(uint16 TransformerId, uint16 DataElementId,
  * @param SourceBuffer Source buffer with serialized data
  * @param TargetBuffer Target buffer for deserialized data
  * @return Result of operation
+ */
+/**
+ * @brief detransform
+ * @param[in] TransformerId Identifier
+ * @param[in] DataElementId Data buffer
+ * @param[in] SourceBuffer Data buffer
+ * @param[in] TargetBuffer Data buffer
+ * @return Operation status
  */
 Std_ReturnType SomeIpXf_Detransform(uint16 TransformerId, uint16 DataElementId,
                                      const SomeIpXf_BufferType* SourceBuffer,
@@ -297,6 +313,13 @@ Std_ReturnType SomeIpXf_TransformerInit(uint16 TransformerId, SomeIpXf_HeaderTyp
  * @param Offset Bit offset
  * @return Number of bits serialized
  */
+/**
+ * @brief serialize boolean
+ * @param[in] Value Parameter value
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @return Result code
+ */
 uint16 SomeIpXf_SerializeBoolean(boolean Value, uint8* Buffer, uint16 Offset);
 
 /** @req SWS_SomeIpXf_00008 */
@@ -306,6 +329,13 @@ uint16 SomeIpXf_SerializeBoolean(boolean Value, uint8* Buffer, uint16 Offset);
  * @param Offset Bit offset
  * @param Value Output value
  * @return Number of bits deserialized
+ */
+/**
+ * @brief deserialize boolean
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @param[in] Value Parameter value
+ * @return Result code
  */
 uint16 SomeIpXf_DeserializeBoolean(const uint8* Buffer, uint16 Offset, boolean* Value);
 
@@ -317,6 +347,13 @@ uint16 SomeIpXf_DeserializeBoolean(const uint8* Buffer, uint16 Offset, boolean* 
  * @param Offset Bit offset
  * @return Number of bits serialized
  */
+/**
+ * @brief serialize uint8
+ * @param[in] Value Parameter value
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @return Result code
+ */
 uint16 SomeIpXf_SerializeUint8(uint8 Value, uint8* Buffer, uint16 Offset);
 
 /** @req SWS_SomeIpXf_00010 */
@@ -326,6 +363,13 @@ uint16 SomeIpXf_SerializeUint8(uint8 Value, uint8* Buffer, uint16 Offset);
  * @param Offset Bit offset
  * @param Value Output value
  * @return Number of bits deserialized
+ */
+/**
+ * @brief deserialize uint8
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @param[in] Value Parameter value
+ * @return Result code
  */
 uint16 SomeIpXf_DeserializeUint8(const uint8* Buffer, uint16 Offset, uint8* Value);
 
@@ -337,6 +381,13 @@ uint16 SomeIpXf_DeserializeUint8(const uint8* Buffer, uint16 Offset, uint8* Valu
  * @param Offset Bit offset
  * @return Number of bits serialized
  */
+/**
+ * @brief serialize uint16
+ * @param[in] Value Parameter value
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @return Result code
+ */
 uint16 SomeIpXf_SerializeUint16(uint16 Value, uint8* Buffer, uint16 Offset);
 
 /** @req SWS_SomeIpXf_00012 */
@@ -346,6 +397,13 @@ uint16 SomeIpXf_SerializeUint16(uint16 Value, uint8* Buffer, uint16 Offset);
  * @param Offset Bit offset
  * @param Value Output value
  * @return Number of bits deserialized
+ */
+/**
+ * @brief deserialize uint16
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @param[in] Value Parameter value
+ * @return Result code
  */
 uint16 SomeIpXf_DeserializeUint16(const uint8* Buffer, uint16 Offset, uint16* Value);
 
@@ -357,6 +415,13 @@ uint16 SomeIpXf_DeserializeUint16(const uint8* Buffer, uint16 Offset, uint16* Va
  * @param Offset Bit offset
  * @return Number of bits serialized
  */
+/**
+ * @brief serialize uint32
+ * @param[in] Value Parameter value
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @return Result code
+ */
 uint16 SomeIpXf_SerializeUint32(uint32 Value, uint8* Buffer, uint16 Offset);
 
 /** @req SWS_SomeIpXf_00014 */
@@ -366,6 +431,13 @@ uint16 SomeIpXf_SerializeUint32(uint32 Value, uint8* Buffer, uint16 Offset);
  * @param Offset Bit offset
  * @param Value Output value
  * @return Number of bits deserialized
+ */
+/**
+ * @brief deserialize uint32
+ * @param[in] Buffer Data buffer
+ * @param[in] Offset Memory offset
+ * @param[in] Value Parameter value
+ * @return Result code
  */
 uint16 SomeIpXf_DeserializeUint32(const uint8* Buffer, uint16 Offset, uint32* Value);
 
@@ -377,6 +449,14 @@ uint16 SomeIpXf_DeserializeUint32(const uint8* Buffer, uint16 Offset, uint32* Va
  * @param Buffer Target buffer
  * @param Config String configuration
  * @return Number of bytes serialized
+ */
+/**
+ * @brief serialize string
+ * @param[in] StringPtr Pointer reference
+ * @param[in] StringLen Data length
+ * @param[in] Buffer Data buffer
+ * @param[in] Config Configuration reference
+ * @return Result code
  */
 uint32 SomeIpXf_SerializeString(const uint8* StringPtr, uint32 StringLen,
                                  uint8* Buffer, const SomeIpXf_DataElementConfigType* Config);
@@ -390,6 +470,15 @@ uint32 SomeIpXf_SerializeString(const uint8* StringPtr, uint32 StringLen,
  * @param StringLen Output string length
  * @param Config String configuration
  * @return Number of bytes deserialized
+ */
+/**
+ * @brief deserialize string
+ * @param[in] Buffer Data buffer
+ * @param[in] BufferLen Data buffer
+ * @param[in] StringPtr Pointer reference
+ * @param[in] StringLen Data length
+ * @param[in] Config Configuration reference
+ * @return Result code
  */
 uint32 SomeIpXf_DeserializeString(const uint8* Buffer, uint32 BufferLen,
                                    uint8* StringPtr, uint32* StringLen,
@@ -405,6 +494,15 @@ uint32 SomeIpXf_DeserializeString(const uint8* Buffer, uint32 BufferLen,
  * @param Config Array configuration
  * @return Number of bytes serialized
  */
+/**
+ * @brief serialize array
+ * @param[in] ArrayPtr Pointer reference
+ * @param[in] ArrayLen Data length
+ * @param[in] ElementSize Data length
+ * @param[in] Buffer Data buffer
+ * @param[in] Config Configuration reference
+ * @return Result code
+ */
 uint32 SomeIpXf_SerializeArray(const uint8* ArrayPtr, uint32 ArrayLen, uint32 ElementSize,
                                 uint8* Buffer, const SomeIpXf_DataElementConfigType* Config);
 
@@ -418,6 +516,16 @@ uint32 SomeIpXf_SerializeArray(const uint8* ArrayPtr, uint32 ArrayLen, uint32 El
  * @param ElementSize Element size in bytes
  * @param Config Array configuration
  * @return Number of bytes deserialized
+ */
+/**
+ * @brief deserialize array
+ * @param[in] Buffer Data buffer
+ * @param[in] BufferLen Data buffer
+ * @param[in] ArrayPtr Pointer reference
+ * @param[in] ArrayLen Data length
+ * @param[in] ElementSize Data length
+ * @param[in] Config Configuration reference
+ * @return Result code
  */
 uint32 SomeIpXf_DeserializeArray(const uint8* Buffer, uint32 BufferLen,
                                   uint8* ArrayPtr, uint32* ArrayLen,

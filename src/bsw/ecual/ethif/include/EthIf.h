@@ -95,15 +95,66 @@ typedef struct {
     const EthIf_RxFilterType* RxFilters;
 } EthIf_ConfigType;
 
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void EthIf_Init(const EthIf_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void EthIf_DeInit(void);
+/**
+ * @brief Transmit data
+ * @param[in] ControllerId Identifier
+ * @param[in] BufferHandle Data buffer
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType EthIf_Transmit(uint8 ControllerId, uint32 BufferHandle, const EthIf_PduType* PduInfoPtr);
+/**
+ * @brief Set configuration value
+ * @param[in] ControllerId Identifier
+ * @param[in] Mode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType EthIf_SetControllerMode(uint8 ControllerId, EthIf_ControllerMode Mode);
+/**
+ * @brief Get requested information
+ * @param[in] ControllerId Identifier
+ * @return Operation result
+ */
 EthIf_ControllerMode EthIf_GetControllerMode(uint8 ControllerId);
+/**
+ * @brief Receive data
+ * @param[in] ControllerId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void EthIf_RxIndication(uint8 ControllerId, const EthIf_PduType* PduInfoPtr);
+/**
+ * @brief Transmit data
+ * @param[in] ControllerId Identifier
+ * @param[in] BufferHandle Data buffer
+ */
 void EthIf_TxConfirmation(uint8 ControllerId, uint32 BufferHandle);
+/**
+ * @brief Process periodic tasks
+ * @param[in] ControllerId Identifier
+ * @param[in] BufferHandle Data buffer
+ */
 void EthIf_MainFunction(void);
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void EthIf_GetVersionInfo(Std_VersionInfoType* versioninfo);
+/**
+ * @brief Get current module state
+ * @param[in] TrcvIdx Index value
+ * @param[in] LinkStatePtr State value
+ * @return Operation status
+ */
 Std_ReturnType EthIf_GetTransceiverLinkState(uint8 TrcvIdx, EthIf_LinkStateType* LinkStatePtr);
 
 #endif /* ETHIF_H */

@@ -271,6 +271,10 @@ void CanTSyn_DeInit(void);
  */
 #if (CANTSYN_VERSION_INFO_API == STD_ON)
 /** @req SWS_CanTSyn_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void CanTSyn_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -282,6 +286,12 @@ void CanTSyn_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
  */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] txMode Operation mode
+ * @return Operation status
+ */
 Std_ReturnType CanTSyn_SetTransmissionMode(uint8 timeBaseId, uint8 txMode);
 
 /** @req SWS_CanTSyn_00006 */
@@ -291,6 +301,12 @@ Std_ReturnType CanTSyn_SetTransmissionMode(uint8 timeBaseId, uint8 txMode);
  * @param txModePtr Pointer to store transmission mode
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
+ */
+/**
+ * @brief Get requested information
+ * @param[in] timeBaseId Identifier
+ * @param[in] txModePtr Operation mode
+ * @return Operation status
  */
 Std_ReturnType CanTSyn_GetTransmissionMode(uint8 timeBaseId, uint8* txModePtr);
 
@@ -311,6 +327,12 @@ boolean CanTSyn_GetSyncReceived(uint8 timeBaseId);
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
  */
+/**
+ * @brief Get requested information
+ * @param[in] timeBaseId Identifier
+ * @param[in] virtualTimePtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType CanTSyn_GetCurrentVirtualTime(uint8 timeBaseId, 
                                               StbM_VirtualLocalTimeType* virtualTimePtr);
 
@@ -322,6 +344,20 @@ Std_ReturnType CanTSyn_GetCurrentVirtualTime(uint8 timeBaseId,
  * @param userDataPtr Pointer to user data (can be NULL)
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized, timeBaseId must be configured as Master
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] timeStampPtr Pointer reference
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] timeStampPtr Pointer reference
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
  */
 Std_ReturnType CanTSyn_SetGlobalTime(uint8 timeBaseId,
                                      const StbM_TimeStampType* timeStampPtr,
@@ -335,6 +371,12 @@ Std_ReturnType CanTSyn_SetGlobalTime(uint8 timeBaseId,
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
  */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] rateCorrection rateCorrection value
+ * @return Operation status
+ */
 Std_ReturnType CanTSyn_SetRateCorrection(uint8 timeBaseId, sint32 rateCorrection);
 
 /** @req SWS_CanTSyn_00011 */
@@ -344,6 +386,12 @@ Std_ReturnType CanTSyn_SetRateCorrection(uint8 timeBaseId, sint32 rateCorrection
  * @param userDataPtr Pointer to user data
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] timeBaseId Identifier
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
  */
 Std_ReturnType CanTSyn_SetUserData(uint8 timeBaseId, const StbM_UserDataType* userDataPtr);
 
@@ -355,6 +403,12 @@ Std_ReturnType CanTSyn_SetUserData(uint8 timeBaseId, const StbM_UserDataType* us
  * @return E_OK: Success, E_NOT_OK: Error
  * @pre CanTSyn module must be initialized
  */
+/**
+ * @brief Get requested information
+ * @param[in] timeBaseId Identifier
+ * @param[in] userDataPtr Data buffer
+ * @return Operation status
+ */
 Std_ReturnType CanTSyn_GetUserData(uint8 timeBaseId, StbM_UserDataType* userDataPtr);
 
 /** @req SWS_CanTSyn_00013 */
@@ -365,6 +419,11 @@ Std_ReturnType CanTSyn_GetUserData(uint8 timeBaseId, StbM_UserDataType* userData
  * @pre CanTSyn module must be initialized
  * @post Received message processed
  */
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void CanTSyn_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 
 /** @req SWS_CanTSyn_00014 */
@@ -374,6 +433,11 @@ void CanTSyn_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
  * @param result Result of transmission
  * @pre CanTSyn module must be initialized
  * @post Transmission confirmed, next message can be sent
+ */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
  */
 void CanTSyn_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
 

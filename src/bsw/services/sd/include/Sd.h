@@ -201,6 +201,13 @@ void Sd_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param[out] Endpoint Endpoint of found service
  * @return E_OK if found, E_NOT_OK otherwise
  */
+/**
+ * @brief find service
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] Endpoint Endpoint value
+ * @return Operation status
+ */
 Std_ReturnType Sd_FindService(Sd_ServiceIdType ServiceId, Sd_InstanceIdType InstanceId,
                               Sd_Ipv4EndpointType* Endpoint);
 
@@ -213,6 +220,15 @@ Std_ReturnType Sd_FindService(Sd_ServiceIdType ServiceId, Sd_InstanceIdType Inst
  * @param MinorVersion Minor version
  * @param Endpoint     Local endpoint for the service
  * @return E_OK on success
+ */
+/**
+ * @brief offer service
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] MajorVersion Version info
+ * @param[in] MinorVersion Version info
+ * @param[in] Endpoint Endpoint value
+ * @return Operation status
  */
 Std_ReturnType Sd_OfferService(Sd_ServiceIdType ServiceId, Sd_InstanceIdType InstanceId,
                                Sd_MajorVersionType MajorVersion, Sd_MinorVersionType MinorVersion,
@@ -231,6 +247,13 @@ Std_ReturnType Sd_StopService(Sd_ServiceIdType ServiceId, Sd_InstanceIdType Inst
  * @param InstanceId   Instance ID
  * @param EventGroupId Event group ID
  * @return E_OK on success
+ */
+/**
+ * @brief subscribe event group
+ * @param[in] ServiceId Identifier
+ * @param[in] InstanceId Identifier
+ * @param[in] EventGroupId Identifier
+ * @return Operation status
  */
 Std_ReturnType Sd_SubscribeEventGroup(Sd_ServiceIdType ServiceId, Sd_InstanceIdType InstanceId,
                                       Sd_EventGroupIdType EventGroupId);

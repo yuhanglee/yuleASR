@@ -60,6 +60,9 @@
 #define CAN_SID_MAINFUNCTIONWAKEUP      (0x0CU)
 #define CAN_SID_MAINFUNCTIONMODE        (0x0DU)
 #define CAN_SID_CHECKWAKEUP             (0x0EU)
+#define CAN_SID_GETCONTROLLERERRORSTATE (0x11U)
+#define CAN_SID_GETCONTROLLERRXERRORCOUNTER (0x12U)
+#define CAN_SID_GETCONTROLLERTXERRORCOUNTER (0x13U)
 
 /*==================================================================================================
 *                                    DET ERROR CODES
@@ -84,6 +87,15 @@ typedef enum {
     CAN_CS_STOPPED,
     CAN_CS_SLEEP
 } Can_ControllerStateType;
+
+/*==================================================================================================
+*                                    CAN ERROR STATE TYPE
+==================================================================================================*/
+typedef uint8 Can_ErrorStateType;
+
+#define CAN_ERRORSTATE_ACTIVE           (0x00U)
+#define CAN_ERRORSTATE_PASSIVE          (0x01U)
+#define CAN_ERRORSTATE_BUSOFF           (0x02U)
 
 /*==================================================================================================
 *                                    CAN HARDWARE OBJECT TYPES
@@ -282,6 +294,30 @@ void Can_MainFunction_Mode(void);
  * @return Wakeup detected flag
  */
 Std_ReturnType Can_CheckWakeup(uint8 Controller);
+
+/**
+ * @brief Gets the error state of a CAN controller (ACTIVE/PASSIVE/BUSOFF)
+ * @param Controller CAN controller to query
+ * @param ErrorStatePtr Pointer to store the error state
+ * @return E_OK on success, E_NOT_OK on invalid controller/pointer or UNINIT
+ */
+Std_ReturnType Can_GetControllerErrorState(uint8 Controller, Can_ErrorStateType* ErrorStatePtr);
+
+/**
+ * @brief Gets the receive error counter of a CAN controller
+ * @param Controller CAN controller to query
+ * @param RxErrorCounterPtr Pointer to store the RX error counter
+ * @return E_OK on success, E_NOT_OK on invalid controller/pointer or UNINIT
+ */
+Std_ReturnType Can_GetControllerRxErrorCounter(uint8 Controller, uint8* RxErrorCounterPtr);
+
+/**
+ * @brief Gets the transmit error counter of a CAN controller
+ * @param Controller CAN controller to query
+ * @param TxErrorCounterPtr Pointer to store the TX error counter
+ * @return E_OK on success, E_NOT_OK on invalid controller/pointer or UNINIT
+ */
+Std_ReturnType Can_GetControllerTxErrorCounter(uint8 Controller, uint8* TxErrorCounterPtr);
 
 #define CAN_STOP_SEC_CODE
 #include "MemMap.h"

@@ -811,28 +811,53 @@ Std_ReturnType Dem_IntValidateEventId(Dem_EventIdType EventId)
 }
 
 /*==================================================================================================
-*                          MISSING INTERNAL API STUBS (T1, 2026-08-08)
+*                          INTERNAL API IMPLEMENTATIONS (P1 Phase 8)
 *
-* Dem.c references these Dem_Int* internal APIs, but no implementation
-* exists anywhere in the tree (declared in Dem_Int.h only - a latent
-* pre-existing gap). Before the T1 fix the gap was masked because the
-* native smoke link dropped Rte_AswScheduler/Os_TaskEntries/Os_Cfg
-* entirely (weak Os_GlobalState), so these symbols were never pulled.
-* Safe defaults: freeze-frame get fails, filters match everything,
-* operation-cycle hooks are no-ops.
+* Originally T1 stubs (2026-08-08): freeze-frame get always failed, the DTC
+* filter matched every slot and the filtered count was never updated - a
+* latent pre-existing gap flagged in the T1 comment above. P1 Phase 8
+* replaces them with real implementations backed by Dem_InternalState.
+* Only the operation-cycle hooks remain no-ops (cycle-based reset/aging
+* is not configured in this project).
 ==================================================================================================*/
 Std_ReturnType Dem_IntGetFreezeFrame(uint8 DtcIndex,
                                      uint8 RecordNumber,
                                      uint8* DestBuffer,
                                      uint16* BufferSize)
 {
-    (void)DtcIndex;
-    (void)RecordNumber;
-    (void)DestBuffer;
-    if (BufferSize != NULL_PTR)
+    uint16 i;
+
+    if ((DestBuffer == NULL_PTR) || (BufferSize == NULL_PTR))
     {
-        *BufferSize = 0U;
+        return E_NOT_OK;
     }
+
+    if (!Dem_IntIsValidDtcIndex(DtcIndex))
+    {
+        return E_NOT_OK;
+    }
+
+    /* RecordNumber is reserved: this implementation stores one standard
+     * freeze frame record (record 0) per DTC. */
+    (void)RecordNumber;
+
+    for (i = 0U; i < DEM_NUM_FREEZE_FRAME_RECORDS; i++)
+    {
+        const Dem_FreezeFrameEntryType* freezeFrame = &Dem_InternalState.FreezeFrames[i];
+
+        if ((freezeFrame->IsValid) && (freezeFrame->DtcIndex == (uint16)DtcIndex))
+        {
+            if (*BufferSize < freezeFrame->Length)
+            {
+                return E_NOT_OK; /* buffer too small */
+            }
+
+            (void)memcpy(DestBuffer, freezeFrame->Data, freezeFrame->Length);
+            *BufferSize = freezeFrame->Length;
+            return E_OK;
+        }
+    }
+
     return E_NOT_OK;
 }
 
@@ -848,12 +873,95 @@ void Dem_IntHandleOperationCycleEnd(uint8 CycleIndex)
 
 boolean Dem_IntMatchDTCFilter(uint8 DtcIndex)
 {
-    (void)DtcIndex;
+    const Dem_DTCEntryType* entry;
+    const Dem_DtcParameterType* dtcConfig;
+
+    if (DtcIndex >= DEM_NUM_DTCS)
+    {
+        return FALSE;
+    }
+
+    entry = &Dem_InternalState.DTCEntries[DtcIndex];
+
+    /* Skip empty slots and entries deleted via Dem_ClearDTC */
+    if ((entry->DTC == 0U) || ((entry->IsDeleted) != 0U))
+    {
+        return FALSE;
+    }
+
+    /* Only report DTCs known to the current configuration */
+    dtcConfig = Dem_IntFindDTCConfig(entry->DTC);
+    if (dtcConfig == NULL_PTR)
+    {
+        return FALSE;
+    }
+
+    /* Apply the origin installed by Dem_SelectDTC (default: PRIMARY_MEMORY) */
+    if (Dem_InternalState.DTCFilterOrigin != dtcConfig->DtcOrigin)
+    {
+        return FALSE;
+    }
+
     return TRUE;
 }
 
 void Dem_IntUpdateFilteredCount(void)
 {
+    uint8 i;
+    uint16 count = 0U;
+
+    for (i = 0U; i < DEM_NUM_DTCS; i++)
+    {
+        if (Dem_IntMatchDTCFilter(i))
+        {
+            count++;
+        }
+    }
+
+    Dem_InternalState.FilteredDTCCount = count;
+}
+
+/**
+ * @brief Count non-deleted DTC entries belonging to a functional group
+ *        (UDS 0x14 mask semantics: entry belongs to the group iff
+ *        (entry->DTC & DtcGroup) == DtcGroup).
+ */
+uint8 Dem_IntCountDTCGroupMatches(Dem_DTCType DtcGroup)
+{
+    uint8 i;
+    uint8 count = 0U;
+
+    for (i = 0U; i < DEM_NUM_DTCS; i++)
+    {
+        const Dem_DTCEntryType* entry = &Dem_InternalState.DTCEntries[i];
+
+        if (((entry->IsDeleted) == 0U) && (entry->DTC != 0U) &&
+            ((entry->DTC & DtcGroup) == DtcGroup))
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+/**
+ * @brief Clear all non-deleted DTC entries belonging to a functional group
+ */
+void Dem_IntClearDTCGroup(Dem_DTCType DtcGroup)
+{
+    uint8 i;
+
+    for (i = 0U; i < DEM_NUM_DTCS; i++)
+    {
+        const Dem_DTCEntryType* entry = &Dem_InternalState.DTCEntries[i];
+
+        if (((entry->IsDeleted) == 0U) && (entry->DTC != 0U) &&
+            ((entry->DTC & DtcGroup) == DtcGroup))
+        {
+            Dem_IntClearSingleDTC(i);
+        }
+    }
 }
 
 #define DEM_STOP_SEC_CODE

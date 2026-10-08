@@ -13,10 +13,12 @@
  *         - E2E_GetVersionInfo*   -> E2E_P01MapStatusToSM()
  *         - E2E_RegisterProfile*  -> E2E_P01Check()/E2E_P01MapStatusToSM() roundtrip
  *         - E2E_MainFunction*     -> E2E_DeInit()/re-init lifecycle
- *       Observed SUT behaviour that differs from the old expectations:
- *         - E2E_Init(NULL) returns E2E_E_INPUTERR_NULL (no DET call; the SUT
- *           never calls Det_ReportError).
- *         - E2E_Init has NO double-init guard: a second init returns E_OK.
+ *       Observed SUT behaviour (updated after E2E_Init/E2E_DeInit DET hardening):
+ *         - E2E_Init(NULL) returns E2E_E_INPUTERR_NULL and reports DET
+ *           (Det_ReportError is mocked in this file).
+ *         - Double-init and uninitialized DeInit stay idempotent (E_OK) but
+ *           report DET errors (E2E_E_DET_ALREADY_INITIALIZED resp.
+ *           E2E_E_DET_NOT_INITIALIZED).
  *         - E2E_P01Protect/E2E_P01Check return E_NOT_OK on NULL arguments
  *           without any DET report.
  */
@@ -28,6 +30,28 @@
 
 /* E2E_Init takes an opaque non-NULL pointer; content is not dereferenced */
 static uint8 e2eDummyConfig;
+
+/* ------------------------------------------------------------------------ */
+/* Det_ReportError mock (E2E.c reports DET via E2E_DET_REPORT_ERROR)        */
+/* ------------------------------------------------------------------------ */
+static uint8 mock_DetApiId = 0xFFU;
+static uint8 mock_DetErrorId = 0xFFU;
+static uint8 mock_DetCalls = 0U;
+
+static void mock_Det_Reset(void) {
+    mock_DetApiId = 0xFFU;
+    mock_DetErrorId = 0xFFU;
+    mock_DetCalls = 0U;
+}
+
+Std_ReturnType Det_ReportError(uint16 ModuleId, uint8 InstanceId, uint8 ApiId, uint8 ErrorId) {
+    (void)ModuleId;
+    (void)InstanceId;
+    mock_DetApiId = ApiId;
+    mock_DetErrorId = ErrorId;
+    mock_DetCalls++;
+    return E_OK;
+}
 
 /* Shared Profile 1 configuration: 4-byte frame, counter byte 0, CRC byte 1 */
 static const E2E_P01ConfigType testConfig = {
@@ -44,6 +68,7 @@ static E2E_P01CheckStateType checkState;
 static uint8 frame[4];
 
 void setUp(void) {
+    mock_Det_Reset();
     memset(&protectState, 0, sizeof(protectState));
     memset(&checkState, 0, sizeof(checkState));
     memset(frame, 0, sizeof(frame));
@@ -65,27 +90,42 @@ static void test_E2E_ProtectWithCounter(uint8 counter) {
 /** @req SWS_E2E_00001 */
 void test_E2E_Init_NullPtr_ShouldReturnInputErrNull(void) {
     TEST_ASSERT_EQUAL_UINT8(E2E_E_INPUTERR_NULL, E2E_Init(NULL_PTR));
+    /* NULL config is reported to DET with the input-error code */
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_DetCalls);
+    TEST_ASSERT_EQUAL_UINT8(0x01U, mock_DetApiId);              /* E2E_SID_INIT */
+    TEST_ASSERT_EQUAL_UINT8(E2E_E_INPUTERR_NULL, mock_DetErrorId);
 }
 
 /** @req SWS_E2E_00001 */
 void test_E2E_Init_ValidConfig_ShouldSucceed(void) {
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_Init(&e2eDummyConfig));
+    /* valid first init: no DET report */
+    TEST_ASSERT_EQUAL_UINT8(0U, mock_DetCalls);
     /* clean up for the other tests */
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_DeInit());
 }
 
 /** @req SWS_E2E_00001 */
 void test_E2E_Init_DoubleInit_ShouldSucceed(void) {
-    /* SUT has no double-init guard: both calls return E_OK */
+    /* repeated init stays idempotent (E_OK) but reports DET */
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_Init(&e2eDummyConfig));
+    TEST_ASSERT_EQUAL_UINT8(0U, mock_DetCalls);
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_Init(&e2eDummyConfig));
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_DetCalls);
+    TEST_ASSERT_EQUAL_UINT8(0x0AU, mock_DetErrorId);            /* E2E_E_DET_ALREADY_INITIALIZED */
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_DeInit());
+    /* DeInit while initialized: no DET report */
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_DetCalls);
 }
 
 /** @req SWS_E2E_00002 (was: MainFunction lifecycle) */
 void test_E2E_DeInit_AlwaysSucceedsAndAllowsReInit(void) {
+    /* DeInit before Init stays idempotent (E_OK) but reports DET */
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_DeInit());
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_DetCalls);
+    TEST_ASSERT_EQUAL_UINT8(0x0BU, mock_DetErrorId);            /* E2E_E_DET_NOT_INITIALIZED */
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_Init(&e2eDummyConfig));
+    TEST_ASSERT_EQUAL_UINT8(1U, mock_DetCalls);
     TEST_ASSERT_EQUAL_UINT8(E_OK, E2E_DeInit());
 }
 

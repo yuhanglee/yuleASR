@@ -123,32 +123,112 @@ typedef struct {
 } Lin_ConfigType;
 
 /* Function Prototypes */
+/**
+ * @brief Initialize the module
+ * @param[in] Config Configuration reference
+ */
 extern void Lin_Init(const Lin_ConfigType* Config);
+/**
+ * @brief De-initialize the module
+ * @param[in] Config Configuration reference
+ */
 extern void Lin_DeInit(void);
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void Lin_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
+/**
+ * @brief send frame
+ * @param[in] Channel Channel identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_SendFrame(Lin_ChannelType Channel, const Lin_PduType* PduInfoPtr);
+/**
+ * @brief send response
+ * @param[in] Channel Channel identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_SendResponse(Lin_ChannelType Channel, const Lin_PduType* PduInfoPtr);
+/**
+ * @brief Disable the feature
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_DisableResponse(Lin_ChannelType Channel);
 
+/**
+ * @brief wake up
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_WakeUp(Lin_ChannelType Channel);
+/**
+ * @brief wake up internal
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_WakeUpInternal(Lin_ChannelType Channel);
+/**
+ * @brief Check condition
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_CheckWakeup(Lin_ChannelType Channel);
 
+/**
+ * @brief Get current status
+ * @param[in] Channel Channel identifier
+ * @param[in] Lin_SduPtr Pointer reference
+ * @return Operation status
+ */
 extern Lin_StatusType Lin_GetStatus(Lin_ChannelType Channel, uint8** Lin_SduPtr);
+/**
+ * @brief go to sleep
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_GoToSleep(Lin_ChannelType Channel);
+/**
+ * @brief go to sleep internal
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Lin_GoToSleepInternal(Lin_ChannelType Channel);
 
 /* Callbacks */
+/**
+ * @brief wake up confirmation
+ * @param[in] Channel Channel identifier
+ */
 extern void Lin_WakeUpConfirmation(Lin_ChannelType Channel);
+/**
+ * @brief wake up frame indication
+ * @param[in] Channel Channel identifier
+ */
 extern void Lin_WakeUpFrameIndication(void);
 
 #define LIN_START_SEC_CODE
 #include "MemMap.h"
 
 /* ISR declarations - to be defined by implementation */
+/**
+ * @brief isr tx
+ * @param[in] Channel Channel identifier
+ */
 extern void Lin_IsrTx(Lin_ChannelType Channel);
+/**
+ * @brief isr rx
+ * @param[in] Channel Channel identifier
+ */
 extern void Lin_IsrRx(Lin_ChannelType Channel);
+/**
+ * @brief isr err
+ * @param[in] Channel Channel identifier
+ */
 extern void Lin_IsrErr(Lin_ChannelType Channel);
 
 #define LIN_STOP_SEC_CODE

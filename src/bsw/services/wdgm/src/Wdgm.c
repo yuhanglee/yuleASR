@@ -230,6 +230,9 @@ Std_ReturnType WdgM_Init(const WdgM_ConfigType* config)
         WdgM_SupervisedEntities[i].state = WDGM_SE_STATE_DEACTIVATED;
         WdgM_SupervisedEntities[i].aliveCounter = 0U;
         WdgM_SupervisedEntities[i].expectedAliveIndications = 0U;
+        WdgM_SupervisedEntities[i].aliveSupMaxIndications = 0U;
+        WdgM_SupervisedEntities[i].aliveSupRefCycle = 1U;
+        WdgM_SupervisedEntities[i].aliveCycleCounter = 0U;
         WdgM_SupervisedEntities[i].timestampStart = 0U;
         WdgM_SupervisedEntities[i].timestampStop = 0U;
         WdgM_SupervisedEntities[i].consecutiveErrors = 0U;
@@ -245,6 +248,27 @@ Std_ReturnType WdgM_Init(const WdgM_ConfigType* config)
             {
                 WdgM_SupervisedEntities[i].seId = config->entities[i].seId;
                 WdgM_SupervisedEntities[i].deactivated = !config->entities[i].enabled;
+                
+                /* 填充活监督配置: 期望活指示数 / 最大活指示数 / 参考周期数
+                 * (修复: 之前 expectedAliveIndications 恒为 0, 导致 alive
+                 *  supervision expiry 永远不会触发) */
+                WdgM_SupervisedEntities[i].expectedAliveIndications =
+                    config->entities[i].config.alive.aliveSupMin;
+                WdgM_SupervisedEntities[i].aliveSupMaxIndications =
+                    config->entities[i].config.alive.aliveSupMax;
+                
+                /* 参考周期数至少为 1, 防止配置为 0 时异常评估 */
+                if (config->entities[i].config.alive.aliveSupRefCycle == 0U)
+                {
+                    WdgM_SupervisedEntities[i].aliveSupRefCycle = 1U;
+                }
+                else
+                {
+                    WdgM_SupervisedEntities[i].aliveSupRefCycle =
+                        config->entities[i].config.alive.aliveSupRefCycle;
+                }
+                WdgM_SupervisedEntities[i].aliveCycleCounter = 0U;
+                
                 if ((config->entities[i].enabled) != 0U)
                 {
                     WdgM_SupervisedEntities[i].state = WDGM_SE_STATE_CORRECT;
@@ -540,6 +564,7 @@ Std_ReturnType WdgM_ActivateSupervisionEntity(uint16 seId)
         WdgM_SupervisedEntities[entityIdx].deactivated = FALSE;
         WdgM_SupervisedEntities[entityIdx].state = WDGM_SE_STATE_CORRECT;
         WdgM_SupervisedEntities[entityIdx].aliveCounter = 0U;
+        WdgM_SupervisedEntities[entityIdx].aliveCycleCounter = 0U;
         WdgM_SupervisedEntities[entityIdx].consecutiveErrors = 0U;
     }
     
@@ -850,20 +875,41 @@ STATIC void WdgM_UpdateSupervision(void)
  */
 STATIC void WdgM_CheckEntityAlive(uint8 entityIdx)
 {
-    const WdgM_SupervisedEntityType* entity = &WdgM_SupervisedEntities[entityIdx];
+    WdgM_SupervisedEntityType* entity = &WdgM_SupervisedEntities[entityIdx];
     
-    /* 检查是否超时 */
     if (WdgM_CurrentConfig != NULL_PTR)
     {
-        if (entity->aliveCounter < entity->expectedAliveIndications)
+        /* 统计当前参考周期内的监督周期数 */
+        if (entity->aliveCycleCounter < entity->aliveSupRefCycle)
         {
-            /* 未收到足够的活指示 */
-            WdgM_SupervisedEntities[entityIdx].consecutiveErrors++;
+            entity->aliveCycleCounter++;
+        }
+        
+        /* 参考周期结束时评估活监督结果 */
+        if (entity->aliveCycleCounter >= entity->aliveSupRefCycle)
+        {
+            entity->aliveCycleCounter = 0U;
             
-            if (WdgM_SupervisedEntities[entityIdx].consecutiveErrors >= WDGM_CFG_FAILURE_THRESHOLD)
+            /* 活指示数超出 [期望值, 最大值] 区间则本参考周期失败 */
+            if ((entity->aliveCounter < entity->expectedAliveIndications) ||
+                (entity->aliveCounter > entity->aliveSupMaxIndications))
             {
-                WdgM_HandleExpiredSupervision(entityIdx);
+                /* 未收到足够的活指示 (或活指示过多) */
+                entity->consecutiveErrors++;
+                
+                if (entity->consecutiveErrors >= WDGM_CFG_FAILURE_THRESHOLD)
+                {
+                    WdgM_HandleExpiredSupervision(entityIdx);
+                }
             }
+            else
+            {
+                /* 本参考周期通过, 重置连续错误计数 */
+                entity->consecutiveErrors = 0U;
+            }
+            
+            /* 开启新的参考周期, 重新开始统计活指示 */
+            entity->aliveCounter = 0U;
         }
     }
 }

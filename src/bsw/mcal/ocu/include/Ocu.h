@@ -225,6 +225,13 @@ void Ocu_SetPinAction(Ocu_ChannelType Channel, Ocu_PinActionType PinAction);
  * @details Sets an absolute compare threshold. Compare match occurs when
  *          counter equals the absolute value.
  */
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] ReferenceValue Parameter value
+ * @param[in] AbsoluteValue Parameter value
+ * @return Operation status
+ */
 Std_ReturnType Ocu_SetAbsoluteThreshold(Ocu_ChannelType Channel,
                                         Ocu_ValueType ReferenceValue,
                                         Ocu_ValueType AbsoluteValue);
@@ -238,6 +245,12 @@ Std_ReturnType Ocu_SetAbsoluteThreshold(Ocu_ChannelType Channel,
  * @retval E_NOT_OK: Failed (e.g., overflow)
  * @details Sets a relative compare threshold. Compare match occurs when
  *          counter equals current value + relative value.
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] RelativeValue Parameter value
+ * @return Operation status
  */
 Std_ReturnType Ocu_SetRelativeThreshold(Ocu_ChannelType Channel,
                                         Ocu_ValueType RelativeValue);

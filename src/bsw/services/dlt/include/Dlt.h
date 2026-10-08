@@ -81,6 +81,10 @@ extern "C" {
  * 
  * AUTOSAR SWS DLT_00001
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void Dlt_Init(const Dlt_ConfigType* ConfigPtr);
 
 /** @req SWS_Dlt_00002 */
@@ -95,6 +99,10 @@ void Dlt_Init(const Dlt_ConfigType* ConfigPtr);
  * - 将模块状态设置为 UNINIT
  * 
  * AUTOSAR SWS DLT_00002
+ */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
  */
 void Dlt_DeInit(void);
 
@@ -113,6 +121,11 @@ void Dlt_DeInit(void);
  * 
  * AUTOSAR SWS DLT_00003
  */
+/**
+ * @brief Register callback or handler
+ * @param[in] AppInfoPtr Pointer reference
+ * @return Operation result
+ */
 Dlt_AppHandleType Dlt_RegisterApp(const Dlt_AppInfoType* AppInfoPtr);
 
 /** @req SWS_Dlt_00005 */
@@ -126,6 +139,11 @@ Dlt_AppHandleType Dlt_RegisterApp(const Dlt_AppInfoType* AppInfoPtr);
  * @retval E_NOT_OK 注销失败 (无效句柄)
  * 
  * AUTOSAR SWS DLT_00004
+ */
+/**
+ * @brief unregister app
+ * @param[in] AppHandle AppHandle value
+ * @return Operation status
  */
 Std_ReturnType Dlt_UnregisterApp(Dlt_AppHandleType AppHandle);
 
@@ -151,6 +169,24 @@ Std_ReturnType Dlt_UnregisterApp(Dlt_AppHandleType AppHandle);
  * AUTOSAR SWS DLT_00005
  */
 /** @req SWS_Dlt_00006 */
+/**
+ * @brief send log message
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] MessageId Identifier
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
+/**
+ * @brief send log message
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] MessageId Identifier
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Dlt_SendLogMessage(
     Dlt_AppHandleType  AppHandle,
     Dlt_LogLevelType   LogLevel,
@@ -176,6 +212,24 @@ Std_ReturnType Dlt_SendLogMessage(
  * 
  * AUTOSAR SWS DLT_00006
  */
+/**
+ * @brief send trace message
+ * @param[in] AppHandle AppHandle value
+ * @param[in] TraceType Type selector
+ * @param[in] TraceId Identifier
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
+/**
+ * @brief send trace message
+ * @param[in] AppHandle AppHandle value
+ * @param[in] TraceType Type selector
+ * @param[in] TraceId Identifier
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Dlt_SendTraceMessage(
     Dlt_AppHandleType AppHandle,
     Dlt_TraceType     TraceType,
@@ -199,6 +253,17 @@ Std_ReturnType Dlt_SendTraceMessage(
  * 
  * AUTOSAR SWS DLT_00007
  */
+/**
+ * @brief Process periodic tasks
+ * @param[in] AppHandle AppHandle value
+ * @param[in] TraceType Type selector
+ * @param[in] TraceId Identifier
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ */
+/**
+ * @brief Process periodic tasks
+ */
 void Dlt_MainFunction(void);
 
 /** @req SWS_Dlt_00003 */
@@ -210,6 +275,10 @@ void Dlt_MainFunction(void);
  * @return void
  * 
  * AUTOSAR SWS DLT_00008
+ */
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfoPtr Pointer reference
  */
 void Dlt_GetVersionInfo(Std_VersionInfoType* VersionInfoPtr);
 
@@ -227,6 +296,20 @@ void Dlt_GetVersionInfo(Std_VersionInfoType* VersionInfoPtr);
  * 
  * AUTOSAR SWS DLT_00009
  */
+/**
+ * @brief Set configuration value
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] Enabled Enabled value
+ * @return Operation status
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] Enabled Enabled value
+ * @return Operation status
+ */
 Std_ReturnType Dlt_SetFilter(
     Dlt_AppHandleType AppHandle,
     Dlt_LogLevelType  LogLevel,
@@ -243,6 +326,17 @@ Std_ReturnType Dlt_SetFilter(
  * 
  * AUTOSAR SWS DLT_00010
  */
+/**
+ * @brief flush queue
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] Enabled Enabled value
+ * @return Operation status
+ */
+/**
+ * @brief flush queue
+ * @return Operation status
+ */
 Std_ReturnType Dlt_FlushQueue(void);
 
 /**
@@ -251,6 +345,17 @@ Std_ReturnType Dlt_FlushQueue(void);
  * @return Dlt_ModuleStateType 模块状态
  * 
  * AUTOSAR SWS DLT_00011
+ */
+/**
+ * @brief Get current status
+ * @param[in] AppHandle AppHandle value
+ * @param[in] LogLevel LogLevel value
+ * @param[in] Enabled Enabled value
+ * @return Operation result
+ */
+/**
+ * @brief Get current status
+ * @return Operation result
  */
 Dlt_ModuleStateType Dlt_GetStatus(void);
 
@@ -266,6 +371,11 @@ Dlt_ModuleStateType Dlt_GetStatus(void);
  * 
  * AUTOSAR SWS DLT_00012
  */
+/**
+ * @brief Set configuration value
+ * @param[in] sessionId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Dlt_SetSessionId(uint32 sessionId);
 
 /** @req SWS_Dlt_00011 */
@@ -279,6 +389,12 @@ Std_ReturnType Dlt_SetSessionId(uint32 sessionId);
  * @return void
  * 
  * AUTOSAR SWS DLT_00013
+ */
+/**
+ * @brief Get requested information
+ * @param[in] sentCount Element count
+ * @param[in] droppedCount Element count
+ * @param[in] queueCount Element count
  */
 void Dlt_GetStatistics(
     uint32* sentCount,
@@ -305,6 +421,22 @@ void Dlt_GetStatistics(
  * 
  * @note 32 个链接期预配置 context 占满表项时, 需先 Dlt_UnregisterContext 释放槽位。
  */
+/**
+ * @brief Register callback or handler
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] description description value
+ * @param[in] descriptionLength Data length
+ * @return Operation status
+ */
+/**
+ * @brief Register callback or handler
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] description description value
+ * @param[in] descriptionLength Data length
+ * @return Operation status
+ */
 Std_ReturnType Dlt_RegisterContext(
     Dlt_ApplicationIdType appId,
     Dlt_ContextIdType contextId,
@@ -323,6 +455,12 @@ Std_ReturnType Dlt_RegisterContext(
  * @retval E_OK 注销成功
  * @retval E_NOT_OK 未找到匹配 context
  */
+/**
+ * @brief unregister context
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Dlt_UnregisterContext(
     Dlt_ApplicationIdType appId,
     Dlt_ContextIdType contextId
@@ -339,6 +477,20 @@ Std_ReturnType Dlt_UnregisterContext(
  * @return Std_ReturnType
  * @retval E_OK 设置成功
  * @retval E_NOT_OK 未找到匹配 context
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] logLevel logLevel value
+ * @return Operation status
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] logLevel logLevel value
+ * @return Operation status
  */
 Std_ReturnType Dlt_SetLogLevel(
     Dlt_ApplicationIdType appId,
@@ -358,6 +510,20 @@ Std_ReturnType Dlt_SetLogLevel(
  * @retval E_OK 读取成功
  * @retval E_NOT_OK 未找到匹配 context 或空指针
  */
+/**
+ * @brief Get requested information
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] logLevel logLevel value
+ * @return Operation status
+ */
+/**
+ * @brief Get requested information
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] logLevel logLevel value
+ * @return Operation status
+ */
 Std_ReturnType Dlt_GetLogLevel(
     Dlt_ApplicationIdType appId,
     Dlt_ContextIdType contextId,
@@ -375,6 +541,20 @@ Std_ReturnType Dlt_GetLogLevel(
  * @return Std_ReturnType
  * @retval E_OK 设置成功
  * @retval E_NOT_OK 未找到匹配 context
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] traceStatus State value
+ * @return Operation status
+ */
+/**
+ * @brief Set configuration value
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] traceStatus State value
+ * @return Operation status
  */
 Std_ReturnType Dlt_SetTraceStatus(
     Dlt_ApplicationIdType appId,
@@ -394,6 +574,20 @@ Std_ReturnType Dlt_SetTraceStatus(
  * @retval E_OK 读取成功
  * @retval E_NOT_OK 未找到匹配 context 或空指针
  */
+/**
+ * @brief Get current status
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] traceStatus State value
+ * @return Operation status
+ */
+/**
+ * @brief Get current status
+ * @param[in] appId Identifier
+ * @param[in] contextId Identifier
+ * @param[in] traceStatus State value
+ * @return Operation status
+ */
 Std_ReturnType Dlt_GetTraceStatus(
     Dlt_ApplicationIdType appId,
     Dlt_ContextIdType contextId,
@@ -412,6 +606,10 @@ Std_ReturnType Dlt_GetTraceStatus(
  */
 #if (DLT_USE_COM == STD_ON)
 /** @req SWS_Dlt_00018 */
+/**
+ * @brief com tx confirmation
+ * @param[in] result Result value
+ */
 void Dlt_ComTxConfirmation(uint8 result);
 #endif
 
@@ -428,6 +626,11 @@ void Dlt_ComTxConfirmation(uint8 result);
  */
 #if (DLT_USE_COM == STD_ON)
 /** @req SWS_Dlt_00019 */
+/**
+ * @brief com rx indication
+ * @param[in] data Data buffer
+ * @param[in] length Data length
+ */
 void Dlt_ComRxIndication(const uint8* data, uint16 length);
 #endif
 

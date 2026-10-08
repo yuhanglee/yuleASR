@@ -104,45 +104,172 @@ typedef void (*Nm_StateChangeNotificationCallbackType)(
 );
 
 /* Function Prototypes */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void Nm_Init(const Nm_ConfigType* ConfigPtr);
+/**
+ * @brief De-initialize the module
+ */
 extern void Nm_DeInit(void);
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void Nm_GetVersionInfo(Std_VersionInfoType* VersionInfo);
 
 /* Network Management Functions */
+/**
+ * @brief passive start up
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_PassiveStartUp(Nm_ChannelHandleType nmChannelHandle);
+/**
+ * @brief network request
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_NetworkRequest(Nm_ChannelHandleType nmChannelHandle);
+/**
+ * @brief network release
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_NetworkRelease(Nm_ChannelHandleType nmChannelHandle);
 
 /* Communication Control */
+/**
+ * @brief Disable the feature
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_DisableCommunication(Nm_ChannelHandleType nmChannelHandle);
+/**
+ * @brief Enable the feature
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_EnableCommunication(Nm_ChannelHandleType nmChannelHandle);
 
 /* State Query Functions */
+/**
+ * @brief Get current module state
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmStatePtr State value
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetState(Nm_ChannelHandleType nmChannelHandle, Nm_StateType* nmStatePtr);
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmModePtr Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetMode(Nm_ChannelHandleType nmChannelHandle, Nm_ModeType* nmModePtr);
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmNodeIdPtr Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetLocalNodeIdentifier(Nm_ChannelHandleType nmChannelHandle, Nm_NodeIdType* nmNodeIdPtr);
 
 /* PDU Data Functions */
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmPduDataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetPduData(Nm_ChannelHandleType nmChannelHandle, uint8* nmPduDataPtr);
+/**
+ * @brief Get requested information
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetUserData(Nm_ChannelHandleType nmChannelHandle, uint8* nmUserDataPtr);
+/**
+ * @brief Set configuration value
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmUserDataPtr Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_SetUserData(Nm_ChannelHandleType nmChannelHandle, const uint8* nmUserDataPtr);
+/**
+ * @brief repeat message request
+ * @param[in] nmChannelHandle Channel identifier
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_RepeatMessageRequest(Nm_ChannelHandleType nmChannelHandle);
 
 /* Remote Sleep */
+/**
+ * @brief Check condition
+ * @param[in] nmChannelHandle Channel identifier
+ * @param[in] nmRemoteSleepIndPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_CheckRemoteSleepIndication(Nm_ChannelHandleType nmChannelHandle, boolean* nmRemoteSleepIndPtr);
+/**
+ * @brief Get requested information
+ * @param[in] nmCoordClusterHandle nmCoordClusterHandle value
+ * @param[in] nmSleepReadyPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType Nm_GetCoordinatorSleepReady(Nm_ChannelHandleType nmCoordClusterHandle, boolean* nmSleepReadyPtr);
 
 /* Main Function */
+/**
+ * @brief Process periodic tasks
+ */
 extern void Nm_MainFunction(void);
 
 /* Callback Functions (called by BusNm) */
+/**
+ * @brief bus sleep mode entry
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_BusSleepModeEntry(Nm_ChannelHandleType nmNetworkHandle);
+/**
+ * @brief prepare bus sleep mode entry
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_PrepareBusSleepModeEntry(Nm_ChannelHandleType nmNetworkHandle);
+/**
+ * @brief network mode entry
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_NetworkModeEntry(Nm_ChannelHandleType nmNetworkHandle);
+/**
+ * @brief network start indication
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_NetworkStartIndication(Nm_ChannelHandleType nmNetworkHandle);
+/**
+ * @brief Receive data
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ * @param[in] nmPduDataPtr Data buffer
+ */
 extern void Nm_RxIndication(Nm_ChannelHandleType nmNetworkHandle, const uint8* nmPduDataPtr);
+/**
+ * @brief state change notification
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ * @param[in] nmPreviousState State value
+ * @param[in] nmCurrentState State value
+ */
 extern void Nm_StateChangeNotification(Nm_ChannelHandleType nmNetworkHandle, Nm_StateType nmPreviousState, Nm_StateType nmCurrentState);
+/**
+ * @brief remote sleep indication
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_RemoteSleepIndication(Nm_ChannelHandleType nmNetworkHandle);
+/**
+ * @brief remote sleep cancellation
+ * @param[in] nmNetworkHandle nmNetworkHandle value
+ */
 extern void Nm_RemoteSleepCancellation(Nm_ChannelHandleType nmNetworkHandle);
 
 #endif /* NM_H */

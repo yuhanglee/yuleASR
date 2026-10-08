@@ -22,6 +22,12 @@
 #ifndef SWC_H
 #define SWC_H
 
+/**
+ * @file Swc.h
+ * @brief SWC module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -182,65 +188,171 @@ typedef struct
 
 /** @req SWS_Swc_00001 */
 /* Initialization and Lifecycle */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void Swc_Init(const Swc_ConfigType* ConfigPtr);
 /** @req SWS_Swc_00002 */
+/**
+ * @brief De-initialize the module
+ */
 extern void Swc_DeInit(void);
 /** @req SWS_Swc_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 /** @req SWS_Swc_00005 */
 /* Component Lifecycle Management */
+/**
+ * @brief create instance
+ * @param[in] componentId Identifier
+ * @param[in] instanceData Data buffer
+ * @param[in] outHandle outHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_CreateInstance(Swc_ComponentHandleType componentId, 
                                           void* instanceData,
                                           Swc_ComponentHandleType* outHandle);
 /** @req SWS_Swc_00006 */
+/**
+ * @brief destroy instance
+ * @param[in] handle handle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_DestroyInstance(Swc_ComponentHandleType handle);
 /** @req SWS_Swc_00007 */
+/**
+ * @brief Set configuration value
+ * @param[in] handle handle value
+ * @param[in] newState State value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_SetComponentState(Swc_ComponentHandleType handle, 
                                             Swc_StateType newState);
+/**
+ * @brief Get current module state
+ * @param[in] handle handle value
+ * @return Operation result
+ */
 extern Swc_StateType Swc_GetComponentState(Swc_ComponentHandleType handle);
 
 /** @req SWS_Swc_00008 */
 /* Runnable Entity Scheduling */
+/**
+ * @brief activate runnable
+ * @param[in] runnableHandle runnableHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_ActivateRunnable(Swc_RunnableHandleType runnableHandle);
 /** @req SWS_Swc_00009 */
+/**
+ * @brief terminate runnable
+ * @param[in] runnableHandle runnableHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_TerminateRunnable(Swc_RunnableHandleType runnableHandle);
 /** @req SWS_Swc_00010 */
+/**
+ * @brief schedule runnables
+ */
 extern void Swc_ScheduleRunnables(void);
 /** @req SWS_Swc_00011 */
+/**
+ * @brief is runnable ready
+ * @param[in] runnableHandle runnableHandle value
+ * @param[in] isReady isReady value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_IsRunnableReady(Swc_RunnableHandleType runnableHandle, 
                                           boolean* isReady);
 
 /** @req SWS_Swc_00012 */
 /* Port Interface Management */
+/**
+ * @brief connect port
+ * @param[in] portHandle portHandle value
+ * @param[in] connectionData Data buffer
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_ConnectPort(Swc_PortHandleType portHandle, 
                                       const void* connectionData);
 /** @req SWS_Swc_00013 */
+/**
+ * @brief disconnect port
+ * @param[in] portHandle portHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_DisconnectPort(Swc_PortHandleType portHandle);
 /** @req SWS_Swc_00014 */
+/**
+ * @brief Write data to channel
+ * @param[in] portHandle portHandle value
+ * @param[in] data Data buffer
+ * @param[in] length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_WritePortData(Swc_PortHandleType portHandle, 
                                         const void* data, 
                                         uint16 length);
 /** @req SWS_Swc_00015 */
+/**
+ * @brief Read data from channel
+ * @param[in] portHandle portHandle value
+ * @param[in] data Data buffer
+ * @param[in] length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_ReadPortData(Swc_PortHandleType portHandle, 
                                        void* data, 
                                        uint16* length);
 
 /** @req SWS_Swc_00016 */
 /* RTE Event Handling */
+/**
+ * @brief Register callback or handler
+ * @param[in] compHandle compHandle value
+ * @param[in] eventConfig Configuration reference
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_RegisterEvent(Swc_ComponentHandleType compHandle,
                                         const Swc_RteEventType* eventConfig);
 /** @req SWS_Swc_00017 */
+/**
+ * @brief Trigger action
+ * @param[in] eventHandle eventHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_TriggerEvent(Swc_EventHandleType eventHandle);
 /** @req SWS_Swc_00018 */
+/**
+ * @brief Enable the feature
+ * @param[in] eventHandle eventHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_EnableEvent(Swc_EventHandleType eventHandle);
 /** @req SWS_Swc_00019 */
+/**
+ * @brief Disable the feature
+ * @param[in] eventHandle eventHandle value
+ * @return Operation status
+ */
 extern Std_ReturnType Swc_DisableEvent(Swc_EventHandleType eventHandle);
 /** @req SWS_Swc_00020 */
+/**
+ * @brief Process data
+ */
 extern void Swc_ProcessEvents(void);
 
 /** @req SWS_Swc_00004 */
 /* Main Functions */
+/**
+ * @brief Process periodic tasks
+ */
 extern void Swc_MainFunction(void);
 
 #ifdef __cplusplus

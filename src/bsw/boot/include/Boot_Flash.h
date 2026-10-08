@@ -1,3 +1,7 @@
+/**
+ * @file Boot_Flash.h
+ * @brief Boot loader flash component
+ */
 #ifndef BOOT_FLASH_H
 #define BOOT_FLASH_H
 

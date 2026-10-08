@@ -151,6 +151,13 @@ void Eep_DeInit(void);
  * @return E_OK if accepted, E_NOT_OK on error
  * @requirement Eep-300: Asynchronous read operation
  */
+/**
+ * @brief Read data from channel
+ * @param[in] Address Memory address
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Eep_Read(Eep_AddressType Address, uint8* DataPtr, Eep_LengthType Length);
 
 /**
@@ -161,6 +168,13 @@ Std_ReturnType Eep_Read(Eep_AddressType Address, uint8* DataPtr, Eep_LengthType 
  * @return E_OK if accepted, E_NOT_OK on error
  * @requirement Eep-400: Asynchronous write operation
  */
+/**
+ * @brief Write data to channel
+ * @param[in] Address Memory address
+ * @param[in] DataPtr Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 Std_ReturnType Eep_Write(Eep_AddressType Address, const uint8* DataPtr, Eep_LengthType Length);
 
 /**
@@ -169,6 +183,12 @@ Std_ReturnType Eep_Write(Eep_AddressType Address, const uint8* DataPtr, Eep_Leng
  * @param Length Number of bytes to erase
  * @return E_OK if accepted, E_NOT_OK on error
  * @requirement Eep-500: Asynchronous erase operation
+ */
+/**
+ * @brief erase
+ * @param[in] Address Memory address
+ * @param[in] Length Data length
+ * @return Operation status
  */
 Std_ReturnType Eep_Erase(Eep_AddressType Address, Eep_LengthType Length);
 

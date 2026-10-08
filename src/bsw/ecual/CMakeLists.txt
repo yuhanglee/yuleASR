@@ -42,10 +42,44 @@ foreach(subdir ${SERVICE_SUBDIRS})
     endif()
 endforeach()
 
+# ── Phase 2 duplicate-module convergence (forwarding shims) ──────────────────
+# These ECUAL modules are thin duplicates whose canonical implementation lives
+# in the services layer. Their src/*.c files are excluded from compilation to
+# avoid duplicate symbol definitions at link time; the CMake target itself is
+# kept (fed with a generated comment-only stub) so target names, PUBLIC include
+# paths and existing link references stay valid.
+#   j1939tp -> services/j1939tp   (NULL check + DET reporting)
+#   memif   -> services/memif     (MemMap/Rte integration; the ecual-only API
+#                                  MemIf_EraseImmediateBlock was merged into
+#                                  the canonical implementation — NvM depends
+#                                  on it)
+#   xcp     -> services/xcp       (superset implementation, 2086 vs 1087 LOC)
+#   fim     -> services/fim       (AUTOSAR layering: FiM belongs to Services)
+set(ECUAL_SHIMMED_MODULES
+    j1939tp
+    memif
+    xcp
+    fim
+)
+
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated/shim-stubs")
+
 foreach(subdir ${ECUAL_SUBDIRS})
     get_filename_component(module_name ${subdir} NAME)
-    
-    file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
+
+    list(FIND ECUAL_SHIMMED_MODULES "${module_name}" _shimmed_idx)
+    if(NOT _shimmed_idx EQUAL -1)
+        # Shimmed module: exclude real sources, keep target alive with an
+        # empty (comment-only) stub translation unit.
+        set(module_sources "${CMAKE_BINARY_DIR}/generated/shim-stubs/ecual_${module_name}_shim.c")
+        file(WRITE "${module_sources}"
+            "/* Phase 2 duplicate-module convergence: forwarding shim for ecual_${module_name}.\n"
+            " * Canonical implementation lives in the services layer; the sources of\n"
+            " * this module are excluded from the build to avoid duplicate symbols.\n"
+            " */\n")
+    else()
+        file(GLOB_RECURSE module_sources ${subdir}/src/*.c)
+    endif()
     
     if(module_sources)
         set(target_name "ecual_${module_name}")

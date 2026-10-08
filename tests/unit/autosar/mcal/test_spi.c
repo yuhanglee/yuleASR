@@ -24,18 +24,36 @@ void tearDown(void) {
 /* 初始化测试 */
 /** @req SWS_Spi_00001 */
 void test_spi_Init_should_initialize_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    /* Normal init with valid config should not crash */
+    Spi_Init(NULL_PTR);
+
+    /* After init, status should be SPI_IDLE */
+    TEST_ASSERT_EQUAL(SPI_IDLE, Spi_GetStatus());
 }
 
 /** @req SWS_Spi_00002 */
 void test_spi_DeInit_should_cleanup_successfully(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    Std_ReturnType result;
+
+    /* Init first, then deinit */
+    Spi_Init(NULL_PTR);
+    result = Spi_DeInit();
+
+    TEST_ASSERT_EQUAL(E_OK, result);
+    TEST_ASSERT_EQUAL(SPI_UNINIT, Spi_GetStatus());
 }
 
 /* 版本信息测试 */
 /** @req SWS_Spi_00009 */
 void test_spi_GetVersionInfo_should_return_version(void) {
-    TEST_IGNORE_MESSAGE("API stub - needs implementation");
+    /* Verify version macros are non-zero and consistent */
+    TEST_ASSERT_NOT_EQUAL(0U, SPI_VENDOR_ID);
+    TEST_ASSERT_NOT_EQUAL(0U, SPI_MODULE_ID);
+    TEST_ASSERT_EQUAL(1U, SPI_SW_MAJOR_VERSION);
+    TEST_ASSERT_EQUAL(0U, SPI_SW_MINOR_VERSION);
+    TEST_ASSERT_EQUAL(0U, SPI_SW_PATCH_VERSION);
+    TEST_ASSERT_EQUAL(4U, SPI_AR_RELEASE_MAJOR_VERSION);
+    TEST_ASSERT_EQUAL(4U, SPI_AR_RELEASE_MINOR_VERSION);
 }
 
 /* 主函数 */

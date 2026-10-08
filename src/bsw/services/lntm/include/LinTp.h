@@ -213,6 +213,13 @@ extern Std_ReturnType LinTp_CancelTransmit(PduIdType TxPduId);
  * @param value New value
  * @return Result of operation
  */
+/**
+ * @brief change parameter
+ * @param[in] id Identifier
+ * @param[in] parameter Function parameter
+ * @param[in] value Parameter value
+ * @return Operation status
+ */
 extern Std_ReturnType LinTp_ChangeParameter(PduIdType id, TPParameterType parameter, uint16 value);
 
 /** @req SWS_LinTp_00009 */

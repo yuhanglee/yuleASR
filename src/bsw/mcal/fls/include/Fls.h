@@ -25,6 +25,12 @@
 #ifndef FLS_H
 #define FLS_H
 
+/**
+ * @file Fls.h
+ * @brief FLS module public API
+ */
+
+
 /* MemIf mode type used by Fls (only when the real MemIf.h is not present) */
 #ifndef MEMIF_H
 #define MEMIF_MODETYPE_DEFINED
@@ -242,6 +248,12 @@ extern void Fls_Init(const Fls_ConfigType* ConfigPtr);
  * @return E_OK: Job accepted, E_NOT_OK: Job rejected
  * @req SWS_Fls_00154
  */
+/**
+ * @brief erase
+ * @param[in] TargetAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Fls_Erase(Fls_AddressType TargetAddress, Fls_LengthType Length);
 
 /**
@@ -251,6 +263,13 @@ extern Std_ReturnType Fls_Erase(Fls_AddressType TargetAddress, Fls_LengthType Le
  * @param Length Number of bytes to write
  * @return E_OK: Job accepted, E_NOT_OK: Job rejected
  * @req SWS_Fls_00155
+ */
+/**
+ * @brief Write data to channel
+ * @param[in] TargetAddress Memory address
+ * @param[in] SourceAddress Memory address
+ * @param[in] Length Data length
+ * @return Operation status
  */
 extern Std_ReturnType Fls_Write(Fls_AddressType TargetAddress, const uint8* SourceAddress, Fls_LengthType Length);
 
@@ -262,6 +281,12 @@ extern Std_ReturnType Fls_Write(Fls_AddressType TargetAddress, const uint8* Sour
  * @return None
  * @req SWS_Fls_00156
  */
+/**
+ * @brief Read data from channel
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ */
 extern void Fls_Read(Fls_AddressType SourceAddress, uint8* TargetAddressPtr, Fls_LengthType Length);
 
 /**
@@ -271,6 +296,12 @@ extern void Fls_Read(Fls_AddressType SourceAddress, uint8* TargetAddressPtr, Fls
  * @param Length Number of bytes to compare
  * @return None
  * @req SWS_Fls_00157
+ */
+/**
+ * @brief compare
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
  */
 extern void Fls_Compare(Fls_AddressType SourceAddress, const uint8* TargetAddressPtr, Fls_LengthType Length);
 
@@ -317,6 +348,10 @@ extern void Fls_MainFunction(void);
  * @req SWS_Fls_00163
  */
 #if (FLS_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void Fls_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -329,6 +364,13 @@ extern void Fls_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @req SWS_Fls_00300
  */
 #if (FLS_USE_ISR == STD_OFF)
+/**
+ * @brief Read data from channel
+ * @param[in] SourceAddress Memory address
+ * @param[in] TargetAddressPtr Pointer reference
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Fls_ReadSync(Fls_AddressType SourceAddress, uint8* TargetAddressPtr, Fls_LengthType Length);
 #endif
 

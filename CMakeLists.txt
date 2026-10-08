@@ -144,6 +144,87 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/middleware/rte/include
 )
 
+# ── BSW configuration closed loop (JSON + Jinja2) ───────────────────────────
+# config/generated/*_Cfg.h are rendered from config/bsw_config.json by
+# config/tools/generate_bsw_config.py.  Regeneration runs at configure time
+# when the config, schema, generator script or any template is newer than the
+# stamp file.  Generated headers are strict supersets of the handwritten
+# module headers and the include path is appended AFTER the module directories
+# above, so a missing or failed generation never breaks the build — the
+# handwritten headers stay authoritative.
+set(YULE_CFG_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/config)
+set(YULE_CFG_GENERATED_DIR ${YULE_CFG_DIR}/generated)
+
+if(EXISTS ${YULE_CFG_DIR}/tools/generate_bsw_config.py)
+    find_package(Python3 COMPONENTS Interpreter)
+
+    file(GLOB YULE_CFG_TEMPLATE_FILES ${YULE_CFG_DIR}/templates/*.j2)
+    set(YULE_CFG_INPUTS
+        ${YULE_CFG_DIR}/bsw_config.json
+        ${YULE_CFG_DIR}/bsw_config_schema.json
+        ${YULE_CFG_DIR}/tools/generate_bsw_config.py
+        ${YULE_CFG_TEMPLATE_FILES}
+    )
+    set(YULE_CFG_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bsw_config_generation.stamp)
+
+    if(Python3_FOUND)
+        set(YULE_CFG_REGEN_NEEDED FALSE)
+        if(NOT EXISTS ${YULE_CFG_STAMP})
+            set(YULE_CFG_REGEN_NEEDED TRUE)
+        else()
+            foreach(_cfg_input IN LISTS YULE_CFG_INPUTS)
+                if(${_cfg_input} IS_NEWER_THAN ${YULE_CFG_STAMP})
+                    set(YULE_CFG_REGEN_NEEDED TRUE)
+                    break()
+                endif()
+            endforeach()
+        endif()
+
+        if(YULE_CFG_REGEN_NEEDED)
+            message(STATUS "Generating BSW configuration headers (JSON + Jinja2) ...")
+            execute_process(
+                COMMAND ${Python3_EXECUTABLE} ${YULE_CFG_DIR}/tools/generate_bsw_config.py
+                        --config    ${YULE_CFG_DIR}/bsw_config.json
+                        --schema    ${YULE_CFG_DIR}/bsw_config_schema.json
+                        --templates ${YULE_CFG_DIR}/templates
+                        --output    ${YULE_CFG_GENERATED_DIR}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                RESULT_VARIABLE _cfggen_result
+                OUTPUT_VARIABLE _cfggen_stdout
+                ERROR_VARIABLE  _cfggen_stderr
+            )
+            if(NOT _cfggen_result EQUAL 0)
+                message(WARNING
+                    "BSW configuration generation failed (exit ${_cfggen_result}).\n"
+                    "${_cfggen_stdout}${_cfggen_stderr}"
+                    "Continuing with handwritten *_Cfg.h headers.")
+            else()
+                file(TOUCH ${YULE_CFG_STAMP})
+            endif()
+        endif()
+
+        # Manual hook:  cmake --build <build> --target generate_bsw_config
+        add_custom_target(generate_bsw_config
+            COMMAND ${Python3_EXECUTABLE} ${YULE_CFG_DIR}/tools/generate_bsw_config.py
+                    --config    ${YULE_CFG_DIR}/bsw_config.json
+                    --schema    ${YULE_CFG_DIR}/bsw_config_schema.json
+                    --templates ${YULE_CFG_DIR}/templates
+                    --output    ${YULE_CFG_GENERATED_DIR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Regenerating BSW configuration from config/bsw_config.json"
+            VERBATIM
+        )
+    else()
+        message(STATUS "Python3 not found - skipping BSW configuration generation")
+    endif()
+
+    # Added AFTER the module include directories declared above, so identical
+    # file names resolve to the handwritten originals first.
+    if(EXISTS ${YULE_CFG_GENERATED_DIR})
+        include_directories(AFTER ${YULE_CFG_GENERATED_DIR})
+    endif()
+endif()
+
 # AUTOSAR stub headers for native builds
 if(NOT CMAKE_CROSSCOMPILING AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/include/autosar)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/autosar)

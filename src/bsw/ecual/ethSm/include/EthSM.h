@@ -203,6 +203,10 @@ typedef struct {
  * @post Module is initialized and ready for use
  * @note Shall be called before any other EthSM API function
  */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 extern void EthSM_Init(const EthSM_ConfigType* ConfigPtr);
 
 /**
@@ -211,6 +215,10 @@ extern void EthSM_Init(const EthSM_ConfigType* ConfigPtr);
  * @pre Module shall be initialized
  * @post Module is deinitialized
  * @note All ongoing communication will be aborted
+ */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
  */
 extern void EthSM_DeInit(void);
 
@@ -223,6 +231,10 @@ extern void EthSM_DeInit(void);
  * @note Available if ETHSM_VERSION_INFO_API is enabled
  */
 #if (ETHSM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void EthSM_GetVersionInfo(Std_VersionInfoType* VersionInfo);
 #endif
 
@@ -239,6 +251,12 @@ extern void EthSM_GetVersionInfo(Std_VersionInfoType* VersionInfo);
  * @post State machine initiates transition to requested mode
  * @note Actual mode change is asynchronous, use EthSM_GetCurrentComMode to poll
  */
+/**
+ * @brief Request operation
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] ComMode Operation mode
+ * @return Operation status
+ */
 extern Std_ReturnType EthSM_RequestComMode(
     EthSM_NetworkHandleType NetworkHandle,
     ComM_ModeType ComMode
@@ -253,6 +271,12 @@ extern Std_ReturnType EthSM_RequestComMode(
  * @details Returns the current state of the state machine mapped to ComM mode
  * @pre Module shall be initialized
  * @post ComMode contains the current communication mode
+ */
+/**
+ * @brief Get requested information
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] ComMode Operation mode
+ * @return Operation status
  */
 extern Std_ReturnType EthSM_GetCurrentComMode(
     EthSM_NetworkHandleType NetworkHandle,
@@ -270,6 +294,11 @@ extern Std_ReturnType EthSM_GetCurrentComMode(
  * @post EthSM state machine is updated based on TcpIp state
  * @note This is a callback function registered with TcpIp
  */
+/**
+ * @brief tcp ip mode indication
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] TcpIpMode Operation mode
+ */
 extern void EthSM_TcpIpModeIndication(
     EthSM_NetworkHandleType NetworkHandle,
     TcpIp_StateType TcpIpMode
@@ -284,6 +313,11 @@ extern void EthSM_TcpIpModeIndication(
  * @post State machine is processed, timers are decremented
  * @note Shall be called cyclically (e.g., every 10ms)
  */
+/**
+ * @brief Process periodic tasks
+ * @param[in] NetworkHandle NetworkHandle value
+ * @param[in] TcpIpMode Operation mode
+ */
 extern void EthSM_MainFunction(void);
 
 /*------------------------- Internal State Access (for testing/debug) -------------------------*/
@@ -295,6 +329,11 @@ extern void EthSM_MainFunction(void);
  * @details Returns the detailed internal state (for diagnostic purposes)
  * @pre Module shall be initialized
  * @note This function is not part of the standard AUTOSAR API
+ */
+/**
+ * @brief Get current module state
+ * @param[in] NetworkHandle NetworkHandle value
+ * @return Operation result
  */
 extern EthSM_StateType EthSM_GetInternalState(EthSM_NetworkHandleType NetworkHandle);
 

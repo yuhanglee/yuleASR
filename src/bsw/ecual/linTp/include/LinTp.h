@@ -12,6 +12,12 @@
 #ifndef LINTP_H
 #define LINTP_H
 
+/**
+ * @file LinTp.h
+ * @brief LINTP module public API
+ */
+
+
 /*==================================================================================================
  *                                         INCLUDES
  *================================================================================================*/
@@ -159,36 +165,91 @@ typedef struct
  *================================================================================================*/
 
 /* Initialization and shutdown */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void LinTp_Init(const LinTp_ConfigType *ConfigPtr);
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void LinTp_DeInit(void);
 
 /* Transmission functions */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType LinTp_Transmit(PduIdType TxPduId, const PduInfoType *PduInfoPtr);
 #if (LINTP_CANCEL_TRANSMIT_API == STD_ON)
+/**
+ * @brief Cancel pending operation
+ * @param[in] TxPduId Identifier
+ * @return Operation status
+ */
 Std_ReturnType LinTp_CancelTransmit(PduIdType TxPduId);
 #endif
 
 /* Reception functions */
 #if (LINTP_CANCEL_RECEIVE_API == STD_ON)
+/**
+ * @brief Cancel pending operation
+ * @param[in] RxPduId Identifier
+ * @return Operation status
+ */
 Std_ReturnType LinTp_CancelReceive(PduIdType RxPduId);
 #endif
 
 /* Parameter management */
 #if (LINTP_CHANGE_PARAMETER_API == STD_ON)
+/**
+ * @brief change parameter
+ * @param[in] PduId Identifier
+ * @param[in] Parameter Function parameter
+ * @param[in] Value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType LinTp_ChangeParameter(PduIdType PduId, LinTp_ParameterType Parameter, uint16 Value);
 #endif
 
 /* Version info */
 #if (LINTP_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 void LinTp_GetVersionInfo(Std_VersionInfoType *VersionInfo);
 #endif
 
 /* Main function - cyclic processing */
+/**
+ * @brief Process periodic tasks
+ * @param[in] VersionInfo Version info
+ */
 void LinTp_MainFunction(void);
 
 /* Callback functions from LinIf */
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 void LinTp_RxIndication(PduIdType RxPduId, const PduInfoType *PduInfoPtr);
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 void LinTp_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
+/**
+ * @brief Trigger action
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType LinTp_TriggerTransmit(PduIdType TxPduId, PduInfoType *PduInfoPtr);
 
 /* Internal functions */

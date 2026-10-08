@@ -13,6 +13,9 @@
 /* Lower-layer stubs (Can driver + PduR), signatures per Can.h / PduR.h */
 static uint8 mock_DetCalls = 0;
 static uint8 mock_CanWriteCalls = 0;
+static Can_ReturnType mock_CanWriteReturn = CAN_OK;
+static uint8 mock_CanWriteLastData[8];
+static uint8 mock_CanWriteLastDlc = 0U;
 static uint8 mock_PduRTxConfCalls = 0;
 static uint8 mock_PduRRxIndCalls = 0;
 
@@ -37,7 +40,19 @@ Can_ReturnType Can_SetControllerMode(uint8 Controller, Can_ControllerStateType T
     (void)Controller;(void)Transition; return CAN_OK;
 }
 Can_ReturnType Can_Write(Can_HwHandleType Hth, const Can_PduType* PduInfo) {
-    (void)Hth;(void)PduInfo; mock_CanWriteCalls++; return CAN_OK;
+    uint8 i;
+    uint8 len;
+    (void)Hth;
+    mock_CanWriteCalls++;
+    if ((PduInfo != NULL) && (PduInfo->SduPtr != NULL)) {
+        len = PduInfo->CanDlc;
+        if (len > 8U) { len = 8U; }
+        for (i = 0U; i < len; i++) {
+            mock_CanWriteLastData[i] = PduInfo->SduPtr[i];
+        }
+        mock_CanWriteLastDlc = PduInfo->CanDlc;
+    }
+    return mock_CanWriteReturn;
 }
 Std_ReturnType Can_CheckWakeup(uint8 Controller) {
     (void)Controller; return E_OK;
@@ -48,6 +63,67 @@ Std_ReturnType CanTrcv_SetOpMode(uint8 Transceiver, CanTrcv_TrcvModeType OpMode)
     mock_CanTrcvLastMode = OpMode;
     return mock_CanTrcvReturn;
 }
+
+/* Can driver error-state getter stubs (new AD3 APIs) */
+static Std_ReturnType mock_CanGetErrState_Return = E_OK;
+static Can_ErrorStateType mock_CanGetErrState_Value = CAN_ERRORSTATE_ACTIVE;
+static uint8 mock_CanGetRxCnt_Value = 0U;
+static uint8 mock_CanGetTxCnt_Value = 0U;
+static uint8 mock_CanGetErrCalls = 0U;
+
+Std_ReturnType Can_GetControllerErrorState(uint8 Controller, Can_ErrorStateType* ErrorStatePtr) {
+    (void)Controller;
+    mock_CanGetErrCalls++;
+    if (mock_CanGetErrState_Return == E_OK) {
+        *ErrorStatePtr = mock_CanGetErrState_Value;
+    }
+    return mock_CanGetErrState_Return;
+}
+Std_ReturnType Can_GetControllerRxErrorCounter(uint8 Controller, uint8* RxErrorCounterPtr) {
+    (void)Controller;
+    mock_CanGetErrCalls++;
+    *RxErrorCounterPtr = mock_CanGetRxCnt_Value;
+    return E_OK;
+}
+Std_ReturnType Can_GetControllerTxErrorCounter(uint8 Controller, uint8* TxErrorCounterPtr) {
+    (void)Controller;
+    mock_CanGetErrCalls++;
+    *TxErrorCounterPtr = mock_CanGetTxCnt_Value;
+    return E_OK;
+}
+
+/* CanSM indication stubs: capture calls so tests can assert forwarding. */
+static uint8 mock_CanSM_CheckWufCalls = 0U;
+static uint8 mock_CanSM_CheckWufLastTrcv = 0xFFU;
+static uint8 mock_CanSM_ClearWufCalls = 0U;
+static uint8 mock_CanSM_ClearWufLastTrcv = 0xFFU;
+static uint8 mock_CanSM_TrcvModeCalls = 0U;
+static uint8 mock_CanSM_TrcvModeLastTrcv = 0xFFU;
+static CanIf_TransceiverModeType mock_CanSM_TrcvModeLastMode = CANIF_TRCV_MODE_NORMAL;
+static uint8 mock_CanSM_CtrlModeCalls = 0U;
+static uint8 mock_CanSM_CtrlModeLastCtrl = 0xFFU;
+static CanIf_ControllerModeType mock_CanSM_CtrlModeLastMode = CANIF_CS_STOPPED;
+
+void CanSM_CheckTransceiverWakeFlagIndication(uint8 NetworkHandle) {
+    mock_CanSM_CheckWufCalls++;
+    mock_CanSM_CheckWufLastTrcv = NetworkHandle;
+}
+Std_ReturnType CanSM_ClearTrcvWufFlagIndication(uint8 NetworkHandle) {
+    mock_CanSM_ClearWufCalls++;
+    mock_CanSM_ClearWufLastTrcv = NetworkHandle;
+    return E_OK;
+}
+void CanSM_TransceiverModeIndication(uint8 NetworkHandle, CanIf_TransceiverModeType TransceiverMode) {
+    mock_CanSM_TrcvModeCalls++;
+    mock_CanSM_TrcvModeLastTrcv = NetworkHandle;
+    mock_CanSM_TrcvModeLastMode = TransceiverMode;
+}
+void CanSM_ControllerModeIndication(uint8 ControllerId, CanIf_ControllerModeType ControllerMode) {
+    mock_CanSM_CtrlModeCalls++;
+    mock_CanSM_CtrlModeLastCtrl = ControllerId;
+    mock_CanSM_CtrlModeLastMode = ControllerMode;
+}
+
 void PduR_TxConfirmation(PduIdType TxPduId, Std_ReturnType result) {
     (void)TxPduId;(void)result; mock_PduRTxConfCalls++;
 }
@@ -61,10 +137,10 @@ static const CanIf_ControllerConfigType testControllers[CANIF_NUM_CONTROLLERS] =
     { 0U, 500000U, 0U, CANIF_CS_STOPPED, FALSE, FALSE, TRUE, FALSE }
 };
 static const CanIf_TxPduConfigType testTxPdus[CANIF_NUM_TX_PDUS] = {
-    { 0U, 0x100U, 0U, 0U, 0U, 8U, TRUE,  FALSE },
-    { 1U, 0x200U, 0U, 0U, 0U, 4U, FALSE, FALSE },
-    { 2U, 0x300U, 0U, 1U, 0U, 2U, FALSE, FALSE },
-    { 3U, 0x700U, 0U, 1U, 0U, 8U, TRUE,  FALSE }
+    { 0U, 0x100U, 0U, 0U, 0U, 8U, TRUE,  FALSE, FALSE },
+    { 1U, 0x200U, 0U, 0U, 0U, 4U, FALSE, FALSE, FALSE },
+    { 2U, 0x300U, 0U, 1U, 0U, 2U, FALSE, TRUE,  FALSE }, /* UserType: trigger-transmit capable */
+    { 3U, 0x700U, 0U, 1U, 0U, 8U, TRUE,  FALSE, FALSE }
 };
 static const CanIf_RxPduConfigType testRxPdus[CANIF_NUM_RX_PDUS] = {
     { 0U, 0x150U, 0x7FFU, 0U, 0U, 0U, 2U, TRUE },
@@ -80,17 +156,45 @@ static const CanIf_ConfigType testConfig = {
     testRxPdus, CANIF_NUM_RX_PDUS,
     TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE
 };
+/* Same tables, but with Tx/Rx notification-status APIs enabled. */
+static const CanIf_ConfigType testConfigNotify = {
+    testControllers, CANIF_NUM_CONTROLLERS,
+    NULL_PTR, 0U,
+    NULL_PTR, 0U,
+    testTxPdus, CANIF_NUM_TX_PDUS,
+    testRxPdus, CANIF_NUM_RX_PDUS,
+    TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE
+};
 
 void setUp(void) {
+    uint8 i;
     CanIf_DeInit(); /* normalize driver state; may report E_UNINIT, counted then cleared below */
     mock_DetCalls = 0;
     mock_CanWriteCalls = 0;
+    mock_CanWriteReturn = CAN_OK;
+    mock_CanWriteLastDlc = 0U;
+    for (i = 0U; i < 8U; i++) { mock_CanWriteLastData[i] = 0U; }
     mock_PduRTxConfCalls = 0;
     mock_PduRRxIndCalls = 0;
     mock_CanTrcvCalls = 0;
     mock_CanTrcvLastTransceiver = 0xFFU;
     mock_CanTrcvLastMode = CANTRCV_TRCVMODE_NORMAL;
     mock_CanTrcvReturn = E_OK;
+    mock_CanGetErrState_Return = E_OK;
+    mock_CanGetErrState_Value = CAN_ERRORSTATE_ACTIVE;
+    mock_CanGetRxCnt_Value = 0U;
+    mock_CanGetTxCnt_Value = 0U;
+    mock_CanGetErrCalls = 0U;
+    mock_CanSM_CheckWufCalls = 0U;
+    mock_CanSM_CheckWufLastTrcv = 0xFFU;
+    mock_CanSM_ClearWufCalls = 0U;
+    mock_CanSM_ClearWufLastTrcv = 0xFFU;
+    mock_CanSM_TrcvModeCalls = 0U;
+    mock_CanSM_TrcvModeLastTrcv = 0xFFU;
+    mock_CanSM_TrcvModeLastMode = CANIF_TRCV_MODE_NORMAL;
+    mock_CanSM_CtrlModeCalls = 0U;
+    mock_CanSM_CtrlModeLastCtrl = 0xFFU;
+    mock_CanSM_CtrlModeLastMode = CANIF_CS_STOPPED;
 }
 void tearDown(void) {}
 
@@ -112,6 +216,59 @@ void test_CanIf_Transmit_BeforeInit_ShouldFail(void) {
     TEST_ASSERT_EQUAL(E_NOT_OK, ret);
     TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
     TEST_ASSERT_EQUAL(0, mock_CanWriteCalls);
+}
+
+/* --- Before-init guards for the AD3 APIs (must run before CanIf_Init) --- */
+
+void test_CanIf_GetControllerErrorState_BeforeInit_ShouldFail(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+    TEST_ASSERT_EQUAL(0, mock_CanGetErrCalls); /* must not reach the Can driver */
+}
+
+void test_CanIf_ReadTxNotifStatus_BeforeInit_ShouldFail(void) {
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadTxNotifStatus(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ReadRxNotifStatus_BeforeInit_ShouldFail(void) {
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadRxNotifStatus(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_TriggerTransmit_BeforeInit_ShouldFail(void) {
+    PduInfoType pdu;
+    uint8 data[2] = {0U};
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_TriggerTransmit(2U, &pdu));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ConfirmPnAvailability_BeforeInit_ShouldFail(void) {
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_ConfirmPnAvailability(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_CheckTrcvWakeFlag_BeforeInit_ShouldFail(void) {
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_CheckTrcvWakeFlag(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ClearTrcvWufFlag_BeforeInit_ShouldFail(void) {
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_ClearTrcvWufFlag(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_SetPnWakeupFilter_BeforeInit_ShouldFail(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_TxQueueMainFunction_BeforeInit_ShouldReportDet(void) {
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
 }
 
 /** @req SWS_CanIf_00001 */
@@ -350,12 +507,613 @@ void test_CanIf_GetTxConfirmationState_InvalidPduId_ShouldReportDet(void) {
     TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
 }
 
+/* --- AD3: error-state delegation to the Can driver --- */
+
+void test_CanIf_GetControllerErrorState_ShouldDelegateToCan(void) {
+    Can_ErrorStateType state = CAN_ERRORSTATE_ACTIVE;
+    CanIf_Init(&testConfig);
+    mock_CanGetErrState_Value = CAN_ERRORSTATE_PASSIVE;
+
+    TEST_ASSERT_EQUAL(E_OK, CanIf_GetControllerErrorState(0U, &state));
+    TEST_ASSERT_EQUAL(CAN_ERRORSTATE_PASSIVE, state);
+    TEST_ASSERT_EQUAL(1, mock_CanGetErrCalls);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_GetControllerRxErrorCounter_ShouldDelegateToCan(void) {
+    uint8 counter = 0U;
+    CanIf_Init(&testConfig);
+    mock_CanGetRxCnt_Value = 0x55U;
+
+    TEST_ASSERT_EQUAL(E_OK, CanIf_GetControllerRxErrorCounter(0U, &counter));
+    TEST_ASSERT_EQUAL(0x55U, counter);
+    TEST_ASSERT_EQUAL(1, mock_CanGetErrCalls);
+}
+
+void test_CanIf_GetControllerTxErrorCounter_ShouldDelegateToCan(void) {
+    uint8 counter = 0U;
+    CanIf_Init(&testConfig);
+    mock_CanGetTxCnt_Value = 0x77U;
+
+    TEST_ASSERT_EQUAL(E_OK, CanIf_GetControllerTxErrorCounter(0U, &counter));
+    TEST_ASSERT_EQUAL(0x77U, counter);
+    TEST_ASSERT_EQUAL(1, mock_CanGetErrCalls);
+}
+
+void test_CanIf_GetControllerErrorState_NullPtr_ShouldReportDet(void) {
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_GetControllerErrorState(0U, NULL_PTR));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+    TEST_ASSERT_EQUAL(0, mock_CanGetErrCalls); /* guarded in CanIf, not delegated */
+}
+
+void test_CanIf_GetControllerRxErrorCounter_InvalidController_ShouldReportDet(void) {
+    uint8 counter = 0U;
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_GetControllerRxErrorCounter(CANIF_NUM_CONTROLLERS, &counter));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+/* --- AD3: notification status, read-and-clear, gated by config --- */
+
+void test_CanIf_ReadTxNotifStatus_DisabledApi_ShouldReportDet(void) {
+    CanIf_Init(&testConfig); /* ReadTxPduNotifyStatusApi == FALSE here */
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadTxNotifStatus(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ReadTxNotifStatus_ShouldSetAndClearOnRead(void) {
+    CanIf_Init(&testConfigNotify); /* notify-status APIs enabled */
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadTxNotifStatus(0U));
+
+    CanIf_TxConfirmation(0U);
+    TEST_ASSERT_EQUAL(CANIF_TX_RX_NOTIFICATION, CanIf_ReadTxNotifStatus(0U));
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadTxNotifStatus(0U)); /* consumed */
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ReadRxNotifStatus_DisabledApi_ShouldReportDet(void) {
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadRxNotifStatus(0U));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ReadRxNotifStatus_ShouldSetAndClearOnRead(void) {
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    mailbox.CanId = 0x150U; mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+
+    CanIf_Init(&testConfigNotify);
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadRxNotifStatus(0U));
+
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(CANIF_TX_RX_NOTIFICATION, CanIf_ReadRxNotifStatus(0U));
+    TEST_ASSERT_EQUAL(CANIF_NO_NOTIFICATION, CanIf_ReadRxNotifStatus(0U)); /* consumed */
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+/* --- AD3: trigger transmit --- */
+
+void test_CanIf_TriggerTransmit_NotConfiguredPdu_ShouldFail(void) {
+    PduInfoType txPdu;
+    PduInfoType trigPdu;
+    uint8 txData[8] = {1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U};
+    uint8 trigBuf[8] = {0U};
+
+    CanIf_Init(&testConfig);
+    (void)CanIf_SetControllerMode(0U, CANIF_CS_STARTED);
+    (void)CanIf_SetPduMode(0U, CANIF_ONLINE);
+
+    txPdu.SduDataPtr = txData; txPdu.SduLength = 8U; txPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &txPdu)); /* PDU0 UserType == FALSE */
+
+    trigPdu.SduDataPtr = trigBuf; trigPdu.SduLength = 8U; trigPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_TriggerTransmit(0U, &trigPdu));
+}
+
+void test_CanIf_TriggerTransmit_NoCachedData_ShouldFail(void) {
+    PduInfoType trigPdu;
+    uint8 trigBuf[8] = {0U};
+
+    CanIf_Init(&testConfig);
+    trigPdu.SduDataPtr = trigBuf; trigPdu.SduLength = 8U; trigPdu.MetaDataPtr = NULL_PTR;
+    /* PDU2 is trigger-transmit capable but never transmitted */
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_TriggerTransmit(2U, &trigPdu));
+}
+
+void test_CanIf_TriggerTransmit_ShouldFillCachedDataWithMinLength(void) {
+    PduInfoType txPdu;
+    PduInfoType trigPdu;
+    uint8 txData[8] = {0x11U, 0x22U, 0x33U, 0x44U, 0x55U, 0x66U, 0x77U, 0x88U};
+    uint8 trigBuf[8] = {0U};
+
+    CanIf_Init(&testConfig);
+    (void)CanIf_SetControllerMode(0U, CANIF_CS_STARTED);
+    (void)CanIf_SetPduMode(0U, CANIF_ONLINE);
+
+    /* PDU2 configured Length == 2: cache must hold min(8, 2) = 2 bytes */
+    txPdu.SduDataPtr = txData; txPdu.SduLength = 8U; txPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(2U, &txPdu));
+
+    trigPdu.SduDataPtr = trigBuf; trigPdu.SduLength = 8U; trigPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_TriggerTransmit(2U, &trigPdu));
+    TEST_ASSERT_EQUAL(2U, trigPdu.SduLength); /* min(requested 8, configured 2, cached 2) */
+    TEST_ASSERT_EQUAL(0x11U, trigBuf[0]);
+    TEST_ASSERT_EQUAL(0x22U, trigBuf[1]);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_TriggerTransmit_ShouldTruncateToCachedLength(void) {
+    PduInfoType txPdu;
+    PduInfoType trigPdu;
+    uint8 shortData[1] = {0x42U};
+    uint8 trigBuf[8] = {0U};
+
+    CanIf_Init(&testConfig);
+    (void)CanIf_SetControllerMode(0U, CANIF_CS_STARTED);
+    (void)CanIf_SetPduMode(0U, CANIF_ONLINE);
+
+    /* Cache holds only 1 byte although the PDU is configured for 2 */
+    txPdu.SduDataPtr = shortData; txPdu.SduLength = 1U; txPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(2U, &txPdu));
+
+    trigPdu.SduDataPtr = trigBuf; trigPdu.SduLength = 2U; trigPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_TriggerTransmit(2U, &trigPdu));
+    TEST_ASSERT_EQUAL(1U, trigPdu.SduLength); /* min(requested 2, configured 2, cached 1) */
+    TEST_ASSERT_EQUAL(0x42U, trigBuf[0]);
+}
+
+void test_CanIf_TriggerTransmit_NullBuffer_ShouldReportDet(void) {
+    PduInfoType trigPdu;
+    uint8 trigBuf[2] = {0U};
+
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_TriggerTransmit(2U, NULL_PTR));
+    trigPdu.SduDataPtr = NULL_PTR; trigPdu.SduLength = 2U; trigPdu.MetaDataPtr = NULL_PTR;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_TriggerTransmit(2U, &trigPdu));
+    TEST_ASSERT_EQUAL(2, mock_DetCalls);
+    (void)trigBuf;
+}
+
+/* --- AD3: PN availability / transceiver wake flags (CanIf-level state) --- */
+
+void test_CanIf_ConfirmPnAvailability_ValidTrcv_ShouldSucceed(void) {
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_ConfirmPnAvailability(0U));
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ConfirmPnAvailability_InvalidTrcv_ShouldReportDet(void) {
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_ConfirmPnAvailability(CANIF_NUM_TRANSCEIVERS));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_CheckTrcvWakeFlag_ValidTrcv_ShouldSucceed(void) {
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_CheckTrcvWakeFlag(0U));
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_CheckTrcvWakeFlag_InvalidTrcv_ShouldReportDet(void) {
+    CanIf_Init(&testConfig);
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_CheckTrcvWakeFlag(CANIF_NUM_TRANSCEIVERS));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ClearTrcvWufFlag_ValidTrcv_ShouldSucceed(void) {
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_ClearTrcvWufFlag(0U));
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+/* --- AD3: indication forwarding to CanSM --- */
+
+void test_CanIf_CheckTrcvWakeFlagIndication_ShouldNotifyCanSM(void) {
+    CanIf_Init(&testConfig);
+    CanIf_CheckTrcvWakeFlag(0U); /* latch pending flag */
+
+    CanIf_CheckTrcvWakeFlagIndication(0U);
+    TEST_ASSERT_EQUAL(1, mock_CanSM_CheckWufCalls);
+    TEST_ASSERT_EQUAL(0U, mock_CanSM_CheckWufLastTrcv);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_ClearTrcvWufFlagIndication_ShouldNotifyCanSM(void) {
+    CanIf_Init(&testConfig);
+    CanIf_ClearTrcvWufFlag(0U);
+
+    CanIf_ClearTrcvWufFlagIndication(0U);
+    TEST_ASSERT_EQUAL(1, mock_CanSM_ClearWufCalls);
+    TEST_ASSERT_EQUAL(0U, mock_CanSM_ClearWufLastTrcv);
+}
+
+void test_CanIf_TrcvModeIndication_ShouldUpdateAndNotifyCanSM(void) {
+    CanIf_TransceiverModeType mode = CANIF_TRCV_MODE_NORMAL;
+    CanIf_Init(&testConfig);
+
+    CanIf_TrcvModeIndication(0U, CANIF_TRCV_MODE_STANDBY);
+    TEST_ASSERT_EQUAL(1, mock_CanSM_TrcvModeCalls);
+    TEST_ASSERT_EQUAL(0U, mock_CanSM_TrcvModeLastTrcv);
+    TEST_ASSERT_EQUAL(CANIF_TRCV_MODE_STANDBY, mock_CanSM_TrcvModeLastMode);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_GetTrcvMode(0U, &mode)); /* cached mode updated */
+    TEST_ASSERT_EQUAL(CANIF_TRCV_MODE_STANDBY, mode);
+}
+
+void test_CanIf_ControllerModeIndication_ShouldNotifyCanSM(void) {
+    CanIf_Init(&testConfig);
+
+    CanIf_ControllerModeIndication(0U, CANIF_CS_STARTED);
+    TEST_ASSERT_EQUAL(1, mock_CanSM_CtrlModeCalls);
+    TEST_ASSERT_EQUAL(0U, mock_CanSM_CtrlModeLastCtrl);
+    TEST_ASSERT_EQUAL(CANIF_CS_STARTED, mock_CanSM_CtrlModeLastMode);
+}
+
+/* --- Phase 4: PN wakeup filtering (CanIf_SetPnWakeupFilter + RxIndication gate) --- */
+
+static void startOnlineTx(void) {
+    CanIf_Init(&testConfig);
+    (void)CanIf_SetControllerMode(0U, CANIF_CS_STARTED);
+    (void)CanIf_SetPduMode(0U, CANIF_ONLINE);
+}
+
+void test_CanIf_SetPnWakeupFilter_ValidRange_ShouldSucceed(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_SetPnWakeupFilter_InvalidTrcv_ShouldReportDet(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_SetPnWakeupFilter(CANIF_NUM_TRANSCEIVERS, &filter));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_SetPnWakeupFilter_NullPtr_ShouldReportDet(void) {
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_SetPnWakeupFilter(0U, NULL_PTR));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_SetPnWakeupFilter_InvertedRange_ShouldReportDet(void) {
+    CanIf_PnWakeupFilterType filter = { 0x300U, 0x100U, 0x7FFU, TRUE };
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_RxIndication_PnFilter_MatchingId_ShouldPass(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    mailbox.CanId = 0x150U; mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(1, mock_PduRRxIndCalls); /* 0x150 is inside [0x100, 0x1FF] */
+}
+
+void test_CanIf_RxIndication_PnFilter_NonMatchingId_ShouldDrop(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    mailbox.CanId = 0x250U; mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(0, mock_PduRRxIndCalls); /* 0x250 outside [0x100, 0x1FF] */
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_RxIndication_PnFilter_MaskAppliedToRangeAndFrame(void) {
+    /* Mask 0x700 narrows both range bounds and received IDs:
+     * range [0x100,0x100]&0x700 = [0x100,0x100]; 0x150&0x700=0x100 passes,
+     * 0x250&0x700=0x200 drops. */
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x100U, 0x700U, TRUE };
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    mailbox.CanId = 0x150U;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(1, mock_PduRRxIndCalls);
+    mailbox.CanId = 0x250U;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(1, mock_PduRRxIndCalls); /* masked out */
+}
+
+void test_CanIf_RxIndication_NoPnFilter_ShouldPassAll(void) {
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    CanIf_Init(&testConfig);
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    mailbox.CanId = 0x150U;
+    CanIf_RxIndication(&mailbox, &pdu);
+    mailbox.CanId = 0x250U;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(2, mock_PduRRxIndCalls); /* no filter: everything passes */
+}
+
+void test_CanIf_DeInit_ShouldClearPnFilter(void) {
+    CanIf_PnWakeupFilterType filter = { 0x100U, 0x1FFU, 0x7FFU, TRUE };
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    CanIf_Init(&testConfig);
+    TEST_ASSERT_EQUAL(E_OK, CanIf_SetPnWakeupFilter(0U, &filter));
+    CanIf_DeInit();
+    CanIf_Init(&testConfig); /* fresh init: filter storage must be cleared */
+    mailbox.CanId = 0x250U; mailbox.Hoh = 0U; mailbox.ControllerId = 0U;
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    CanIf_RxIndication(&mailbox, &pdu);
+    TEST_ASSERT_EQUAL(1, mock_PduRRxIndCalls); /* previously filtered ID passes again */
+}
+
+/* --- Phase 4: Hoh-bucketed Rx dispatch lookup table --- */
+
+static void rxDispatchOnce(uint16 Hoh, uint32 CanId) {
+    Can_HwType mailbox;
+    PduInfoType pdu;
+    uint8 data[2] = {0xAAU, 0xBBU};
+    mailbox.CanId = CanId; mailbox.Hoh = Hoh; mailbox.ControllerId = 0U;
+    pdu.SduDataPtr = data; pdu.SduLength = 2U; pdu.MetaDataPtr = NULL_PTR;
+    CanIf_RxIndication(&mailbox, &pdu);
+}
+
+void test_CanIf_RxLookup_DispatchesEachHohBucket(void) {
+    CanIf_Init(&testConfig);
+    rxDispatchOnce(0U, 0x150U); /* Hoh 0 bucket, entry 0 */
+    rxDispatchOnce(0U, 0x250U); /* Hoh 0 bucket, entry 1 */
+    rxDispatchOnce(1U, 0x350U); /* Hoh 1 bucket, entry 0 */
+    rxDispatchOnce(1U, 0x600U); /* Hoh 1 bucket, entry 1 */
+    TEST_ASSERT_EQUAL(4, mock_PduRRxIndCalls);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_RxIndication_UnknownCanId_ShouldDrop(void) {
+    CanIf_Init(&testConfig);
+    rxDispatchOnce(0U, 0x999U);
+    TEST_ASSERT_EQUAL(0, mock_PduRRxIndCalls);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_RxIndication_UnknownHoh_ShouldDrop(void) {
+    CanIf_Init(&testConfig);
+    rxDispatchOnce(0x42U, 0x150U);   /* Hoh beyond configured, inside table range */
+    rxDispatchOnce(0xFFFEU, 0x150U); /* Hoh beyond table: linear fallback path */
+    TEST_ASSERT_EQUAL(0, mock_PduRRxIndCalls);
+    TEST_ASSERT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_RxLookup_Equivalence_WithLinearScan(void) {
+    /* Lookup-table dispatch must accept exactly the (Hoh, CanId) pairs the
+     * linear scan accepted, including out-of-table Hoh values. */
+    static const struct {
+        uint16 Hoh;
+        uint32 CanId;
+        boolean ExpectDispatch;
+    } cases[] = {
+        { 0U,      0x150U, TRUE  },
+        { 0U,      0x250U, TRUE  },
+        { 1U,      0x350U, TRUE  },
+        { 1U,      0x600U, TRUE  },
+        { 0U,      0x151U, FALSE },
+        { 1U,      0x601U, FALSE },
+        { 2U,      0x150U, FALSE },
+        { 0xFFFEU, 0x150U, FALSE }
+    };
+    int dispatched = 0;
+    CanIf_Init(&testConfig);
+    for (uint8 i = 0U; i < (sizeof(cases) / sizeof(cases[0])); i++) {
+        rxDispatchOnce(cases[i].Hoh, cases[i].CanId);
+        if (cases[i].ExpectDispatch == TRUE) {
+            dispatched++;
+        }
+        /* Unity build lacks *_MESSAGE variants; the loop index identifies a mismatch */
+        TEST_ASSERT_EQUAL(dispatched, mock_PduRRxIndCalls);
+    }
+}
+
+/* --- Phase 4: Tx retry queue (CAN_BUSY buffering) --- */
+
+void test_CanIf_Transmit_CanBusy_ShouldEnqueueForRetry(void) {
+    PduInfoType pdu;
+    uint8 data[8] = {0x11U, 0x22U, 0x33U, 0x44U, 0x55U, 0x66U, 0x77U, 0x88U};
+    pdu.SduDataPtr = data; pdu.SduLength = 8U; pdu.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &pdu)); /* buffered, not dropped */
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls);
+
+    CanIf_TxQueueMainFunction(); /* hardware still busy */
+    TEST_ASSERT_EQUAL(2, mock_CanWriteCalls);
+
+    mock_CanWriteReturn = CAN_OK;
+    CanIf_TxQueueMainFunction(); /* queued frame is retransmitted */
+    TEST_ASSERT_EQUAL(3, mock_CanWriteCalls);
+    TEST_ASSERT_EQUAL(8U, mock_CanWriteLastDlc);
+    TEST_ASSERT_EQUAL(0x11U, mock_CanWriteLastData[0]);
+    TEST_ASSERT_EQUAL(0x88U, mock_CanWriteLastData[7]);
+    TEST_ASSERT_EQUAL(CANIF_TXCONF_PENDING, CanIf_GetTxConfirmationState(0U));
+
+    CanIf_TxQueueMainFunction(); /* queue empty: no further writes */
+    TEST_ASSERT_EQUAL(3, mock_CanWriteCalls);
+}
+
+void test_CanIf_TxQueue_ShouldDrainInFifoOrder(void) {
+    PduInfoType pdu0;
+    PduInfoType pdu1;
+    uint8 d0[8] = {0x11U, 0x12U, 0x13U, 0x14U, 0x15U, 0x16U, 0x17U, 0x18U};
+    uint8 d1[4] = {0x21U, 0x22U, 0x23U, 0x24U};
+    pdu0.SduDataPtr = d0; pdu0.SduLength = 8U; pdu0.MetaDataPtr = NULL_PTR;
+    pdu1.SduDataPtr = d1; pdu1.SduLength = 4U; pdu1.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &pdu0));
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(1U, &pdu1));
+    TEST_ASSERT_EQUAL(2, mock_CanWriteCalls);
+
+    mock_CanWriteReturn = CAN_OK;
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_EQUAL(4, mock_CanWriteCalls); /* both queued frames drained */
+    /* FIFO order: the second queued frame (4 bytes, 0x21..) written last */
+    TEST_ASSERT_EQUAL(4U, mock_CanWriteLastDlc);
+    TEST_ASSERT_EQUAL(0x21U, mock_CanWriteLastData[0]);
+    TEST_ASSERT_EQUAL(0x24U, mock_CanWriteLastData[3]);
+    TEST_ASSERT_EQUAL(CANIF_TXCONF_PENDING, CanIf_GetTxConfirmationState(1U));
+}
+
+void test_CanIf_TxQueue_Full_ShouldReturnNotOk(void) {
+    PduInfoType pdu;
+    uint8 data[8] = {0U};
+    pdu.SduDataPtr = data; pdu.SduLength = 8U; pdu.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    for (uint8 i = 0U; i < CANIF_TX_QUEUE_DEPTH; i++) {
+        TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &pdu));
+    }
+    TEST_ASSERT_EQUAL(CANIF_TX_QUEUE_DEPTH, mock_CanWriteCalls);
+
+    /* Queue full: the frame is rejected instead of silently dropped */
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_Transmit(0U, &pdu));
+    TEST_ASSERT_EQUAL((int)CANIF_TX_QUEUE_DEPTH + 1, mock_CanWriteCalls);
+
+    mock_CanWriteReturn = CAN_OK;
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_EQUAL((int)CANIF_TX_QUEUE_DEPTH * 2 + 1, mock_CanWriteCalls); /* exactly the buffered 16 drained */
+}
+
+void test_CanIf_Transmit_OversizedFrame_ShouldNotBeBuffered(void) {
+    PduInfoType pdu;
+    uint8 data[12] = {0U};
+    pdu.SduDataPtr = data; pdu.SduLength = 12U; pdu.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_Transmit(0U, &pdu)); /* exceeds queue entry size */
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls); /* only the rejected Can_Write attempt */
+}
+
+void test_CanIf_ControllerBusOff_ShouldFlushTxQueue(void) {
+    PduInfoType pdu;
+    uint8 data[8] = {0U};
+    pdu.SduDataPtr = data; pdu.SduLength = 8U; pdu.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &pdu));
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls);
+
+    CanIf_ControllerBusOff(0U); /* queued frame must not outlive the bus-off */
+    mock_CanWriteReturn = CAN_OK;
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls);
+}
+
+void test_CanIf_DeInit_ShouldFlushTxQueue(void) {
+    PduInfoType pdu;
+    uint8 data[8] = {0U};
+    pdu.SduDataPtr = data; pdu.SduLength = 8U; pdu.MetaDataPtr = NULL_PTR;
+    startOnlineTx();
+
+    mock_CanWriteReturn = CAN_BUSY;
+    TEST_ASSERT_EQUAL(E_OK, CanIf_Transmit(0U, &pdu));
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls);
+
+    CanIf_DeInit();
+    CanIf_Init(&testConfig);
+    mock_CanWriteReturn = CAN_OK;
+    CanIf_TxQueueMainFunction();
+    TEST_ASSERT_EQUAL(1, mock_CanWriteCalls); /* queue did not survive DeInit */
+}
+
+/* --- AD3: MetaData <-> CAN ID conversion --- */
+
+void test_CanIf_CanIdToMetaData_ExtendedId_ShouldPackBigEndian(void) {
+    uint8 meta[4] = {0U};
+    TEST_ASSERT_EQUAL(E_OK, CanIf_CanIdToMetaData(0x1FFFFFFFU, meta));
+    TEST_ASSERT_EQUAL(0xFFU, meta[0]);
+    TEST_ASSERT_EQUAL(0xFFU, meta[1]);
+    TEST_ASSERT_EQUAL(0xFFU, meta[2]);
+    TEST_ASSERT_EQUAL(0xFFU, meta[3]);
+}
+
+void test_CanIf_CanIdToMetaData_StandardId_ShouldPackBigEndian(void) {
+    uint8 meta[4] = {0U};
+    TEST_ASSERT_EQUAL(E_OK, CanIf_CanIdToMetaData(0x123U, meta));
+    TEST_ASSERT_EQUAL(0x00U, meta[0]);
+    TEST_ASSERT_EQUAL(0x00U, meta[1]);
+    TEST_ASSERT_EQUAL(0x09U, meta[2]); /* bits 12..5 */
+    TEST_ASSERT_EQUAL(0x23U, meta[3]); /* bits 7..0 */
+}
+
+void test_CanIf_CanIdToMetaData_NullPtr_ShouldReportDet(void) {
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_CanIdToMetaData(0x123U, NULL_PTR));
+    TEST_ASSERT_NOT_EQUAL(0, mock_DetCalls);
+}
+
+void test_CanIf_MetaDataToCanId_NullPtr_ShouldReportDet(void) {
+    uint8 meta[4] = {0U};
+    uint32 canId = 0U;
+    mock_DetCalls = 0;
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_MetaDataToCanId(NULL_PTR, &canId));
+    TEST_ASSERT_EQUAL(E_NOT_OK, CanIf_MetaDataToCanId(meta, NULL_PTR));
+    TEST_ASSERT_EQUAL(2, mock_DetCalls);
+}
+
+void test_CanIf_MetaData_RoundTrip_ShouldPreserveCanId(void) {
+    uint8 meta[4] = {0U};
+    uint32 canId = 0U;
+    const uint32 testIds[3] = {0x00000000U, 0x00000123U, 0x1FFFFFFFU};
+
+    for (uint8 i = 0U; i < 3U; i++) {
+        TEST_ASSERT_EQUAL(E_OK, CanIf_CanIdToMetaData(testIds[i], meta));
+        TEST_ASSERT_EQUAL(E_OK, CanIf_MetaDataToCanId(meta, &canId));
+        TEST_ASSERT_EQUAL(testIds[i], canId);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
 
     RUN_TEST(test_CanIf_Init_NullPtr_ShouldReportDet);
     RUN_TEST(test_CanIf_Transmit_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_GetControllerErrorState_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_ReadTxNotifStatus_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_ReadRxNotifStatus_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_TriggerTransmit_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_ConfirmPnAvailability_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_CheckTrcvWakeFlag_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_ClearTrcvWufFlag_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_SetPnWakeupFilter_BeforeInit_ShouldFail);
+    RUN_TEST(test_CanIf_TxQueueMainFunction_BeforeInit_ShouldReportDet);
     RUN_TEST(test_CanIf_Init_ValidConfig_ShouldSucceed);
     RUN_TEST(test_CanIf_Init_DoubleInit_ShouldReportDet);
     RUN_TEST(test_CanIf_Transmit_NullPdu_ShouldFail);
@@ -378,6 +1136,53 @@ int main(void)
     RUN_TEST(test_CanIf_CheckValidation_ShouldSucceedOncePerWakeup);
     RUN_TEST(test_CanIf_GetTxConfirmationState_AfterTransmitAndConfirm);
     RUN_TEST(test_CanIf_GetTxConfirmationState_InvalidPduId_ShouldReportDet);
+    RUN_TEST(test_CanIf_GetControllerErrorState_ShouldDelegateToCan);
+    RUN_TEST(test_CanIf_GetControllerRxErrorCounter_ShouldDelegateToCan);
+    RUN_TEST(test_CanIf_GetControllerTxErrorCounter_ShouldDelegateToCan);
+    RUN_TEST(test_CanIf_GetControllerErrorState_NullPtr_ShouldReportDet);
+    RUN_TEST(test_CanIf_GetControllerRxErrorCounter_InvalidController_ShouldReportDet);
+    RUN_TEST(test_CanIf_ReadTxNotifStatus_DisabledApi_ShouldReportDet);
+    RUN_TEST(test_CanIf_ReadTxNotifStatus_ShouldSetAndClearOnRead);
+    RUN_TEST(test_CanIf_ReadRxNotifStatus_DisabledApi_ShouldReportDet);
+    RUN_TEST(test_CanIf_ReadRxNotifStatus_ShouldSetAndClearOnRead);
+    RUN_TEST(test_CanIf_TriggerTransmit_NotConfiguredPdu_ShouldFail);
+    RUN_TEST(test_CanIf_TriggerTransmit_NoCachedData_ShouldFail);
+    RUN_TEST(test_CanIf_TriggerTransmit_ShouldFillCachedDataWithMinLength);
+    RUN_TEST(test_CanIf_TriggerTransmit_ShouldTruncateToCachedLength);
+    RUN_TEST(test_CanIf_TriggerTransmit_NullBuffer_ShouldReportDet);
+    RUN_TEST(test_CanIf_ConfirmPnAvailability_ValidTrcv_ShouldSucceed);
+    RUN_TEST(test_CanIf_ConfirmPnAvailability_InvalidTrcv_ShouldReportDet);
+    RUN_TEST(test_CanIf_CheckTrcvWakeFlag_ValidTrcv_ShouldSucceed);
+    RUN_TEST(test_CanIf_CheckTrcvWakeFlag_InvalidTrcv_ShouldReportDet);
+    RUN_TEST(test_CanIf_ClearTrcvWufFlag_ValidTrcv_ShouldSucceed);
+    RUN_TEST(test_CanIf_CheckTrcvWakeFlagIndication_ShouldNotifyCanSM);
+    RUN_TEST(test_CanIf_ClearTrcvWufFlagIndication_ShouldNotifyCanSM);
+    RUN_TEST(test_CanIf_TrcvModeIndication_ShouldUpdateAndNotifyCanSM);
+    RUN_TEST(test_CanIf_ControllerModeIndication_ShouldNotifyCanSM);
+    RUN_TEST(test_CanIf_CanIdToMetaData_ExtendedId_ShouldPackBigEndian);
+    RUN_TEST(test_CanIf_CanIdToMetaData_StandardId_ShouldPackBigEndian);
+    RUN_TEST(test_CanIf_CanIdToMetaData_NullPtr_ShouldReportDet);
+    RUN_TEST(test_CanIf_MetaDataToCanId_NullPtr_ShouldReportDet);
+    RUN_TEST(test_CanIf_MetaData_RoundTrip_ShouldPreserveCanId);
+        RUN_TEST(test_CanIf_SetPnWakeupFilter_ValidRange_ShouldSucceed);
+        RUN_TEST(test_CanIf_SetPnWakeupFilter_InvalidTrcv_ShouldReportDet);
+        RUN_TEST(test_CanIf_SetPnWakeupFilter_NullPtr_ShouldReportDet);
+        RUN_TEST(test_CanIf_SetPnWakeupFilter_InvertedRange_ShouldReportDet);
+        RUN_TEST(test_CanIf_RxIndication_PnFilter_MatchingId_ShouldPass);
+        RUN_TEST(test_CanIf_RxIndication_PnFilter_NonMatchingId_ShouldDrop);
+        RUN_TEST(test_CanIf_RxIndication_PnFilter_MaskAppliedToRangeAndFrame);
+        RUN_TEST(test_CanIf_RxIndication_NoPnFilter_ShouldPassAll);
+        RUN_TEST(test_CanIf_DeInit_ShouldClearPnFilter);
+        RUN_TEST(test_CanIf_RxLookup_DispatchesEachHohBucket);
+        RUN_TEST(test_CanIf_RxIndication_UnknownCanId_ShouldDrop);
+        RUN_TEST(test_CanIf_RxIndication_UnknownHoh_ShouldDrop);
+        RUN_TEST(test_CanIf_RxLookup_Equivalence_WithLinearScan);
+        RUN_TEST(test_CanIf_Transmit_CanBusy_ShouldEnqueueForRetry);
+        RUN_TEST(test_CanIf_TxQueue_ShouldDrainInFifoOrder);
+        RUN_TEST(test_CanIf_TxQueue_Full_ShouldReturnNotOk);
+        RUN_TEST(test_CanIf_Transmit_OversizedFrame_ShouldNotBeBuffered);
+        RUN_TEST(test_CanIf_ControllerBusOff_ShouldFlushTxQueue);
+        RUN_TEST(test_CanIf_DeInit_ShouldFlushTxQueue);
 
     return UnityEnd();
 }

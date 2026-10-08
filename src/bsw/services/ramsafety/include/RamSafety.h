@@ -213,6 +213,11 @@ typedef void (*RamSafety_ErrorCallbackType)(
  * @return E_OK: 成功, E_NOT_OK: 失败
  * @req SWS_RamSafety_00001
  */
+/**
+ * @brief Initialize the module
+ * @param[in] config Configuration reference
+ * @return Operation status
+ */
 extern Std_ReturnType RamSafety_Init(const RamSafety_ConfigType* config);
 
 /**
@@ -242,6 +247,11 @@ extern RamSafety_StateType RamSafety_GetState(void);
  * @return E_OK: 所有检查通过, E_NOT_OK: 至少一个检查失败
  * @req SWS_RamSafety_00010
  */
+/**
+ * @brief run startup test
+ * @param[in] progressCb Callback function
+ * @return Operation status
+ */
 extern Std_ReturnType RamSafety_RunStartupTest(
     RamSafety_ProgressCallbackType progressCb
 );
@@ -254,6 +264,9 @@ extern Std_ReturnType RamSafety_RunStartupTest(
  * 每次检查一个或多个区域
  * @req SWS_RamSafety_00011
  */
+/**
+ * @brief Process periodic tasks
+ */
 extern void RamSafety_MainFunction(void);
 
 /**
@@ -265,6 +278,13 @@ extern void RamSafety_MainFunction(void);
  * @param errorCb 错误回调 (可为NULL)
  * @return 测试结果
  * @req SWS_RamSafety_00012
+ */
+/**
+ * @brief Trigger action
+ * @param[in] testType Type selector
+ * @param[in] regionId Identifier
+ * @param[in] errorCb Callback function
+ * @return Operation result
  */
 extern RamSafety_ResultType RamSafety_TriggerTest(
     RamSafety_TestType testType,
@@ -280,6 +300,11 @@ extern RamSafety_ResultType RamSafety_TriggerTest(
  * @return E_OK: 验证通过, E_NOT_OK: 验证失败
  * @req SWS_RamSafety_00020
  */
+/**
+ * @brief verify region
+ * @param[in] regionId Identifier
+ * @return Operation status
+ */
 extern Std_ReturnType RamSafety_VerifyRegion(uint8 regionId);
 
 /**
@@ -290,6 +315,12 @@ extern Std_ReturnType RamSafety_VerifyRegion(uint8 regionId);
  * @return E_OK: 验证通过, E_NOT_OK: 验证失败
  * @req SWS_RamSafety_00021
  */
+/**
+ * @brief verify range
+ * @param[in] startAddr Memory address
+ * @param[in] size Data length
+ * @return Operation status
+ */
 extern Std_ReturnType RamSafety_VerifyRange(uint32 startAddr, uint32 size);
 
 /**
@@ -298,6 +329,11 @@ extern Std_ReturnType RamSafety_VerifyRange(uint32 startAddr, uint32 size);
  * @param stats 统计结构体指针
  * @return E_OK: 成功, E_NOT_OK: 失败
  * @req SWS_RamSafety_00030
+ */
+/**
+ * @brief Get requested information
+ * @param[in] stats stats value
+ * @return Operation status
  */
 extern Std_ReturnType RamSafety_GetStatistics(RamSafety_StatisticsType* stats);
 
@@ -318,6 +354,13 @@ extern Std_ReturnType RamSafety_ClearStatistics(void);
  * @return E_OK: 成功, E_NOT_OK: 失败
  * @req SWS_RamSafety_00032
  */
+/**
+ * @brief Check condition
+ * @param[in] regionId Identifier
+ * @param[in] hasError Error code
+ * @param[in] errorCount Element count
+ * @return Operation status
+ */
 extern Std_ReturnType RamSafety_CheckEccStatus(
     uint8 regionId,
     boolean* hasError,
@@ -332,6 +375,10 @@ extern Std_ReturnType RamSafety_CheckEccStatus(
  * 
  * @param reason 进入安全状态的原因
  * @req SWS_RamSafety_00040
+ */
+/**
+ * @brief enter safe state
+ * @param[in] reason reason value
  */
 extern void RamSafety_EnterSafeState(uint8 reason);
 

@@ -10,9 +10,13 @@
 #include "unity.h"
 #include "LinIf.h"
 #include "Lin.h"
+#include "LinTrcv.h"
+#include "Dio.h"
 #include <string.h>
 
-/* Det SID/error literals are private to LinIf.c (not exported in the header) */
+/* Det SID/error literals still private to LinIf.c (not exported in the
+ * header). LINIF_E_PARAM_POINTER / LINIF_E_PARAM_CHANNEL / LINIF_E_PARAM_VALUE
+ * and the 0x20-0x29 SID block come from LinIf.h. */
 #define LINIF_SID_INIT          (0x00U)
 #define LINIF_SID_TRANSMIT      (0x02U)
 #define LINIF_SID_RX_INDICATION (0x03U)
@@ -20,11 +24,9 @@
 #define LINIF_SID_WAKEUP        (0x09U)
 #define LINIF_SID_GOTOSLEEP     (0x0AU)
 #define LINIF_SID_SCHEDREQ      (0x0BU)
-#define LINIF_E_PARAM_POINTER   (0x10U)
 #define LINIF_E_UNINIT          (0x20U)
 #define LINIF_E_PARAM_PDU       (0x30U)
 #define LINIF_E_PARAM_SCHEDULE  (0x40U)
-#define LINIF_E_PARAM_CHANNEL   (0x50U)
 
 /* ---------- Det mock ---------- */
 static uint8 mock_DetLastApiId = 0xFFU;
@@ -76,6 +78,74 @@ Std_ReturnType Lin_GoToSleep(Lin_ChannelType Channel) {
     return mock_LinRetVal;
 }
 
+/* ---------- LinTrcv driver support: host-safe DIO + EcuM mocks ----------
+ * The real LinTrcv driver (ecual_lintrcv library) is linked into this test;
+ * its external dependencies are satisfied here so the delegation paths run
+ * against production code. */
+static Dio_LevelType mock_DioLevel[MOCK_LOG_DEPTH];
+
+Dio_LevelType Dio_ReadChannel(Dio_ChannelType ChannelId) {
+    return (ChannelId < MOCK_LOG_DEPTH) ? mock_DioLevel[ChannelId] : STD_LOW;
+}
+
+void Dio_WriteChannel(Dio_ChannelType ChannelId, Dio_LevelType Level) {
+    if (ChannelId < MOCK_LOG_DEPTH) {
+        mock_DioLevel[ChannelId] = Level;
+    }
+}
+
+static uint32 mock_EcuM_WakeupEventCount = 0U;
+static uint32 mock_EcuM_LastWakeupSource = 0U;
+
+void EcuM_SetWakeupEvent(uint32 wakeupSource) {
+    mock_EcuM_WakeupEventCount++;
+    mock_EcuM_LastWakeupSource = wakeupSource;
+}
+
+/* One TJA1021 channel on DIO pin 0 (EN), 1 (NWake), 2 (NERR); all transition
+ * delays zero so mode changes do not busy-wait on the host. */
+static const LinTrcv_ChannelConfigType mock_TrcvChannelCfg = {
+    0U,                    /* ChannelId */
+    LINTRCV_TJA1021,       /* HwType */
+    LINTRCV_CTRL_DIO,      /* CtrlIf */
+    0U,                    /* EnPinDio */
+    0xFFFFU,               /* TxDPinDio (not managed) */
+    1U,                    /* NwadrsPinDio */
+    2U,                    /* NerrPinDio */
+    TRUE,                  /* WakeupByBusEnabled */
+    TRUE,                  /* WakeupByPinEnabled */
+    0U,                    /* WakeupSourceRef (0 => no EcuM notification) */
+    0U,                    /* SpiChannel */
+    0U,                    /* SpiDevice */
+    0U, 0U, 0U, 0U,        /* mode transition delays */
+    LINTRCV_OPMODE_NORMAL  /* InitialMode */
+};
+
+static const LinTrcv_ConfigType mock_TrcvConfig = {
+    1U,
+    &mock_TrcvChannelCfg,
+    TRUE,
+    TRUE,
+    TRUE
+};
+
+static void linifTest_InitLinTrcv(void) {
+    LinTrcv_Init(&mock_TrcvConfig);
+}
+
+/* ---------- LinIf test config holding a diagnostic frame ---------- */
+static const LinIf_FrameConfigType mock_DiagFrames[1] = {
+    { 0U, 0x3CU, 8U, LINIF_DIAGNOSTIC_FRAME, TRUE }
+};
+
+static const LinIf_ChannelConfigType mock_DiagChannel = {
+    0U, 1U, 0U, mock_DiagFrames, NULL_PTR
+};
+
+static const LinIf_ConfigType mock_DiagConfig = {
+    1U, &mock_DiagChannel, 0U, NULL_PTR
+};
+
 /* ---------- Upper layer hook mocks (override LinIf weak defaults) ---------- */
 static uint8 mock_TxConfCount = 0U;
 static uint8 mock_TxConfChannel = 0xFFU;
@@ -119,10 +189,13 @@ static void mock_Reset(void) {
     mock_SchedConfChannel = 0xFFU;
     mock_SchedConfSchedule = 0xFFU;
     mock_RxCallbackCount = 0U;
+    mock_EcuM_WakeupEventCount = 0U;
+    mock_EcuM_LastWakeupSource = 0U;
     (void)memset(&mock_RxCallbackPdu, 0, sizeof(mock_RxCallbackPdu));
     (void)memset(mock_SendPdu, 0, sizeof(mock_SendPdu));
     (void)memset(mock_SendChannel, 0, sizeof(mock_SendChannel));
     (void)memset(mock_SendData, 0, sizeof(mock_SendData));
+    (void)memset(mock_DioLevel, 0, sizeof(mock_DioLevel));
 }
 
 static void linif_RunTicks(uint16 ticks) {
@@ -473,6 +546,322 @@ void test_LinIf_GetVersionInfo_NullPtr_ShouldReportDet(void) {
     TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
 }
 
+/** @req SWS_LinIf_00679 @req SWS_LinIf_00680 */
+void test_LinIf_SetGetTrcvMode_ShouldDelegateToLinTrcv(void) {
+    LinIf_TrcvModeType mode = LINIF_TRCV_MODE_NORMAL;
+
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvMode(0U, LINIF_TRCV_MODE_SLEEP));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetTrcvMode(0U, &mode));
+    TEST_ASSERT_EQUAL(LINIF_TRCV_MODE_SLEEP, mode);
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvMode(0U, LINIF_TRCV_MODE_STANDBY));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetTrcvMode(0U, &mode));
+    TEST_ASSERT_EQUAL(LINIF_TRCV_MODE_STANDBY, mode);
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvMode(0U, LINIF_TRCV_MODE_NORMAL));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetTrcvMode(0U, &mode));
+    TEST_ASSERT_EQUAL(LINIF_TRCV_MODE_NORMAL, mode);
+
+    /* The mode must be visible on the real driver as well */
+    {
+        LinTrcv_OpmodeType trcvMode = LINTRCV_OPMODE_SLEEP;
+        TEST_ASSERT_EQUAL(E_OK, LinTrcv_GetOpMode(0U, &trcvMode));
+        TEST_ASSERT_EQUAL(LINTRCV_OPMODE_NORMAL, trcvMode);
+    }
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00679 */
+void test_LinIf_SetTrcvMode_InvalidChannel_ShouldReportParamChannel(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvMode(9U, LINIF_TRCV_MODE_NORMAL));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00679 */
+void test_LinIf_SetTrcvMode_InvalidMode_ShouldReportParamValue(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvMode(0U, (LinIf_TrcvModeType)0x7FU));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_VALUE, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00680 */
+void test_LinIf_GetTrcvMode_NullPtr_ShouldReportParamPointer(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetTrcvMode(0U, NULL_PTR));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETTRCVMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00681 */
+void test_LinIf_SetTrcvWakeupMode_ShouldAcceptValidModes(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvWakeupMode(0U, LINIF_TRCV_WU_ENABLE));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvWakeupMode(0U, LINIF_TRCV_WU_DISABLE));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetTrcvWakeupMode(0U, LINIF_TRCV_WU_CLEAR));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00681 */
+void test_LinIf_SetTrcvWakeupMode_InvalidParams_ShouldReportDet(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+
+    /* LinTrcv exposes no SetWakeupMode API: invalid values are rejected */
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvWakeupMode(0U, (LinIf_TrcvWakeupModeType)0x55U));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVWAKEUPMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_VALUE, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvWakeupMode(9U, LINIF_TRCV_WU_ENABLE));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVWAKEUPMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00682 */
+void test_LinIf_GetTrcvWakeupReason_ShouldMapLinTrcvReason(void) {
+    LinIf_TrcvWakeupReasonType reason = LINIF_TRCV_WU_ERROR;
+
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+
+    /* LinTrcv_Init records the reset wake-up reason */
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetTrcvWakeupReason(0U, &reason));
+    TEST_ASSERT_EQUAL(LINIF_TRCV_WU_RESET, reason);
+
+    /* A bus wake-up notification updates the delegated reason */
+    LinTrcv_Cbk_WakeupByBus(0U);
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetTrcvWakeupReason(0U, &reason));
+    TEST_ASSERT_EQUAL(LINIF_TRCV_WU_BY_BUS, reason);
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00682 */
+void test_LinIf_GetTrcvWakeupReason_NullPtr_ShouldReportParamPointer(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetTrcvWakeupReason(0U, NULL_PTR));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETTRCVWAKEUPREASON, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00683 */
+void test_LinIf_CheckWakeup_ShouldDelegateToLinTrcv(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+
+    /* No wake-up pending yet */
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_CheckWakeup(0U));
+
+    LinTrcv_Cbk_WakeupByBus(0U);
+    TEST_ASSERT_EQUAL(E_OK, LinIf_CheckWakeup(0U));
+    /* The pending flag is consumed by the first check */
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_CheckWakeup(0U));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00683 */
+void test_LinIf_CheckWakeup_InvalidChannel_ShouldReportParamChannel(void) {
+    LinIf_Init(&LinIf_Config);
+    linifTest_InitLinTrcv();
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_CheckWakeup(9U));
+    TEST_ASSERT_EQUAL(LINIF_SID_CHECKWAKEUP, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00679 @req SWS_LinIf_00580 @req SWS_LinIf_00581
+ *  @req SWS_LinIf_00582 @req SWS_LinIf_00583 */
+void test_LinIf_TrcvAndNodeConfig_BeforeInit_ShouldReportUninit(void) {
+    LinIf_TrcvModeType mode = LINIF_TRCV_MODE_NORMAL;
+    LinIf_TrcvWakeupReasonType reason = LINIF_TRCV_WU_ERROR;
+    uint8 nad = 0U;
+    uint8 pidBuf[4] = {0U};
+    uint8 numFrames = 0U;
+
+    LinIf_DeInit();
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvMode(0U, LINIF_TRCV_MODE_NORMAL));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetTrcvMode(0U, &mode));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETTRCVMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetTrcvWakeupMode(0U, LINIF_TRCV_WU_ENABLE));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETTRCVWAKEUPMODE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetTrcvWakeupReason(0U, &reason));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETTRCVWAKEUPREASON, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_CheckWakeup(0U));
+    TEST_ASSERT_EQUAL(LINIF_SID_CHECKWAKEUP, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetConfiguredNAD(0U, 0x2EU));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETCONFIGUREDNAD, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetConfiguredNAD(0U, &nad));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETCONFIGUREDNAD, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetPIDTable(0U, pidBuf, 1U));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETPIDTABLE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetPIDTable(0U, pidBuf, &numFrames));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETPIDTABLE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_UNINIT, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00580 @req SWS_LinIf_00581 */
+void test_LinIf_ConfiguredNAD_DefaultAndRoundTrip(void) {
+    uint8 nad = 0U;
+
+    LinIf_Init(&LinIf_Config);
+
+    /* Default NAD after Init is 0x60 */
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetConfiguredNAD(0U, &nad));
+    TEST_ASSERT_EQUAL(0x60U, nad);
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetConfiguredNAD(0U, 0x2EU));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetConfiguredNAD(0U, &nad));
+    TEST_ASSERT_EQUAL(0x2EU, nad);
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00580 @req SWS_LinIf_00581 */
+void test_LinIf_ConfiguredNAD_InvalidParams_ShouldReportDet(void) {
+    uint8 nad = 0U;
+
+    LinIf_Init(&LinIf_Config);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetConfiguredNAD(9U, 0x2EU));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETCONFIGUREDNAD, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetConfiguredNAD(9U, &nad));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETCONFIGUREDNAD, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetConfiguredNAD(0U, NULL_PTR));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETCONFIGUREDNAD, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00582 @req SWS_LinIf_00583 */
+void test_LinIf_PidTable_DefaultFromConfigAndRoundTrip(void) {
+    uint8 buf[LINIF_MAX_FRAMES] = {0U};
+    uint8 numFrames = 0U;
+    static const uint8 newTable[3] = {0x11U, 0x22U, 0x33U};
+
+    LinIf_Init(&LinIf_Config);
+
+    /* Default PID table is copied from the configured frames (0x3C/0x3D/0x3E) */
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetPIDTable(0U, buf, &numFrames));
+    TEST_ASSERT_EQUAL(3U, numFrames);
+    TEST_ASSERT_EQUAL_HEX8(0x3CU, buf[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x3DU, buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x3EU, buf[2]);
+
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetPIDTable(0U, newTable, 3U));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetPIDTable(0U, buf, &numFrames));
+    TEST_ASSERT_EQUAL(3U, numFrames);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(newTable, buf, 3U);
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00582 @req SWS_LinIf_00583 */
+void test_LinIf_SetPIDTable_OversizedAndNullPtr_ShouldReportDet(void) {
+    uint8 buf[LINIF_MAX_FRAMES] = {0U};
+    uint8 numFrames = 0U;
+    static const uint8 fourPids[4] = {0x11U, 0x22U, 0x33U, 0x44U};
+
+    LinIf_Init(&LinIf_Config);
+
+    /* Channel 0 configures only 3 frames */
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetPIDTable(0U, fourPids, 4U));
+    TEST_ASSERT_EQUAL(LINIF_SID_SETPIDTABLE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_VALUE, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetPIDTable(0U, NULL_PTR, 1U));
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_SetPIDTable(9U, fourPids, 1U));
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetPIDTable(0U, NULL_PTR, &numFrames));
+    TEST_ASSERT_EQUAL(LINIF_SID_GETPIDTABLE, mock_DetLastApiId);
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetPIDTable(0U, buf, NULL_PTR));
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_POINTER, mock_DetLastErrorId);
+
+    TEST_ASSERT_EQUAL(E_NOT_OK, LinIf_GetPIDTable(9U, buf, &numFrames));
+    TEST_ASSERT_EQUAL(LINIF_E_PARAM_CHANNEL, mock_DetLastErrorId);
+}
+
+/** @req SWS_LinIf_00002 */
+void test_LinIf_DeInit_ShouldRestoreDefaultNadAndPidTable(void) {
+    uint8 nad = 0U;
+    uint8 buf[LINIF_MAX_FRAMES] = {0U};
+    uint8 numFrames = 0U;
+    static const uint8 customTable[2] = {0x55U, 0x66U};
+
+    LinIf_Init(&LinIf_Config);
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetConfiguredNAD(0U, 0x99U));
+    TEST_ASSERT_EQUAL(E_OK, LinIf_SetPIDTable(0U, customTable, 2U));
+
+    LinIf_DeInit();
+    LinIf_Init(&LinIf_Config);
+
+    /* NAD and PID table are back to the configuration defaults */
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetConfiguredNAD(0U, &nad));
+    TEST_ASSERT_EQUAL(0x60U, nad);
+    TEST_ASSERT_EQUAL(E_OK, LinIf_GetPIDTable(0U, buf, &numFrames));
+    TEST_ASSERT_EQUAL(3U, numFrames);
+    TEST_ASSERT_EQUAL_HEX8(0x3CU, buf[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x3DU, buf[1]);
+    TEST_ASSERT_EQUAL_HEX8(0x3EU, buf[2]);
+}
+
+/** @req SWS_LinIf_00585 */
+void test_LinIf_IsSupportTpTransmit_ShouldReflectDiagnosticFrames(void) {
+    /* Shipped config holds no LINIF_DIAGNOSTIC_FRAME-typed frame */
+    LinIf_Init(&LinIf_Config);
+    TEST_ASSERT_EQUAL(FALSE, LinIf_IsSupportTpTransmit(0U));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+
+    /* A config with a diagnostic frame supports Tp transmission */
+    LinIf_Init(&mock_DiagConfig);
+    TEST_ASSERT_EQUAL(TRUE, LinIf_IsSupportTpTransmit(0U));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+
+    /* Unknown channel reports FALSE without Det */
+    TEST_ASSERT_EQUAL(FALSE, LinIf_IsSupportTpTransmit(9U));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
+/** @req SWS_LinIf_00585 */
+void test_LinIf_IsSupportTpTransmit_BeforeInit_ShouldReturnFalse(void) {
+    LinIf_DeInit();
+    TEST_ASSERT_EQUAL(FALSE, LinIf_IsSupportTpTransmit(0U));
+    TEST_ASSERT_EQUAL(0U, mock_DetCallCount);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -503,6 +892,24 @@ int main(void)
     RUN_TEST(test_LinIf_DeInit_AfterInit_ShouldDeactivateModule);
     RUN_TEST(test_LinIf_GetVersionInfo_ValidPtr_ShouldSucceed);
     RUN_TEST(test_LinIf_GetVersionInfo_NullPtr_ShouldReportDet);
+    RUN_TEST(test_LinIf_SetGetTrcvMode_ShouldDelegateToLinTrcv);
+    RUN_TEST(test_LinIf_SetTrcvMode_InvalidChannel_ShouldReportParamChannel);
+    RUN_TEST(test_LinIf_SetTrcvMode_InvalidMode_ShouldReportParamValue);
+    RUN_TEST(test_LinIf_GetTrcvMode_NullPtr_ShouldReportParamPointer);
+    RUN_TEST(test_LinIf_SetTrcvWakeupMode_ShouldAcceptValidModes);
+    RUN_TEST(test_LinIf_SetTrcvWakeupMode_InvalidParams_ShouldReportDet);
+    RUN_TEST(test_LinIf_GetTrcvWakeupReason_ShouldMapLinTrcvReason);
+    RUN_TEST(test_LinIf_GetTrcvWakeupReason_NullPtr_ShouldReportParamPointer);
+    RUN_TEST(test_LinIf_CheckWakeup_ShouldDelegateToLinTrcv);
+    RUN_TEST(test_LinIf_CheckWakeup_InvalidChannel_ShouldReportParamChannel);
+    RUN_TEST(test_LinIf_TrcvAndNodeConfig_BeforeInit_ShouldReportUninit);
+    RUN_TEST(test_LinIf_ConfiguredNAD_DefaultAndRoundTrip);
+    RUN_TEST(test_LinIf_ConfiguredNAD_InvalidParams_ShouldReportDet);
+    RUN_TEST(test_LinIf_PidTable_DefaultFromConfigAndRoundTrip);
+    RUN_TEST(test_LinIf_SetPIDTable_OversizedAndNullPtr_ShouldReportDet);
+    RUN_TEST(test_LinIf_DeInit_ShouldRestoreDefaultNadAndPidTable);
+    RUN_TEST(test_LinIf_IsSupportTpTransmit_ShouldReflectDiagnosticFrames);
+    RUN_TEST(test_LinIf_IsSupportTpTransmit_BeforeInit_ShouldReturnFalse);
 
     return UnityEnd();
 }

@@ -28,6 +28,7 @@
 #include "Csm.h"
 #include "Det.h"
 #include "SchM_SecOC.h"
+#include "NvM.h"
 #include <string.h>
 
 /*==================================================================================================
@@ -86,6 +87,20 @@ static boolean SecOC_Initialized_Local = FALSE;
 
 /* Freshness value sync master counter */
 static uint32 SecOC_SyncMasterFreshness = 0u;
+
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+typedef struct {
+    uint32 txFreshness[SECOC_NUM_TX_PDUS];
+    uint32 rxLastVerifiedFreshness[SECOC_NUM_RX_PDUS];
+    uint32 syncMasterFreshness;
+    uint32 magic;
+} SecOC_FreshnessNvMType;
+
+#define SECOC_FRESHNESS_NVM_MAGIC    (0x534F4346u)
+
+static SecOC_FreshnessNvMType SecOC_FreshnessNvMData;
+static boolean SecOC_FreshnessDirty = FALSE;
+#endif
 
 #define SECOC_STOP_SEC_VAR_CLEARED_UNSPECIFIED
 #include "SecOC_MemMap.h"
@@ -146,6 +161,48 @@ static uint32 SecOC_IncrementFreshness(uint32 freshness)
     return freshness;
 }
 
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+static void SecOC_RestoreFreshnessFromNvM(void)
+{
+    SecOC_FreshnessNvMType restored;
+    uint16 i;
+
+    (void)memset(&restored, 0, sizeof(restored));
+    if (NvM_ReadBlock((NvM_BlockIdType)SECOC_NVM_BLOCK_FRESHNESS, &restored) != E_OK) {
+        return;
+    }
+    if (restored.magic != SECOC_FRESHNESS_NVM_MAGIC) {
+        return;
+    }
+    for (i = 0u; i < (uint16)SECOC_NUM_TX_PDUS; i++) {
+        SecOC_TxPduState[i].freshnessValue = restored.txFreshness[i];
+    }
+    for (i = 0u; i < (uint16)SECOC_NUM_RX_PDUS; i++) {
+        SecOC_RxPduState[i].lastVerifiedFreshness = restored.rxLastVerifiedFreshness[i];
+    }
+    SecOC_SyncMasterFreshness = restored.syncMasterFreshness;
+}
+
+static void SecOC_ScheduleFreshnessWrite(void)
+{
+    uint16 i;
+
+    if (SecOC_FreshnessDirty == FALSE) {
+        return;
+    }
+    for (i = 0u; i < (uint16)SECOC_NUM_TX_PDUS; i++) {
+        SecOC_FreshnessNvMData.txFreshness[i] = SecOC_TxPduState[i].freshnessValue;
+    }
+    for (i = 0u; i < (uint16)SECOC_NUM_RX_PDUS; i++) {
+        SecOC_FreshnessNvMData.rxLastVerifiedFreshness[i] = SecOC_RxPduState[i].lastVerifiedFreshness;
+    }
+    SecOC_FreshnessNvMData.syncMasterFreshness = SecOC_SyncMasterFreshness;
+    SecOC_FreshnessNvMData.magic = SECOC_FRESHNESS_NVM_MAGIC;
+    (void)NvM_WriteBlock((NvM_BlockIdType)SECOC_NVM_BLOCK_FRESHNESS, &SecOC_FreshnessNvMData);
+    SecOC_FreshnessDirty = FALSE;
+}
+#endif
+
 /**
  * @brief Build authentication data
  * @req SWS_SecOC_00103
@@ -180,7 +237,9 @@ static void SecOC_BuildAuthData(const uint8* pduData, PduLengthType pduLength,
 static Std_ReturnType SecOC_GenerateAuthCode(const uint8* authData, uint16 authDataLen,
                                               uint8* authCode, uint32* authCodeLen)
 {
-    return Csm_MacGenerate(SECOC_CSM_JOB_ID_AUTH, CSM_OPERATIONMODE_STREAMSTART,
+    /* SINGLESHOT (START|FINISH): a streaming START alone never triggers the
+     * FINISH path inside Csm, so no MAC was ever produced (P1 Phase 8 fix) */
+    return Csm_MacGenerate(SECOC_CSM_JOB_ID_AUTH, CSM_OPERATIONMODE_SINGLESHOT,
                            authData, authDataLen, authCode, authCodeLen);
 }
 
@@ -192,7 +251,7 @@ static Std_ReturnType SecOC_VerifyAuthCode(const uint8* authData, uint16 authDat
                                             const uint8* authCode, uint32 authCodeLen,
                                             Csm_VerifyResultType* verifyResult)
 {
-    return Csm_MacVerify(SECOC_CSM_JOB_ID_VERIFY, CSM_OPERATIONMODE_STREAMSTART,
+    return Csm_MacVerify(SECOC_CSM_JOB_ID_VERIFY, CSM_OPERATIONMODE_SINGLESHOT,
                          authData, authDataLen, authCode, authCodeLen, verifyResult);
 }
 
@@ -206,7 +265,12 @@ static Std_ReturnType SecOC_ProcessTxPdu(PduIdType pduId)
     uint8 authData[SECOC_MAX_PDU_LENGTH + SECOC_FRESHNESS_BYTE_LEN + 1u];
     uint16 authDataLen;
     uint8 authCode[SECOC_MAX_AUTH_INFO_LEN];
-    uint32 authCodeLen = SECOC_AUTH_INFO_LENGTH;
+    /* Pass the full buffer capacity: the Csm backend digest (HMAC-SHA256,
+     * 32B) is longer than the truncated SecOC auth code (16B). Passing only
+     * the truncated length made Csm_MacGenerate fail with E_NOT_OK and the
+     * whole TX path returned before ever transmitting (P1 Phase 8 fix).
+     * Only the first SECOC_AUTH_INFO_LENGTH bytes go on wire. */
+    uint32 authCodeLen = SECOC_MAX_AUTH_INFO_LEN;
     uint8 securedPdu[SECOC_MAX_PDU_LENGTH + SECOC_FRESHNESS_TX_BYTE_LEN + SECOC_AUTH_INFO_LENGTH];
     PduLengthType securedPduLen;
     uint8 i;
@@ -224,6 +288,9 @@ static Std_ReturnType SecOC_ProcessTxPdu(PduIdType pduId)
     /* Increment freshness value */
     SecOC_TxPduState[idx].freshnessValue = 
         SecOC_IncrementFreshness(SecOC_TxPduState[idx].freshnessValue);
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+    SecOC_FreshnessDirty = TRUE;
+#endif
     
     /* Build authentication data */
     SecOC_BuildAuthData(SecOC_TxBuffers[idx].data, SecOC_TxBuffers[idx].length,
@@ -344,6 +411,9 @@ static void SecOC_ProcessRxPdu(PduIdType pduId)
         SecOC_RxPduState[idx].status = SECOC_VERIFICATIONSUCCESS_STATUS;
         SecOC_RxPduState[idx].lastResult = SECOC_VERIFICATIONSUCCESS;
         SecOC_RxPduState[idx].lastVerifiedFreshness = receivedFreshness;
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+        SecOC_FreshnessDirty = TRUE;
+#endif
         
         /* Forward verified data to upper layer */
         {
@@ -423,6 +493,11 @@ void SecOC_Init(const SecOC_ConfigType* configPtr)
     SecOC_Initialized_Local = TRUE;
     SecOC_Initialized = TRUE;
     
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+    SecOC_FreshnessDirty = FALSE;
+    SecOC_RestoreFreshnessFromNvM();
+#endif
+
     SchM_Exit_SecOC_SECOC_EXCLUSIVE_AREA_0();
 }
 
@@ -532,6 +607,178 @@ Std_ReturnType SecOC_IfTransmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr
         SecOC_TxBuffers[idx].pduId = TxPduId;
     }
 
+    return E_OK;
+}
+
+/**
+ * @brief Receive indication callback for secured PDUs (buffers the PDU;
+ *        verification happens in SecOC_MainFunctionRx)
+ * @req SWS_SecOC_00011
+ */
+void SecOC_IfRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr)
+{
+    sint16 idx;
+    
+#if (SECOC_DEV_ERROR_DETECT == STD_ON)
+    if (SecOC_Initialized_Local == FALSE) {
+        (void)Det_ReportError(SECOC_MODULE_ID, SECOC_INSTANCE_ID, SECOC_SID_IFRXINDICATION, 
+                               SECOC_E_UNINIT);
+        return;
+    }
+    
+    if (PduInfoPtr == NULL_PTR) {
+        (void)Det_ReportError(SECOC_MODULE_ID, SECOC_INSTANCE_ID, SECOC_SID_IFRXINDICATION, 
+                               SECOC_E_PARAM_POINTER);
+        return;
+    }
+#endif
+
+    idx = SecOC_GetRxPduIndex(RxPduId);
+    if (idx < 0) {
+#if (SECOC_DEV_ERROR_DETECT == STD_ON)
+        (void)Det_ReportError(SECOC_MODULE_ID, SECOC_INSTANCE_ID, SECOC_SID_IFRXINDICATION, 
+                               SECOC_E_INVALID_PDU_SDU_ID);
+#endif
+        return;
+    }
+    
+    if (SecOC_RxBuffers[idx].inUse) {
+        /* previous PDU still pending verification: drop the new one (busy) */
+        return;
+    }
+    
+    if ((PduInfoPtr->SduDataPtr != NULL_PTR) &&
+        (PduInfoPtr->SduLength > 0u) &&
+        (PduInfoPtr->SduLength <= SECOC_MAX_PDU_LENGTH)) {
+        SecOC_RxBuffers[idx].length = PduInfoPtr->SduLength;
+        (void)memcpy(SecOC_RxBuffers[idx].data, PduInfoPtr->SduDataPtr, PduInfoPtr->SduLength);
+        SecOC_RxBuffers[idx].inUse = TRUE;
+        SecOC_RxBuffers[idx].pduId = RxPduId;
+    }
+#if (SECOC_DEV_ERROR_DETECT == STD_ON)
+    else {
+        (void)Det_ReportError(SECOC_MODULE_ID, SECOC_INSTANCE_ID, SECOC_SID_IFRXINDICATION, 
+                               SECOC_E_PARAM_POINTER);
+    }
+#endif
+}
+
+/**
+ * @brief Tx confirmation callback
+ * @req SWS_SecOC_00033
+ */
+void SecOC_TxConfirmation(PduIdType TxPduId, Std_ReturnType result)
+{
+    sint16 idx;
+    
+    (void)result;
+    idx = SecOC_GetTxPduIndex(TxPduId);
+    if (idx >= 0) {
+        SecOC_TxPduState[idx].txInProgress = FALSE;
+    }
+}
+
+/**
+ * @brief Main function for TX processing: authenticates and transmits all
+ *        buffered TX PDUs
+ * @req SWS_SecOC_00020
+ */
+void SecOC_MainFunctionTx(void)
+{
+    PduIdType i;
+    
+    if (SecOC_Initialized_Local == FALSE) {
+        return;
+    }
+    
+    for (i = 0u; i < (PduIdType)SECOC_NUM_TX_PDUS; i++) {
+        if ((SecOC_TxBuffers[i].inUse) &&
+            (SecOC_TxPduState[i].txInProgress == FALSE)) {
+            SecOC_TxPduState[i].txInProgress = TRUE;
+            (void)SecOC_ProcessTxPdu(SecOC_TxBuffers[i].pduId);
+        }
+    }
+
+#if (SECOC_ENABLE_FRESHNESS_PERSISTENCE == STD_ON)
+    SecOC_ScheduleFreshnessWrite();
+#endif
+}
+
+/**
+ * @brief Main function for RX processing: verifies all buffered RX PDUs
+ * @req SWS_SecOC_00021
+ */
+void SecOC_MainFunctionRx(void)
+{
+    PduIdType i;
+    
+    if (SecOC_Initialized_Local == FALSE) {
+        return;
+    }
+    
+    for (i = 0u; i < (PduIdType)SECOC_NUM_RX_PDUS; i++) {
+        if (SecOC_RxBuffers[i].inUse) {
+            SecOC_ProcessRxPdu(SecOC_RxBuffers[i].pduId);
+        }
+    }
+}
+
+/**
+ * @brief Overrides verification status for a PDU
+ * @req SWS_SecOC_00012
+ */
+Std_ReturnType SecOC_VerifyStatusOverride(PduIdType PduId, 
+                                          SecOC_VerificationStatusType status)
+{
+    sint16 idx;
+    
+    idx = SecOC_GetRxPduIndex(PduId);
+    if (idx < 0) {
+        return E_NOT_OK;
+    }
+    
+    if ((SecOC_ConfigPtr == NULL_PTR) ||
+        (SecOC_ConfigPtr->overrideStatusAllowed != TRUE)) {
+        return E_NOT_OK;
+    }
+    
+    SecOC_RxPduState[idx].status = status;
+    return E_OK;
+}
+
+/**
+ * @brief Gets current verification status for a PDU
+ * @req SWS_SecOC_00013
+ */
+SecOC_VerificationStatusType SecOC_GetVerificationStatus(PduIdType PduId)
+{
+    sint16 idx = SecOC_GetRxPduIndex(PduId);
+    
+    if (idx < 0) {
+        return SECOC_UNVERIFIED;
+    }
+    return SecOC_RxPduState[idx].status;
+}
+
+/**
+ * @brief Gets verification result for a PDU
+ * @req SWS_SecOC_00014
+ */
+Std_ReturnType SecOC_GetVerificationResult(PduIdType PduId, 
+                                           SecOC_VerificationResultType* resultPtr)
+{
+    sint16 idx;
+    
+    if (resultPtr == NULL_PTR) {
+        return E_NOT_OK;
+    }
+    
+    idx = SecOC_GetRxPduIndex(PduId);
+    if (idx < 0) {
+        return E_NOT_OK;
+    }
+    
+    *resultPtr = SecOC_RxPduState[idx].lastResult;
     return E_OK;
 }
 

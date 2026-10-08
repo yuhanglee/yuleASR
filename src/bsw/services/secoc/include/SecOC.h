@@ -25,6 +25,12 @@
 #ifndef SECOC_H
 #define SECOC_H
 
+/**
+ * @file SecOC.h
+ * @brief SECOC module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -258,6 +264,10 @@ extern void SecOC_DeInit(void);
  * @req SWS_SecOC_00040
  */
 #if (SECOC_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void SecOC_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -268,6 +278,12 @@ extern void SecOC_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @return Result of operation
  * @req SWS_SecOC_00010
  */
+/**
+ * @brief if transmit
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType SecOC_IfTransmit(PduIdType TxPduId, const PduInfoType* PduInfoPtr);
 
 /**
@@ -277,6 +293,11 @@ extern Std_ReturnType SecOC_IfTransmit(PduIdType TxPduId, const PduInfoType* Pdu
  * @return None
  * @req SWS_SecOC_00011
  */
+/**
+ * @brief if rx indication
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ */
 extern void SecOC_IfRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 
 /**
@@ -285,6 +306,12 @@ extern void SecOC_IfRxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPt
  * @param status New verification status
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_SecOC_00012
+ */
+/**
+ * @brief verify status override
+ * @param[in] PduId Identifier
+ * @param[in] status State value
+ * @return Operation status
  */
 extern Std_ReturnType SecOC_VerifyStatusOverride(PduIdType PduId, 
                                                   SecOC_VerificationStatusType status);
@@ -304,6 +331,12 @@ extern SecOC_VerificationStatusType SecOC_GetVerificationStatus(PduIdType PduId)
  * @return E_OK if successful, E_NOT_OK otherwise
  * @req SWS_SecOC_00014
  */
+/**
+ * @brief Get requested information
+ * @param[in] PduId Identifier
+ * @param[in] resultPtr Pointer reference
+ * @return Operation status
+ */
 extern Std_ReturnType SecOC_GetVerificationResult(PduIdType PduId, 
                                                    SecOC_VerificationResultType* resultPtr);
 
@@ -315,6 +348,14 @@ extern Std_ReturnType SecOC_GetVerificationResult(PduIdType PduId,
  * @param AvailableDataPtr Pointer to available data
  * @return BufReq_ReturnType
  * @req SWS_SecOC_00030
+ */
+/**
+ * @brief copy tx data
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] RetryInfoPtr Pointer reference
+ * @param[in] AvailableDataPtr Data buffer
+ * @return Operation result
  */
 extern BufReq_ReturnType SecOC_CopyTxData(PduIdType TxPduId, 
                                            PduInfoType* PduInfoPtr,
@@ -329,6 +370,13 @@ extern BufReq_ReturnType SecOC_CopyTxData(PduIdType TxPduId,
  * @return BufReq_ReturnType
  * @req SWS_SecOC_00031
  */
+/**
+ * @brief copy rx data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @param[in] RxBufferSizePtr Data buffer
+ * @return Operation result
+ */
 extern BufReq_ReturnType SecOC_CopyRxData(PduIdType RxPduId,
                                            const PduInfoType* PduInfoPtr,
                                            PduLengthType* RxBufferSizePtr);
@@ -341,6 +389,13 @@ extern BufReq_ReturnType SecOC_CopyRxData(PduIdType RxPduId,
  * @return BufReq_ReturnType
  * @req SWS_SecOC_00032
  */
+/**
+ * @brief Start the operation
+ * @param[in] RxPduId Identifier
+ * @param[in] TpSduLength Data length
+ * @param[in] RxBufferSizePtr Data buffer
+ * @return Operation result
+ */
 extern BufReq_ReturnType SecOC_StartOfReception(PduIdType RxPduId,
                                                  PduLengthType TpSduLength,
                                                  PduLengthType* RxBufferSizePtr);
@@ -351,6 +406,11 @@ extern BufReq_ReturnType SecOC_StartOfReception(PduIdType RxPduId,
  * @param result Transmission result
  * @return None
  * @req SWS_SecOC_00033
+ */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
  */
 extern void SecOC_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
 

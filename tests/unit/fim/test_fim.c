@@ -12,6 +12,7 @@
 #include "FiM.h"
 #include "FiM_Cfg.h"
 
+/* @req SWR-005.1-06 */
 static void test_FiM_Init(void **state) {
     (void)state;
     const FiM_ConfigType* config = NULL;

@@ -1,6 +1,8 @@
 /*
  * NvM_Private.h - Private internal header for NvM module
  * AUTOSAR NvM private types and functions
+ * @file NvM_Private.h
+ * @brief NVRAM Manager internal definitions
  */
 #ifndef NVM_PRIVATE_H
 #define NVM_PRIVATE_H

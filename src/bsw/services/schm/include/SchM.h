@@ -46,20 +46,51 @@ typedef struct {
 } SchM_ConfigType;
 
 /** @req SWS_SchM_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void SchM_Init(const SchM_ConfigType* ConfigPtr);
 /** @req SWS_SchM_00002 */
+/**
+ * @brief De-initialize the module
+ */
 void SchM_DeInit(void);
 /** @req SWS_SchM_00005 */
+/**
+ * @brief Start the operation
+ * @return Operation status
+ */
 Std_ReturnType SchM_Start(void);
 /** @req SWS_SchM_00006 */
+/**
+ * @brief Stop the operation
+ * @return Operation status
+ */
 Std_ReturnType SchM_Stop(void);
 /** @req SWS_SchM_00007 */
+/**
+ * @brief Set configuration value
+ * @param[in] ScheduleId Identifier
+ * @return Operation status
+ */
 Std_ReturnType SchM_SetScheduleTable(uint8 ScheduleId);
 /** @req SWS_SchM_00008 */
+/**
+ * @brief Get requested information
+ * @return Result code
+ */
 uint8 SchM_GetScheduleTable(void);
 /** @req SWS_SchM_00004 */
+/**
+ * @brief Process periodic tasks
+ */
 void SchM_MainFunction(void);
 /** @req SWS_SchM_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void SchM_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* SCHM_H */

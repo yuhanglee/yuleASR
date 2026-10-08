@@ -56,6 +56,7 @@ void tearDown(void) {}
 
 /* ===== MCAL-SHALL-001: 标准 AUTOSAR API ===== */
 void test_MCAL001_Adc_Init(void) { Adc_Init(&AdcCfg); TEST_ASSERT_TRUE(sizeof(AdcCfg) > 0U); Adc_DeInit(); }
+/* @req MCAL-SHALL-001 */
 void test_MCAL001_Can_Init(void) { Can_Init(&CanCfg); TEST_ASSERT_TRUE(sizeof(CanCfg) > 0U); }
 void test_MCAL001_Dio_Write(void) { Dio_WriteChannel(TestCh, STD_HIGH); Dio_LevelType v=Dio_ReadChannel(TestCh); TEST_ASSERT_TRUE(v==STD_HIGH||v==STD_LOW); }
 void test_MCAL001_Dio_Read(void) { Dio_LevelType r=Dio_ReadChannel(TestCh); TEST_ASSERT_TRUE(r==STD_HIGH||r==STD_LOW); }
@@ -69,6 +70,7 @@ void test_MCAL001_Mcu_Init(void) { Std_ReturnType mcu_init_ret = Mcu_Init(&McuCf
 void test_MCAL001_Lin_Init(void) { Lin_Init(&LinCfg); TEST_ASSERT_TRUE(sizeof(LinCfg) > 0U); }
 
 /* ===== MCAL-SHALL-002: 同步/中断模式 ===== */
+/* @req MCAL-SHALL-002 */
 void test_MCAL002_Spi_Sync(void) {
     uint8 tx[4]={0xAA,0xBB,0xCC,0xDD}, rx[4]={0};
     Std_ReturnType sr = Spi_SyncTransmit(0U, tx, rx, 4U);

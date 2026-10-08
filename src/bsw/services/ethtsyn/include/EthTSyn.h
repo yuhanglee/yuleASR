@@ -56,23 +56,65 @@ typedef enum {
 } EthTSyn_PortStateType;
 
 /* Initialization */
+/**
+ * @brief Initialize the module
+ * @param[in] config Configuration reference
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_Init(const EthTSyn_ConfigType* config);
+/**
+ * @brief De-initialize the module
+ */
 void EthTSyn_DeInit(void);
 
 /* Main function */
+/**
+ * @brief Process periodic tasks
+ */
 void EthTSyn_MainFunction(void);
 
 /* Time synchronization */
+/**
+ * @brief Get requested information
+ * @param[in] timestamp timestamp value
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_GetTime(EthTSyn_TimestampType* timestamp);
+/**
+ * @brief Set configuration value
+ * @param[in] timestamp timestamp value
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_SetTime(const EthTSyn_TimestampType* timestamp);
+/**
+ * @brief adjust rate
+ * @param[in] rateNumerator rateNumerator value
+ * @param[in] rateDenominator rateDenominator value
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_AdjustRate(int32 rateNumerator, int32 rateDenominator);
 
 /* Port management */
+/**
+ * @brief Get current module state
+ * @param[in] portIndex Index value
+ * @param[in] state State value
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_GetPortState(uint8 portIndex, EthTSyn_PortStateType* state);
+/**
+ * @brief Get requested information
+ * @param[in] identity Identifier
+ * @return Operation status
+ */
 Std_ReturnType EthTSyn_GetClockIdentity(EthTSyn_ClockIdentityType* identity);
 
 /* Version info */
 #if (ETHTSYN_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void EthTSyn_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 

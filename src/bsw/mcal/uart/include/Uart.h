@@ -200,22 +200,51 @@ typedef void (*Uart_ErrorNotificationType)(uint8 ErrorCode);
  *===========================================================================*/
 
 /* 初始化和反初始化 */
+/**
+ * @brief Initialize the module
+ * @param[in] Config Configuration reference
+ */
 extern void Uart_Init(const Uart_ConfigType* Config);
+/**
+ * @brief De-initialize the module
+ * @param[in] Config Configuration reference
+ */
 extern void Uart_DeInit(void);
 
 /* 发送函数 */
+/**
+ * @brief send
+ * @param[in] Channel Channel identifier
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_Send(
     Uart_ChannelType Channel,
     const uint8* Data,
     uint32 Length
 );
 
+/**
+ * @brief send d m a
+ * @param[in] Channel Channel identifier
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_SendDMA(
     Uart_ChannelType Channel,
     const uint8* Data,
     uint32 Length
 );
 
+/**
+ * @brief send interrupt
+ * @param[in] Channel Channel identifier
+ * @param[in] Data Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_SendInterrupt(
     Uart_ChannelType Channel,
     const uint8* Data,
@@ -223,18 +252,39 @@ extern Std_ReturnType Uart_SendInterrupt(
 );
 
 /* 接收函数 */
+/**
+ * @brief Receive data
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_Receive(
     Uart_ChannelType Channel,
     uint8* Buffer,
     uint32 Length
 );
 
+/**
+ * @brief Receive data
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_ReceiveDMA(
     Uart_ChannelType Channel,
     uint8* Buffer,
     uint32 Length
 );
 
+/**
+ * @brief Receive data
+ * @param[in] Channel Channel identifier
+ * @param[in] Buffer Data buffer
+ * @param[in] Length Data length
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_ReceiveInterrupt(
     Uart_ChannelType Channel,
     uint8* Buffer,
@@ -242,29 +292,77 @@ extern Std_ReturnType Uart_ReceiveInterrupt(
 );
 
 /* 状态和结果 */
+/**
+ * @brief Get current status
+ * @param[in] Channel Channel identifier
+ * @return Operation status
+ */
 extern Uart_StatusType Uart_GetStatus(Uart_ChannelType Channel);
+/**
+ * @brief Get requested information
+ * @param[in] Channel Channel identifier
+ * @return Operation result
+ */
 extern Uart_ResultType Uart_GetTxResult(Uart_ChannelType Channel);
+/**
+ * @brief Get requested information
+ * @param[in] Channel Channel identifier
+ * @return Operation result
+ */
 extern Uart_ResultType Uart_GetRxResult(Uart_ChannelType Channel);
 
 /* 波特率设置 */
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] BaudRate BaudRate value
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_SetBaudRate(
     Uart_ChannelType Channel,
     uint32 BaudRate
 );
 
 /* 中断管理 */
+/**
+ * @brief Enable the feature
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_EnableInterrupt(Uart_ChannelType Channel);
+/**
+ * @brief Disable the feature
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_DisableInterrupt(Uart_ChannelType Channel);
 
 /* DMA管理 */
 #if (UART_DMA_SUPPORT == STD_ON)
+/**
+ * @brief Enable the feature
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_EnableDMA(Uart_ChannelType Channel);
+/**
+ * @brief Disable the feature
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_DisableDMA(Uart_ChannelType Channel);
 #endif
 
 /* FIFO管理 */
 #if (UART_FIFO_SUPPORT == STD_ON)
+/**
+ * @brief clear f i f o
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_ClearFIFO(Uart_ChannelType Channel);
+/**
+ * @brief Set configuration value
+ * @param[in] Channel Channel identifier
+ * @param[in] TxThreshold TxThreshold value
+ * @param[in] RxThreshold RxThreshold value
+ * @return Operation status
+ */
 extern Std_ReturnType Uart_SetFifoThreshold(
     Uart_ChannelType Channel,
     uint8 TxThreshold,
@@ -273,17 +371,33 @@ extern Std_ReturnType Uart_SetFifoThreshold(
 #endif
 
 /* 传输中止 */
+/**
+ * @brief abort
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_Abort(Uart_ChannelType Channel);
 
 /* 版本信息 */
 #if (UART_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] VersionInfo Version info
+ */
 extern void Uart_GetVersionInfo(Std_VersionInfoType* VersionInfo);
 #endif
 
 /* 主函数 (轮询模式需要) */
+/**
+ * @brief Process periodic tasks
+ * @param[in] VersionInfo Version info
+ */
 extern void Uart_MainFunction(void);
 
 /* 中断处理函数 */
+/**
+ * @brief isr handler
+ * @param[in] Channel Channel identifier
+ */
 extern void Uart_IsrHandler(Uart_ChannelType Channel);
 
 #endif /* UART_H */

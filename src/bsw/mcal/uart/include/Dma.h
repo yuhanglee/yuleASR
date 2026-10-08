@@ -3,6 +3,8 @@
  *
  * Minimal DMA driver interface used by the Uart driver's DMA transfer path.
  * TODO: replace with a real DMA (eDMA) driver for production builds.
+ * @file Dma.h
+ * @brief DMA driver interface stub
  *================================================================================================*/
 #ifndef DMA_H
 #define DMA_H

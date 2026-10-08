@@ -147,14 +147,47 @@ STATIC void Com_PackSignal(const Com_SignalConfigType* SignalPtr, const void* Si
     uint16 startByte;
     uint8 startBit;
     uint8 bitSize;
-    uint8 i;
+    uint16 i;
 
     if ((SignalPtr != NULL_PTR) && (SignalDataPtr != NULL_PTR) && (IPduDataPtr != NULL_PTR))
     {
+        uint8 staged[4];
+        uint8 numBytes;
+        uint8 j;
+
         value = Com_GetSignalValueAsUint32(SignalPtr, SignalDataPtr);
         bitSize = SignalPtr->BitSize;
 
-        if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
+        /* P1 Phase 8: byte-aligned fast path. When the signal starts at a
+         * byte boundary and spans whole bytes, the bit loop degenerates to
+         * a byte-order staging + memcpy. The value is staged byte-by-byte
+         * per endianness so the written bytes stay bit-exact with the
+         * legacy bit loop on any host byte order. */
+        if (((SignalPtr->BitPosition % 8U) == 0U) &&
+            ((bitSize % 8U) == 0U) &&
+            (bitSize <= 32U))
+        {
+            numBytes = bitSize / 8U;
+            startByte = SignalPtr->BitPosition / 8U;
+
+            if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
+            {
+                for (j = 0U; j < numBytes; j++)
+                {
+                    staged[j] = (uint8)(value >> (8U * j));
+                }
+            }
+            else /* COM_BIG_ENDIAN */
+            {
+                for (j = 0U; j < numBytes; j++)
+                {
+                    staged[j] = (uint8)(value >> (8U * (numBytes - 1U - j)));
+                }
+            }
+
+            (void)memcpy(&IPduDataPtr[startByte], staged, numBytes);
+        }
+        else if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
         {
             startByte = SignalPtr->BitPosition / 8U;
             startBit = SignalPtr->BitPosition % 8U;
@@ -209,13 +242,45 @@ STATIC void Com_UnpackSignal(const Com_SignalConfigType* SignalPtr, const uint8*
     uint16 startByte;
     uint8 startBit;
     uint8 bitSize;
-    uint8 i;
+    uint16 i;
 
     if ((SignalPtr != NULL_PTR) && (IPduDataPtr != NULL_PTR) && (SignalDataPtr != NULL_PTR))
     {
+        uint8 staged[4];
+        uint8 numBytes;
+        uint8 j;
+
         bitSize = SignalPtr->BitSize;
 
-        if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
+        /* P1 Phase 8: byte-aligned fast path (mirror of Com_PackSignal).
+         * Copy whole bytes with memcpy, then reassemble the value per
+         * endianness — bit-exact with the legacy bit loop. */
+        if (((SignalPtr->BitPosition % 8U) == 0U) &&
+            ((bitSize % 8U) == 0U) &&
+            (bitSize <= 32U))
+        {
+            numBytes = bitSize / 8U;
+            startByte = SignalPtr->BitPosition / 8U;
+
+            (void)memcpy(staged, &IPduDataPtr[startByte], numBytes);
+            value = 0U;
+
+            if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
+            {
+                for (j = 0U; j < numBytes; j++)
+                {
+                    value |= ((uint32)staged[j] << (8U * j));
+                }
+            }
+            else /* COM_BIG_ENDIAN */
+            {
+                for (j = 0U; j < numBytes; j++)
+                {
+                    value |= ((uint32)staged[j] << (8U * (numBytes - 1U - j)));
+                }
+            }
+        }
+        else if (SignalPtr->Endianness == COM_LITTLE_ENDIAN)
         {
             startByte = SignalPtr->BitPosition / 8U;
             startBit = SignalPtr->BitPosition % 8U;
@@ -395,7 +460,7 @@ STATIC const Com_SignalConfigType* Com_GetSignalConfig(Com_SignalIdType SignalId
 STATIC const Com_IPduConfigType* Com_GetIPduConfig(PduIdType PduId)
 {
     const Com_IPduConfigType* result = NULL_PTR;
-    uint8 i;
+    uint16 i;
 
     if ((PduId < COM_NUM_OF_IPDUS) && (Com_InternalState.ConfigPtr != NULL_PTR))
     {
@@ -422,7 +487,7 @@ STATIC const Com_IPduConfigType* Com_GetIPduConfig(PduIdType PduId)
 /** @req SWS_Com_00001 */
 void Com_Init(const Com_ConfigType* config)
 {
-    uint8 i;
+    uint16 i;
     uint8 j;
 
 #if (COM_DEV_ERROR_DETECT == STD_ON)
@@ -495,7 +560,7 @@ void Com_DeInit(void)
  * @brief   Send signal
  */
 /** @req SWS_Com_00003 */
-uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
+Std_ReturnType Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     const Com_SignalConfigType* signalConfig;
@@ -569,7 +634,7 @@ uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
  * @brief   Receive signal
  */
 /** @req SWS_Com_00004 */
-uint8 Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
+Std_ReturnType Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     const Com_SignalConfigType* signalConfig;
@@ -614,7 +679,7 @@ uint8 Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
  * @brief   Send signal group
  */
 /** @req SWS_Com_00005 */
-uint8 Com_SendSignalGroup(Com_SignalGroupIdType SignalGroupId)
+Std_ReturnType Com_SendSignalGroup(Com_SignalGroupIdType SignalGroupId)
 {
     uint8 result = COM_SERVICE_NOT_OK;
 
@@ -651,7 +716,7 @@ uint8 Com_SendSignalGroup(Com_SignalGroupIdType SignalGroupId)
  * @brief   Receive signal group
  */
 /** @req SWS_Com_00006 */
-uint8 Com_ReceiveSignalGroup(Com_SignalGroupIdType SignalGroupId)
+Std_ReturnType Com_ReceiveSignalGroup(Com_SignalGroupIdType SignalGroupId)
 {
     uint8 result = COM_SERVICE_NOT_OK;
 
@@ -681,7 +746,7 @@ uint8 Com_ReceiveSignalGroup(Com_SignalGroupIdType SignalGroupId)
  * @brief   Update shadow signal
  */
 /** @req SWS_Com_00007 */
-uint8 Com_UpdateShadowSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
+Std_ReturnType Com_UpdateShadowSignal(Com_SignalIdType SignalId, const void* SignalDataPtr)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     const Com_SignalConfigType* signalConfig;
@@ -716,7 +781,7 @@ uint8 Com_UpdateShadowSignal(Com_SignalIdType SignalId, const void* SignalDataPt
  * @brief   Receive shadow signal
  */
 /** @req SWS_Com_00008 */
-uint8 Com_ReceiveShadowSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
+Std_ReturnType Com_ReceiveShadowSignal(Com_SignalIdType SignalId, void* SignalDataPtr)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     const Com_SignalConfigType* signalConfig;
@@ -895,7 +960,7 @@ void Com_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr)
 /** @req SWS_Com_00013 */
 void Com_MainFunctionRx(void)
 {
-    uint8 i;
+    uint16 i;
     const Com_IPduConfigType* ipduConfig;
 
     if (Com_InternalState.State == COM_STATE_INIT)
@@ -928,7 +993,7 @@ void Com_MainFunctionRx(void)
 /** @req SWS_Com_00014 */
 void Com_MainFunctionTx(void)
 {
-    uint8 i;
+    uint16 i;
     const Com_IPduConfigType* ipduConfig;
 
     if (Com_InternalState.State == COM_STATE_INIT)
@@ -978,7 +1043,7 @@ void Com_MainFunctionTx(void)
 void Com_MainFunctionRouteSignals(void)
 {
 #if (COM_GATEWAY_SUPPORT == STD_ON)
-    uint8 i;
+    uint16 i;
 
     if (Com_InternalState.State == COM_STATE_INIT)
     {
@@ -1028,7 +1093,7 @@ void Com_GetVersionInfo(Std_VersionInfoType* versioninfo)
 /** @req SWS_Com_00018 */
 void Com_ClearIpduGroupVector(Com_IpduGroupVector ipduGroupVector)
 {
-    uint8 i;
+    uint16 i;
     for (i = 0U; i < ((COM_NUM_OF_IPDU_GROUPS + 7U) / 8U); i++)
     {
         ipduGroupVector[i] = 0U;
@@ -1056,18 +1121,42 @@ void Com_ClearIpduGroup(Com_IpduGroupVector ipduGroupVector, Com_IpduGroupIdType
 /** @req SWS_Com_00021 */
 void Com_IpduGroupControl(Com_IpduGroupVector ipduGroupVector, boolean enable)
 {
-    uint8 i;
+    uint16 i;
+    uint8 b;
+    const Com_ConfigType* cfg = Com_InternalState.ConfigPtr;
+
+    /* P1 Phase 8 fix: honor the caller-supplied group vector instead of
+     * globally (de)activating every I-PDU. Only I-PDUs whose group bit is
+     * set in ipduGroupVector are started (enable == TRUE) or stopped
+     * (enable == FALSE), per SWS_Com_00021 / SWS_Com_00207-00208. The
+     * I-PDU -> group assignment comes from Com_IPduConfigType.IpduGroupRef;
+     * I-PDUs outside the configured range or in groups not covered by the
+     * vector keep their current state. */
     for (i = 0U; i < COM_NUM_OF_IPDUS; i++)
     {
-        Com_InternalState.IPduStates[i].GroupEnabled = enable;
+        if ((cfg != NULL_PTR) && (cfg->IPdus != NULL_PTR) && (i < cfg->NumIPdus))
+        {
+            Com_IpduGroupIdType grp = cfg->IPdus[i].IpduGroupRef;
+
+            if ((grp < COM_NUM_OF_IPDU_GROUPS) &&
+                ((ipduGroupVector[grp / 8U] & (uint8)(1U << (grp % 8U))) != 0U))
+            {
+                Com_InternalState.IPduStates[i].GroupEnabled = enable;
+            }
+        }
     }
-    (void)ipduGroupVector;
+
+    /* Keep the module-wide group vector in sync with the requested state */
+    for (b = 0U; b < (uint8)(((COM_NUM_OF_IPDU_GROUPS + 7U) / 8U)); b++)
+    {
+        Com_InternalState.IPduGroupVector[b] = ipduGroupVector[b];
+    }
 }
 
 /** @req SWS_Com_00022 */
 void Com_ReceptionDMControl(Com_IpduGroupVector ipduGroupVector, boolean Enable)
 {
-    uint8 i;
+    uint16 i;
 
 #if (COM_DEV_ERROR_DETECT == STD_ON)
     if (Com_InternalState.State != COM_STATE_INIT)
@@ -1098,7 +1187,7 @@ void Com_DisableReceptionDM(Com_IpduGroupVector ipduGroupVector)
 
 /* Stub functions for unimplemented features */
 /** @req SWS_Com_00025 */
-uint8 Com_InvalidateSignal(Com_SignalIdType SignalId)
+Std_ReturnType Com_InvalidateSignal(Com_SignalIdType SignalId)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     const Com_SignalConfigType* signalConfig;
@@ -1144,7 +1233,7 @@ uint8 Com_InvalidateSignal(Com_SignalIdType SignalId)
 }
 
 /** @req SWS_Com_00026 */
-uint8 Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId)
+Std_ReturnType Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId)
 {
     uint8 result = COM_SERVICE_NOT_OK;
     uint16 i;
@@ -1178,7 +1267,7 @@ uint8 Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId)
 }
 
 /** @req SWS_Com_00027 */
-uint8 Com_SendDynSignal(Com_SignalIdType SignalId, const void* SignalDataPtr, uint16 Length)
+Std_ReturnType Com_SendDynSignal(Com_SignalIdType SignalId, const void* SignalDataPtr, uint16 Length)
 {
     (void)SignalId;
     (void)SignalDataPtr;
@@ -1187,7 +1276,7 @@ uint8 Com_SendDynSignal(Com_SignalIdType SignalId, const void* SignalDataPtr, ui
 }
 
 /** @req SWS_Com_00028 */
-uint8 Com_ReceiveDynSignal(Com_SignalIdType SignalId, void* SignalDataPtr, uint16* Length)
+Std_ReturnType Com_ReceiveDynSignal(Com_SignalIdType SignalId, void* SignalDataPtr, uint16* Length)
 {
     (void)SignalId;
     (void)SignalDataPtr;

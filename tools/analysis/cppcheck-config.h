@@ -176,6 +176,48 @@
 /* ── CSM platform config ── */
 #define CDR_MAX_STRING_LENGTH              256u
 
+/* ── CanNm (CAN Network Management) config ── */
+#define CANNM_NUMBER_OF_CHANNELS             4u
+#define CANNM_MAIN_FUNCTION_PERIOD_MS        10u
+#define CANNM_USER_DATA_LENGTH               8u
+#define CANNM_DEV_ERROR_DETECT               STD_ON
+#define CANNM_STATE_CHANGE_IND_ENABLED       STD_ON
+#define CANNM_REMOTE_SLEEP_IND_CALLBACK      STD_ON
+#define CANNM_REMOTE_SLEEP_IND_TIME          500u
+
+/* CanNm SID (Service ID) constants */
+#define CANNM_SID_PASSIVE_STARTUP            0x01u
+#define CANNM_SID_NETWORK_REQUEST            0x02u
+#define CANNM_SID_NETWORK_RELEASE            0x03u
+#define CANNM_SID_SET_USER_DATA              0x04u
+#define CANNM_SID_GET_USER_DATA              0x05u
+#define CANNM_SID_GET_STATE                  0x0Bu
+#define CANNM_SID_DISABLE_COMMUNICATION      0x0Cu
+#define CANNM_SID_ENABLE_COMMUNICATION       0x0Du
+#define CANNM_SID_SET_SLEEP_READY_BIT        0x12u
+
+/* CanNm state enum values */
+#define CANNM_STATE_BUS_SLEEP_MODE           0u
+#define CANNM_STATE_PREPARE_BUS_SLEEP_MODE   1u
+#define CANNM_STATE_READY_SLEEP_MODE         2u
+#define CANNM_STATE_NORMAL_OPERATION_MODE    3u
+#define CANNM_STATE_REPEAT_MESSAGE_MODE      4u
+
+/* ── EthSM (Ethernet State Manager) config ── */
+#define ETHSM_MAX_RETRIES                    3u
+#define ETHSM_NETWORK_0                      0u
+#define ETHSM_NETWORK_1                      1u
+#define ETHSM_TIMEOUT_WAIT_TRCVLINK          5000u
+#define ETHSM_TIMEOUT_WAIT_ONLINE            10000u
+
+/* ── TcpIp state constants ── */
+#define TCPIP_STATE_OFFLINE                  0u
+#define TCPIP_STATE_ONLINE                   1u
+#define TCPIP_STATE_ONHOLD                   2u
+
+/* ── AUTOSAR PDU types (for cppcheck type resolution) ── */
+typedef unsigned short PduIdType;
+
 /* ── SomeIpXf config ── */
 #define SomeIpXf_ProtocolVersion           1u
 #define SomeIpXf_InterfaceVersion          1u

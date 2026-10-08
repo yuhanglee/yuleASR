@@ -1,5 +1,5 @@
 /* 
- * @file test_ecuc.c
+ * @file test_ecuC.c
  * @brief ECUC 模块单元测试
  */
 
@@ -7,17 +7,24 @@
 
 #include <unity.h>
 #include "ecuc.h"
+#include <string.h>
 
 void setUp(void) {}
 void tearDown(void) {}
 
 /** @req SWS_EcuC_00001 */
 void test_ecuc_Init_should_initialize(void) {
-    TEST_IGNORE_MESSAGE("API stub");
+    /* Init with NULL_PTR should not crash (DET reports error internally) */
+    EcuC_Init(NULL_PTR);
+    TEST_PASS();
 }
 
 void test_ecuc_GetVersionInfo_should_return_version(void) {
-    TEST_IGNORE_MESSAGE("API stub");
+    Std_VersionInfoType versionInfo;
+    memset(&versionInfo, 0, sizeof(Std_VersionInfoType));
+    EcuC_GetVersionInfo(&versionInfo);
+    TEST_ASSERT_EQUAL(ECUC_VENDOR_ID, versionInfo.vendorID);
+    TEST_ASSERT_NOT_EQUAL(0, versionInfo.sw_major_version);
 }
 
 int main(void) {

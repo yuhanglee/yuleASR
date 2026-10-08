@@ -25,6 +25,12 @@
 #ifndef MEM_H
 #define MEM_H
 
+/**
+ * @file Mem.h
+ * @brief MEM module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -222,6 +228,10 @@ extern void Mem_DeInit(void);
  * @req SWS_Mem_00003
  */
 #if (MEM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 extern void Mem_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -231,6 +241,12 @@ extern void Mem_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param Alignment Required alignment (power of 2, >= MEM_MIN_ALIGNMENT)
  * @return Handle to allocated memory or MEM_INVALID_HANDLE
  * @req SWS_Mem_00010
+ */
+/**
+ * @brief allocate
+ * @param[in] Size Data length
+ * @param[in] Alignment Alignment value
+ * @return Operation result
  */
 extern Mem_HandleType Mem_Allocate(uint32 Size, uint8 Alignment);
 
@@ -248,6 +264,12 @@ extern Std_ReturnType Mem_Free(Mem_HandleType Handle);
  * @param NewSize New size in bytes
  * @return Handle to reallocated memory or MEM_INVALID_HANDLE
  * @req SWS_Mem_00012
+ */
+/**
+ * @brief reallocate
+ * @param[in] Handle Handle value
+ * @param[in] NewSize Data length
+ * @return Operation result
  */
 extern Mem_HandleType Mem_Reallocate(Mem_HandleType Handle, uint32 NewSize);
 
@@ -272,6 +294,12 @@ extern Mem_StatusType Mem_GetStatus(void);
  * @param InfoPtr Pointer to info structure to fill
  * @return E_OK if successful, E_NOT_OK if invalid pool
  * @req SWS_Mem_00021
+ */
+/**
+ * @brief Get requested information
+ * @param[in] PoolIndex Index value
+ * @param[in] InfoPtr Pointer reference
+ * @return Operation status
  */
 extern Std_ReturnType Mem_GetMemInfo(uint8 PoolIndex, Mem_InfoType* InfoPtr);
 

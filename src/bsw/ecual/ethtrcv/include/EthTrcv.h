@@ -19,6 +19,12 @@
 #ifndef ETHTRCV_H
 #define ETHTRCV_H
 
+/**
+ * @file EthTrcv.h
+ * @brief ETHTRCV module public API
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

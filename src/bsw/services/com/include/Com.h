@@ -216,6 +216,11 @@ typedef struct {
     uint8 NumRepetitions;
     uint16 TimeBetweenRepetitions;
     uint16 TimePeriod;
+    /** @brief I-PDU group this I-PDU belongs to, consumed by
+     *  Com_IpduGroupControl (P1 Phase 8). Appended at the end of the
+     *  struct so existing positional initializers that omit it default
+     *  to 0 (= group 0) and stay source-compatible. */
+    Com_IpduGroupIdType IpduGroupRef;
 } Com_IPduConfigType;
 
 /** @brief Type for COM configuration */
@@ -248,6 +253,10 @@ typedef struct {
  * @pre None
  * @post COM module initialized
  */
+/**
+ * @brief Initialize the module
+ * @param[in] config Configuration reference
+ */
 void Com_Init(const Com_ConfigType* config);
 
 /**
@@ -267,6 +276,11 @@ void Com_DeInit(void);
  * @pre COM module initialized
  * @post I-PDU groups started
  */
+/**
+ * @brief ipdu group control
+ * @param[in] IpduGroupVector Group identifier
+ * @param[in] Initialize Initialize value
+ */
 void Com_IpduGroupControl(Com_IpduGroupVector IpduGroupVector, boolean Initialize);
 
 /**
@@ -278,6 +292,11 @@ void Com_IpduGroupControl(Com_IpduGroupVector IpduGroupVector, boolean Initializ
  * @pre COM module initialized
  * @post Deadline monitoring enabled/disabled
  */
+/**
+ * @brief reception d m control
+ * @param[in] IpduGroupVector Group identifier
+ * @param[in] Enable Enable value
+ */
 void Com_ReceptionDMControl(Com_IpduGroupVector IpduGroupVector, boolean Enable);
 
 /**
@@ -288,6 +307,10 @@ void Com_ReceptionDMControl(Com_IpduGroupVector IpduGroupVector, boolean Enable)
  * @pre COM module initialized
  * @post Deadline monitoring enabled for specified groups
  */
+/**
+ * @brief Enable the feature
+ * @param[in] IpduGroupVector Group identifier
+ */
 void Com_EnableReceptionDM(Com_IpduGroupVector IpduGroupVector);
 
 /**
@@ -297,6 +320,10 @@ void Com_EnableReceptionDM(Com_IpduGroupVector IpduGroupVector);
  *
  * @pre COM module initialized
  * @post Deadline monitoring disabled for specified groups
+ */
+/**
+ * @brief Disable the feature
+ * @param[in] IpduGroupVector Group identifier
  */
 void Com_DisableReceptionDM(Com_IpduGroupVector IpduGroupVector);
 
@@ -323,6 +350,10 @@ Com_ConfigIdType Com_GetConfigurationId(void);
  * @post Version information stored
  */
 #if (COM_VERSION_INFO_API == STD_ON)
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void Com_GetVersionInfo(Std_VersionInfoType* versioninfo);
 #endif
 
@@ -332,7 +363,7 @@ void Com_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @param[in] SignalId ID of the signal to be sent
  * @param[in] SignalDataPtr Pointer to the signal data
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - COM_BUSY: Transmission is currently ongoing
  *         - E_OK: Service accepted
@@ -340,7 +371,13 @@ void Com_GetVersionInfo(Std_VersionInfoType* versioninfo);
  * @pre COM module initialized
  * @post Signal queued for transmission
  */
-uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr);
+/**
+ * @brief send signal
+ * @param[in] SignalId Identifier
+ * @param[in] SignalDataPtr Data buffer
+ * @return Result code
+ */
+Std_ReturnType Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr);
 
 /**
  * @brief Receives a signal
@@ -348,21 +385,27 @@ uint8 Com_SendSignal(Com_SignalIdType SignalId, const void* SignalDataPtr);
  * @param[in] SignalId ID of the signal to be received
  * @param[out] SignalDataPtr Pointer to the signal data buffer
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - E_OK: Service accepted
  *
  * @pre COM module initialized
  * @post Signal data stored in buffer
  */
-uint8 Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr);
+/**
+ * @brief Receive data
+ * @param[in] SignalId Identifier
+ * @param[in] SignalDataPtr Data buffer
+ * @return Result code
+ */
+Std_ReturnType Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr);
 
 /**
  * @brief Sends a signal group
  *
  * @param[in] SignalGroupId ID of the signal group to be sent
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - COM_BUSY: Transmission is currently ongoing
  *         - E_OK: Service accepted
@@ -370,49 +413,69 @@ uint8 Com_ReceiveSignal(Com_SignalIdType SignalId, void* SignalDataPtr);
  * @pre COM module initialized
  * @post Signal group queued for transmission
  */
-uint8 Com_SendSignalGroup(Com_SignalGroupIdType SignalGroupId);
+/**
+ * @brief send signal group
+ * @param[in] SignalGroupId Identifier
+ * @return Result code
+ */
+Std_ReturnType Com_SendSignalGroup(Com_SignalGroupIdType SignalGroupId);
 
 /**
  * @brief Receives a signal group
  *
  * @param[in] SignalGroupId ID of the signal group to be received
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - E_OK: Service accepted
  *
  * @pre COM module initialized
  * @post Signal group data stored
  */
-uint8 Com_ReceiveSignalGroup(Com_SignalGroupIdType SignalGroupId);
+/**
+ * @brief Receive data
+ * @param[in] SignalGroupId Identifier
+ * @return Result code
+ */
+Std_ReturnType Com_ReceiveSignalGroup(Com_SignalGroupIdType SignalGroupId);
 
 /**
  * @brief Invalidates a signal
  *
  * @param[in] SignalId ID of the signal to be invalidated
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - E_OK: Service accepted
  *
  * @pre COM module initialized
  * @post Signal set to invalid value
  */
-uint8 Com_InvalidateSignal(Com_SignalIdType SignalId);
+/**
+ * @brief invalidate signal
+ * @param[in] SignalId Identifier
+ * @return Result code
+ */
+Std_ReturnType Com_InvalidateSignal(Com_SignalIdType SignalId);
 
 /**
  * @brief Invalidates a signal group
  *
  * @param[in] SignalGroupId ID of the signal group to be invalidated
  *
- * @return uint8
+ * @return Std_ReturnType
  *         - COM_SERVICE_NOT_AVAILABLE: Service not available
  *         - E_OK: Service accepted
  *
  * @pre COM module initialized
  * @post Signal group set to invalid values
  */
-uint8 Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId);
+/**
+ * @brief invalidate signal group
+ * @param[in] SignalGroupId Identifier
+ * @return Result code
+ */
+Std_ReturnType Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId);
 
 /**
  * @brief Triggers the transmission of an I-PDU
@@ -426,6 +489,11 @@ uint8 Com_InvalidateSignalGroup(Com_SignalGroupIdType SignalGroupId);
  * @pre COM module initialized
  * @post I-PDU transmission triggered
  */
+/**
+ * @brief Trigger action
+ * @param[in] PduId Identifier
+ * @return Operation status
+ */
 Std_ReturnType Com_TriggerIPDUSend(PduIdType PduId);
 
 /**
@@ -438,6 +506,12 @@ Std_ReturnType Com_TriggerIPDUSend(PduIdType PduId);
  *         - E_OK: Data provided
  *         - E_NOT_OK: Data not provided
  */
+/**
+ * @brief Trigger action
+ * @param[in] TxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
+ * @return Operation status
+ */
 Std_ReturnType Com_TriggerTransmit(PduIdType TxPduId, PduInfoType* PduInfoPtr);
 
 /**
@@ -448,6 +522,11 @@ Std_ReturnType Com_TriggerTransmit(PduIdType TxPduId, PduInfoType* PduInfoPtr);
  *
  * @pre COM module initialized
  * @post Received data copied to IPDU buffer
+ */
+/**
+ * @brief Receive data
+ * @param[in] RxPduId Identifier
+ * @param[in] PduInfoPtr Pointer reference
  */
 void Com_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
 
@@ -460,6 +539,11 @@ void Com_RxIndication(PduIdType RxPduId, const PduInfoType* PduInfoPtr);
  * @pre COM module initialized
  * @post IPDU transmission state updated
  */
+/**
+ * @brief Transmit data
+ * @param[in] TxPduId Identifier
+ * @param[in] result Result value
+ */
 void Com_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
 
 /**
@@ -470,6 +554,11 @@ void Com_TxConfirmation(PduIdType TxPduId, Std_ReturnType result);
  *
  * @pre COM module initialized
  * @post Transmission mode switched
+ */
+/**
+ * @brief switch ipdu tx mode
+ * @param[in] PduId Identifier
+ * @param[in] Mode Operation mode
  */
 void Com_SwitchIpduTxMode(PduIdType PduId, ComTxModeModeType Mode);
 

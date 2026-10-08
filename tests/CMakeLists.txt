@@ -205,6 +205,23 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/integration)
     add_subdirectory(integration)
 endif()
 
+# E2E tests (P1-4: CI-required test_e2e_{dds,secoc,e2e,uds,ota} binaries)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/e2e)
+    add_subdirectory(e2e)
+endif()
+
+# Performance benchmarks (P1 Phase 8: test infrastructure & performance
+# baseline — OS task switch / IRQ latency / scheduling jitter, communication
+# stack dispatch-routing-pack latency, memory stack CRC + NvM job cycles).
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/performance)
+    add_subdirectory(performance)
+endif()
+
+# P1-4: Security tests (CI-required test_security binary)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/security)
+    add_subdirectory(security)
+endif()
+
 # MCAL mock tests (links real production source with MockHAL)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mock/CMakeLists_MCAL_Tests.txt)
     include(${CMAKE_CURRENT_SOURCE_DIR}/mock/CMakeLists_MCAL_Tests.txt)
@@ -238,6 +255,8 @@ if(NOT CMAKE_CROSSCOMPILING)
             service_pdur
             # ECUAL: CanIf (Com dependency) and MemIf (NvM dependency)
             ecual_canif
+            # CanIf indication callbacks -> CanSM (direct-call wiring, same as bus-off path)
+            service_cansm
             ecual_memif
             # CanIf_SetTrcvMode -> CanTrcv driver -> Dio/EcuM wakeup path
             ecual_cantrcv
@@ -268,12 +287,11 @@ if(NOT CMAKE_CROSSCOMPILING)
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
 
-    # MemIf 有意双挂：service_memif（NvM 依赖）+ ecual_memif（ECUAL 抽象层），
-    # 与 configurator-linkage 门禁白名单一致（YAC-CI-004 登记）。
-    # Linux/GNU ld 需 --allow-multiple-definition 容忍；macOS ld64 无此选项且不报错。
-    if(UNIX AND NOT APPLE)
-        target_link_options(s0_smoke_test PRIVATE -Wl,--allow-multiple-definition)
-    endif()
+    # Phase 2 duplicate-module convergence: ecual_memif is now an empty
+    # forwarding-shim target (no symbols); every MemIf symbol has a single
+    # definition in service_memif (MemIf_EraseImmediateBlock merged there).
+    # The former -Wl,--allow-multiple-definition workaround (YAC-CI-004) is
+    # therefore no longer needed and was removed.
 
     add_test(NAME s0_smoke COMMAND s0_smoke_test)
 

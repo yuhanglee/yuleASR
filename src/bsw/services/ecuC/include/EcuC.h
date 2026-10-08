@@ -89,14 +89,38 @@ typedef struct {
 } EcuC_ConfigType;
 
 /** @req SWS_EcuC_00001 */
+/**
+ * @brief Initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void EcuC_Init(const EcuC_ConfigType* ConfigPtr);
 /** @req SWS_EcuC_00002 */
+/**
+ * @brief De-initialize the module
+ * @param[in] ConfigPtr Configuration reference
+ */
 void EcuC_DeInit(void);
 /** @req SWS_EcuC_00004 */
+/**
+ * @brief Get requested information
+ * @param[in] ConfigId Configuration reference
+ * @param[in] Value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType EcuC_GetConfigValue(uint16 ConfigId, uint32* Value);
 /** @req SWS_EcuC_00005 */
+/**
+ * @brief Set configuration value
+ * @param[in] ConfigId Configuration reference
+ * @param[in] Value Parameter value
+ * @return Operation status
+ */
 Std_ReturnType EcuC_SetConfigValue(uint16 ConfigId, uint32 Value);
 /** @req SWS_EcuC_00003 */
+/**
+ * @brief Get module version information
+ * @param[in] versioninfo Version info
+ */
 void EcuC_GetVersionInfo(Std_VersionInfoType* versioninfo);
 
 #endif /* ECUC_H */
