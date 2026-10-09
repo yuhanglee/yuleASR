@@ -38,9 +38,6 @@
 
 #include <string.h>
 
-/* cppcheck MISRA addon configuration — provides macro definitions for static analysis */
-#include "../../../../../tools/analysis/cppcheck-config.h"
-
 /*==================================================================================================
  *                                      LOCAL DEFINES
  ==================================================================================================*/

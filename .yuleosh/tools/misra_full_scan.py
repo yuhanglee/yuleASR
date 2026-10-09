@@ -39,7 +39,7 @@ def run(rules_filter=None, out=None):
     for d in ["STD_ON", "STD_OFF", "STD_HIGH", "STD_LOW", "STD_ACTIVE", "STD_IDLE",
               "NULL_PTR", "TRUE", "FALSE", "E_OK", "E_NOT_OK", "NULL"]:
         cmd.append("-D" + d)
-    inc = PROJECT / "cppcheck-config.h"
+    inc = PROJECT / "tools/analysis/cppcheck-config.h"
     if inc.exists():
         cmd.append("--include=" + str(inc))
     for i in detect_includes():

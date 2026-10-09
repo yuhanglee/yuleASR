@@ -27,7 +27,7 @@ def run_cppcheck(files, rule_filter=None):
     for d in ["STD_ON", "STD_OFF", "STD_HIGH", "STD_LOW", "STD_ACTIVE", "STD_IDLE",
               "NULL_PTR", "TRUE", "FALSE", "E_OK", "E_NOT_OK", "NULL"]:
         cmd.append("-D" + d)
-    inc = Path(PROJECT / "cppcheck-config.h")
+    inc = Path(PROJECT / "tools/analysis/cppcheck-config.h")
     if inc.exists():
         cmd.append("--include=" + str(inc))
         cmd.append("--max-configs=1")
