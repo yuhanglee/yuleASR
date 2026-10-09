@@ -218,10 +218,16 @@ if(EXISTS ${YULE_CFG_DIR}/tools/generate_bsw_config.py)
         message(STATUS "Python3 not found - skipping BSW configuration generation")
     endif()
 
-    # Added AFTER the module include directories declared above, so identical
-    # file names resolve to the handwritten originals first.
+    # -idirafter appends the directory to the END of the compiler search path,
+    # after every -I entry contributed by ANY scope.  include_directories(AFTER)
+    # only orders entries within one directory scope: because this block lives
+    # in the top-level CMakeLists, its entries are emitted before the module
+    # include directories added by subdirectories (src/bsw/services/...), so
+    # generated *_Cfg.h headers shadowed the handwritten ones.  Verified on a
+    # case-insensitive filesystem (macOS/APFS) where config/generated/crc_Cfg.h
+    # shadowed src/bsw/services/crc/include/Crc_Cfg.h and broke 19 targets.
     if(EXISTS ${YULE_CFG_GENERATED_DIR})
-        include_directories(AFTER ${YULE_CFG_GENERATED_DIR})
+        add_compile_options(-idirafter ${YULE_CFG_GENERATED_DIR})
     endif()
 endif()
 
