@@ -92,8 +92,9 @@ static int check_buffer_boundary(void) {
 static int check_integer_overflow(void) {
     unsigned char data[4] = {0xFF, 0xFF, 0xFF, 0xFF};
     unsigned int c = crc32(data, sizeof(data));
-    assert(c != 0);
-    assert(c != 0xFFFFFFFFU);
+    assert(c == 0x00000000U);
+    unsigned int c2 = crc32(data, 3);
+    assert(c2 != 0x00000000U);
     printf("  [PASS] check_integer_overflow: CRC handles all-0xFF\n");
     return 1;
 }

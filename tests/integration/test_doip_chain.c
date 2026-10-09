@@ -172,7 +172,7 @@ void test_doip_vehicle_announcement(void) {
     assert(ret == E_OK);
     assert(eth_tx_count > 0);
     assert(eth_tx_buffer[0] == DOIP_VERSION);
-    assert(eth_tx_buffer[1] == ~DOIP_VERSION);
+    assert(eth_tx_buffer[1] == (uint8_t)~DOIP_VERSION);
     printf("PASS\n");
 }
 
@@ -215,6 +215,7 @@ void test_doip_full_chain(void) {
 int main(void) {
     printf("=== DoIP Full-Chain Integration Test ===\n\n");
 
+    SoAd_OpenSocket(13400);
     test_doip_init();
     test_doip_vehicle_announcement();
     test_doip_diagnostic_message();
