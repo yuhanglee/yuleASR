@@ -34,6 +34,9 @@
 #include "Det.h"
 #endif
 
+/* cppcheck MISRA addon configuration — provides macro definitions for static analysis */
+#include "../../../../../tools/analysis/cppcheck-config.h"
+
 /*==================================================================================================
 *                                    INTERNAL DEFINES
 ==================================================================================================*/

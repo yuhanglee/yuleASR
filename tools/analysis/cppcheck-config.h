@@ -180,6 +180,7 @@
 #define CANNM_NUMBER_OF_CHANNELS             4u
 #define CANNM_MAIN_FUNCTION_PERIOD_MS        10u
 #define CANNM_USER_DATA_LENGTH               8u
+#define CANNM_PDU_LENGTH                     8u
 #define CANNM_DEV_ERROR_DETECT               STD_ON
 #define CANNM_STATE_CHANGE_IND_ENABLED       STD_ON
 #define CANNM_REMOTE_SLEEP_IND_CALLBACK      STD_ON
@@ -207,8 +208,14 @@
 #define ETHSM_MAX_RETRIES                    3u
 #define ETHSM_NETWORK_0                      0u
 #define ETHSM_NETWORK_1                      1u
+#define ETHSM_MAX_NETWORKS                   2u
 #define ETHSM_TIMEOUT_WAIT_TRCVLINK          5000u
 #define ETHSM_TIMEOUT_WAIT_ONLINE            10000u
+
+/* ── ComM mode constants (for EthSM and other modules) ── */
+#define COMM_NO_COMMUNICATION                0u
+#define COMM_SILENT_COMMUNICATION            1u
+#define COMM_FULL_COMMUNICATION              2u
 
 /* ── TcpIp state constants ── */
 #define TCPIP_STATE_OFFLINE                  0u
